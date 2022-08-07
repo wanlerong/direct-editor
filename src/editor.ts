@@ -1,5 +1,23 @@
-let hi = function (): void {
-  console.log("say hi")
+class Editor {
+  constructor(dom: HTMLElement) {
+    let d = document.createElement("div")
+    d.setAttribute("class", "direct-editor")
+    d.setAttribute("contenteditable", "true")
+    dom.appendChild(d);
+  }
+
+  getSelectionRange(): Range {
+    return window.getSelection().getRangeAt(0)
+  }
+
+  bold() {
+    let range: Range = this.getSelectionRange()
+
+  }
+
+  hi(): void {
+    console.log("say hi")
+  }
 }
 
-export { hi }
+export default Editor

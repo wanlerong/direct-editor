@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <title>demo1</title>
-    <script type="module">
-      import { hi } from "../../dist/editor.js";
-      hi();
-    </script>
 </head>
 <body>
+    <div id="test"></div>
 </body>
+<script type="module">
+  import Editor from "../../dist/editor.js";
+  let theEditor = new Editor(document.getElementById("test"))
+  theEditor.hi()
+</script>
 </html>
