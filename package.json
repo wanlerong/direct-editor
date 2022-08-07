@@ -1,0 +1,22 @@
+{
+  "name": "direct-editor",
+  "version": "0.0.1",
+  "description": "a rich-text editor",
+  "main": "index.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wanlerong/direct-editor.git"
+  },
+  "author": "wanlerong",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/wanlerong/direct-editor/issues"
+  },
+  "homepage": "https://github.com/wanlerong/direct-editor#readme"
+}
