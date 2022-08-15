@@ -3,6 +3,9 @@ class Editor {
     let d = document.createElement("div")
     d.setAttribute("class", "direct-editor")
     d.setAttribute("contenteditable", "true")
+    let html = dom.innerHTML;
+    dom.innerHTML = '';
+    d.innerHTML = html;
     dom.appendChild(d);
   }
 

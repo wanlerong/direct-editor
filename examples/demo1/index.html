@@ -3,13 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <title>demo1</title>
+    <style>
+      #container {
+        min-height: 30rem;
+        display: flex;
+      }
+
+      .direct-editor {
+        flex: 1;
+      }
+    </style>
 </head>
 <body>
-    <div id="test"></div>
+<button id="bold-btn">加粗</button>
+<div id="container">
+    <div class="line"><span>111</span><span>aaa</span></div>
+    <div class="line"><span>222</span><span>bbb</span></div>
+</div>
 </body>
 <script type="module">
   import Editor from "../../dist/editor.js";
-  let theEditor = new Editor(document.getElementById("test"))
+
+  let theEditor = new Editor(document.getElementById("container"))
   theEditor.hi()
+
+  document.getElementById("bold-btn").addEventListener('click', (event) => {
+    theEditor.bold()
+  })
 </script>
 </html>
