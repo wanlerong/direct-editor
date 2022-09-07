@@ -13,6 +13,8 @@ class Editor {
     return window.getSelection().getRangeAt(0)
   }
 
+  // 1. 确定 range
+  // 2. 对 range 内的节点应用加粗
   bold() {
     let range: Range = this.getSelectionRange()
     this.splitRange(range)
