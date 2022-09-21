@@ -1,5 +1,5 @@
 import {RangeIterator} from './rangeIterator.js'
-import {isCharacterDataNode} from "./domUtils.js";
+import {isCharacterDataNode, isTextNode} from "./domUtils.js";
 
 class Editor {
   constructor(dom: HTMLElement) {
@@ -33,37 +33,40 @@ class Editor {
 
   splitRange(range: Range) {
     let endOffset = range.endOffset
-    if (range.startContainer == range.endContainer) {
+    let startIsText = isTextNode(range.startContainer)
+    let endIsText = isTextNode(range.endContainer)
+    if (startIsText && endIsText && range.startContainer == range.endContainer) {
       endOffset = range.endOffset - range.startOffset
     }
-    // 假设选中的是 text 节点，parentElement is span
-    // 在头尾边界点的创建新的 span 节点
-    let start: HTMLElement = range.startContainer.parentElement
-    let end: HTMLElement = range.endContainer.parentElement
-
-    let newNode = document.createElement(start.nodeName)
-    let beforeText = start.innerText.substring(0, range.startOffset);
-    let afterText = start.innerText.substring(range.startOffset);
-    if (beforeText !== '' && afterText !== '') {
-      newNode.innerText = beforeText;
-      start.innerText = afterText;
-      start.parentNode.insertBefore(newNode, start)
-    }
-    newNode = document.createElement(end.nodeName)
-    beforeText = end.innerText.substring(0, endOffset);
-    afterText = end.innerText.substring(endOffset);
-    if (beforeText !== '' && afterText !== '') {
-      newNode.innerText = afterText;
-      end.innerText = beforeText;
-      end.parentNode.insertBefore(newNode, end.nextSibling)
+    if (startIsText) {
+      let beforeText = (range.startContainer as Text).data.substring(0, range.startOffset);
+      let afterText = (range.startContainer as Text).data.substring(range.startOffset);
+      let parentNode = range.startContainer.parentNode;
+      if (beforeText !== '' && afterText !== '') {
+        let newNode = document.createElement(parentNode.nodeName)
+        newNode.innerText = beforeText;
+        (range.startContainer as Text).data = afterText
+        parentNode.parentNode.insertBefore(newNode, parentNode)
+        range.setStart(range.startContainer, 0)
+      }
     }
 
-    range.setStart(start.firstChild, 0)
-    range.setEnd(end.firstChild, endOffset)
+    if (endIsText) {
+      let beforeText = (range.endContainer as Text).data.substring(0, endOffset);
+      let afterText = (range.endContainer as Text).data.substring(endOffset);
+      let parentNode = range.endContainer.parentNode;
+
+      if (beforeText !== '' && afterText !== '') {
+        let newNode = document.createElement(parentNode.nodeName)
+        newNode.innerText = afterText;
+        (range.endContainer as Text).data = beforeText;
+        parentNode.parentNode.insertBefore(newNode, parentNode.nextSibling)
+        range.setEnd(range.endContainer, endOffset)
+      }
+    }
   }
 
   iterateSubtree(rangeIterator: RangeIterator, func: (node: Node) => void) {
-    console.log(rangeIterator);
     for (let node: Node; (node = rangeIterator.traverse());) {
       func(node)
       let subRangeIterator: RangeIterator = rangeIterator.getSubtreeIterator();

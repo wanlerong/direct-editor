@@ -2,6 +2,10 @@ export function isCharacterDataNode(node: Node): boolean {
   return node.nodeType == Node.TEXT_NODE || node.nodeType == Node.COMMENT_NODE || node.nodeType == Node.CDATA_SECTION_NODE
 }
 
+export function isTextNode(node: Node): boolean {
+  return node.nodeType == Node.TEXT_NODE
+}
+
 // ancestor -> ancestor1 -> .... -> node
 // 返回的是 ancestor1
 export function getClosestAncestorIn(node: Node, ancestor: Node): Node {
