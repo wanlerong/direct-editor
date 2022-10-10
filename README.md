@@ -5,5 +5,8 @@ node v16.0.0
 
 ### build
 ```
-tsc --project ./tsconfig.json
+webpack
 ```
+
+### some note
+查看 ts 编译后的代码：tsc --project ./tsconfig.json

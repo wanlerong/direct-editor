@@ -1,7 +1,7 @@
-import {RangeIterator} from './rangeIterator.js'
-import {isCharacterDataNode, isTextNode} from "./domUtils.js";
+import {RangeIterator} from './rangeIterator'
+import {isCharacterDataNode, isTextNode} from "./domUtils";
 
-class Editor {
+export class Editor {
   constructor(dom: HTMLElement) {
     let d = document.createElement("div")
     d.setAttribute("class", "direct-editor")
@@ -80,5 +80,3 @@ class Editor {
     console.log("say hi")
   }
 }
-
-export default Editor

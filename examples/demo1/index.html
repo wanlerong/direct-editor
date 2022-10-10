@@ -8,7 +8,10 @@
         min-height: 30rem;
         display: flex;
       }
-
+      body {
+        margin: 0;
+        padding: 1rem;
+      }
       .direct-editor {
         flex: 1;
       }
@@ -21,12 +24,11 @@
     <p class="line"><span>222</span><span>bbb</span></p>
 </div>
 </body>
-<script type="module">
-  import Editor from "../../dist/editor.js";
-
+<script src="../../dist/bundle.js"></script>
+<script>
+  let Editor = DirectEditor.Editor;
   let theEditor = new Editor(document.getElementById("container"))
   theEditor.hi()
-
   document.getElementById("bold-btn").addEventListener('click', (event) => {
     theEditor.bold()
   })
