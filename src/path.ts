@@ -1,4 +1,4 @@
-const validNodeTypes = [
+const validNodeTypes:number[] = [
   Node.ELEMENT_NODE,
   Node.TEXT_NODE,
   Node.COMMENT_NODE,

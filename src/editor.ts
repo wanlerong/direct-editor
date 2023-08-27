@@ -8,7 +8,7 @@ export class Editor {
 
   private idMap = {};
 
-  private theDom;
+  private theDom: HTMLDivElement;
 
   private customCallback: Function;
 
@@ -38,8 +38,8 @@ export class Editor {
     dom.innerHTML = '';
     d.innerHTML = html;
     dom.appendChild(d);
-
     this.theDom = d
+    this.normalize()
 
     if (callback) {
       this.customCallback = callback
@@ -52,6 +52,13 @@ export class Editor {
         attributeOldValue: true,
         characterDataOldValue: true,
       });
+    }
+  }
+
+  normalize() {
+    if (!this.theDom.hasChildNodes()) {
+      const div = document.createElement("div")
+      this.theDom.appendChild(div);
     }
   }
 
@@ -454,8 +461,8 @@ export class Editor {
       let hasOi = op.oi !== undefined
       let hasOd = op.od !== undefined
       let path = op.p;
-      let ele = this.theDom
-      let target = this.theDom
+      let ele:any = this.theDom
+      let target:any = this.theDom
 
       if (hasSi || hasSd) {
         let strIdx = path.pop();
@@ -466,7 +473,7 @@ export class Editor {
         })
         let outOp = document.createElement("span")
         outOp.setAttribute("class", "out-op")
-        let targetTextNode = target.childNodes[idx]
+        let targetTextNode:any = target.childNodes[idx]
         target.insertBefore(outOp, targetTextNode)
         outOp.appendChild(targetTextNode)
         if (hasSd) {
