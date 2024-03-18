@@ -3,8 +3,12 @@ import {isCharacterDataNode, isTextNode} from "./domUtils";
 import {getJson0Path} from "./path";
 import JsonML from "./lib/jsonml-dom";
 import JsonMLHtml from "./lib/jsonml-html";
+import {Toolbar} from "./toolbar";
+import {getSelectionRange} from "./range";
 
 export class Editor {
+
+  public toolbar: Toolbar;
 
   private idMap = {};
 
@@ -40,6 +44,8 @@ export class Editor {
     dom.appendChild(d);
     this.theDom = d
     this.normalize()
+    
+    this.toolbar = new Toolbar(this)
 
     if (callback) {
       this.customCallback = callback
@@ -53,68 +59,34 @@ export class Editor {
         characterDataOldValue: true,
       });
     }
+
+    // 监听变化
+    let _this = this
+    d.addEventListener("keydown", function () {
+      console.log("keydown")
+      setTimeout(() => {
+        _this.normalize()
+      }, 1)
+    })
   }
 
   normalize() {
+    this.theDom.childNodes.forEach(n => {
+      if (n.nodeType == Node.TEXT_NODE) {
+        n.parentNode.removeChild(n);
+      } else if (n.nodeType == Node.ELEMENT_NODE) {
+        if (n.nodeName != "DIV") {
+          n.parentNode.removeChild(n);
+        }
+      }
+    })
     if (!this.theDom.hasChildNodes()) {
       const div = document.createElement("div")
+      div.appendChild(document.createElement("br"))
       this.theDom.appendChild(div);
     }
   }
 
-  getSelectionRange(): Range {
-    return window.getSelection().getRangeAt(0)
-  }
-
-  // 1. 确定 range
-  // 2. 对 range 内的节点应用加粗
-  bold() {
-    let range: Range = this.getSelectionRange()
-    this.splitRange(range)
-    this.iterateSubtree(new RangeIterator(range), (node) => {
-      if (isCharacterDataNode(node)) {
-        let textContainer: HTMLElement = (node.parentNode as HTMLElement);
-        if (textContainer.tagName == "SPAN") {
-          textContainer.style.fontWeight = "bold";
-        }
-      }
-    })
-  }
-
-  splitRange(range: Range) {
-    let endOffset = range.endOffset
-    let startIsText = isTextNode(range.startContainer)
-    let endIsText = isTextNode(range.endContainer)
-    if (startIsText && endIsText && range.startContainer == range.endContainer) {
-      endOffset = range.endOffset - range.startOffset
-    }
-    if (startIsText) {
-      let beforeText = (range.startContainer as Text).data.substring(0, range.startOffset);
-      let afterText = (range.startContainer as Text).data.substring(range.startOffset);
-      let parentNode = range.startContainer.parentNode;
-      if (beforeText !== '' && afterText !== '') {
-        let newNode = document.createElement(parentNode.nodeName)
-        newNode.innerText = beforeText;
-        (range.startContainer as Text).data = afterText
-        parentNode.parentNode.insertBefore(newNode, parentNode)
-        range.setStart(range.startContainer, 0)
-      }
-    }
-
-    if (endIsText) {
-      let beforeText = (range.endContainer as Text).data.substring(0, endOffset);
-      let afterText = (range.endContainer as Text).data.substring(endOffset);
-      let parentNode = range.endContainer.parentNode;
-
-      if (beforeText !== '' && afterText !== '') {
-        let newNode = document.createElement(parentNode.nodeName)
-        newNode.innerText = afterText;
-        (range.endContainer as Text).data = beforeText;
-        parentNode.parentNode.insertBefore(newNode, parentNode.nextSibling)
-        range.setEnd(range.endContainer, endOffset)
-      }
-    }
-  }
 
   iterateSubtree(rangeIterator: RangeIterator, func: (node: Node) => void) {
     for (let node: Node; (node = rangeIterator.traverse());) {
@@ -411,7 +383,7 @@ export class Editor {
     let ops = [];
     let oldValue = mutation.oldValue
     let value = mutation.target.data
-    let range = this.getSelectionRange()
+    let range = getSelectionRange()
     let unModifiedRightString = value.substring(range.endOffset, value.length);
     let idx = 0;
     for (let i = 0; i < Math.min(value.length, oldValue.length) - unModifiedRightString.length; i++) {
@@ -461,8 +433,8 @@ export class Editor {
       let hasOi = op.oi !== undefined
       let hasOd = op.od !== undefined
       let path = op.p;
-      let ele:any = this.theDom
-      let target:any = this.theDom
+      let ele: any = this.theDom
+      let target: any = this.theDom
 
       if (hasSi || hasSd) {
         let strIdx = path.pop();
@@ -473,7 +445,7 @@ export class Editor {
         })
         let outOp = document.createElement("span")
         outOp.setAttribute("class", "out-op")
-        let targetTextNode:any = target.childNodes[idx]
+        let targetTextNode: any = target.childNodes[idx]
         target.insertBefore(outOp, targetTextNode)
         outOp.appendChild(targetTextNode)
         if (hasSd) {
