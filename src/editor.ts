@@ -4,7 +4,7 @@ import {getJson0Path} from "./path";
 import JsonML from "./lib/jsonml-dom";
 import JsonMLHtml from "./lib/jsonml-html";
 import {Toolbar} from "./toolbar";
-import {getSelectionRange} from "./range";
+import {getIntersectionStyle, getSelectionRange} from "./range";
 
 export class Editor {
 
@@ -15,6 +15,7 @@ export class Editor {
   private theDom: HTMLDivElement;
 
   private customCallback: Function;
+  public asChange: Function;
 
   private mutationCallback: MutationCallback = (mutations: MutationRecord[], observer: MutationObserver) => {
     // 来自外部的dom变更不需要再向外发送 op
@@ -34,7 +35,7 @@ export class Editor {
     }
   }
 
-  constructor(dom: HTMLElement, callback: (jsonOp: any) => void) {
+  constructor(dom: HTMLElement, callback: (jsonOp: any) => void, asChangeFunc:Function) {
     let d = document.createElement("div")
     d.setAttribute("class", "direct-editor")
     d.setAttribute("contenteditable", "true")
@@ -44,8 +45,8 @@ export class Editor {
     dom.appendChild(d);
     this.theDom = d
     this.normalize()
-    
     this.toolbar = new Toolbar(this)
+    this.asChange = asChangeFunc
 
     if (callback) {
       this.customCallback = callback
@@ -68,6 +69,19 @@ export class Editor {
         _this.normalize()
       }, 1)
     })
+
+    // selection change
+    d.addEventListener('mouseup', function (){
+      setTimeout(()=>{
+        _this.toolbar.checkActiveStatus()
+      },2)
+    });
+    
+    d.addEventListener('keyup', function (){
+      setTimeout(()=>{
+        _this.toolbar.checkActiveStatus()
+      },2)
+    });
   }
 
   normalize() {
@@ -84,17 +98,6 @@ export class Editor {
       const div = document.createElement("div")
       div.appendChild(document.createElement("br"))
       this.theDom.appendChild(div);
-    }
-  }
-
-
-  iterateSubtree(rangeIterator: RangeIterator, func: (node: Node) => void) {
-    for (let node: Node; (node = rangeIterator.traverse());) {
-      func(node)
-      let subRangeIterator: RangeIterator = rangeIterator.getSubtreeIterator();
-      if (subRangeIterator != null) {
-        this.iterateSubtree(subRangeIterator, func);
-      }
     }
   }
 
