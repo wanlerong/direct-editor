@@ -17,28 +17,28 @@ export class Toolbar{
     }
   }
   
-  bold() {
+  bold(value:boolean) {
     let range: Range = getSelectionRange()
     splitRange(range)
-    this.applyInlineStyles({fontWeight:"bold"}, range)
+    this.applyInlineStyles({fontWeight: value ? "bold" : null}, range)
     this.checkActiveStatus()
   }
-  italic(){
+  italic(value:boolean){
     let range: Range = getSelectionRange()
     splitRange(range)
-    this.applyInlineStyles({fontStyle:"italic"}, range)
+    this.applyInlineStyles({fontStyle: value ? "italic" : null}, range)
     this.checkActiveStatus()
   }
-  underline() {
+  underline(value:boolean) {
     let range: Range = getSelectionRange()
     splitRange(range)
-    this.applyInlineStyles({textDecoration:"underline"}, range)
+    this.applyInlineStyles({textDecoration: value ? "underline" : null}, range)
     this.checkActiveStatus()
   }
-  strikethrough() {
+  strikethrough(value:boolean) {
     let range: Range = getSelectionRange()
     splitRange(range)
-    this.applyInlineStyles({textDecoration:"line-through"}, range)
+    this.applyInlineStyles({textDecoration: value ? "line-through" : null}, range)
     this.checkActiveStatus()
   }
   
