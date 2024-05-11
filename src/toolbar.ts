@@ -20,30 +20,33 @@ export class Toolbar{
   bold(value:boolean) {
     let range: Range = getSelectionRange()
     splitRange(range)
+    this.editor.normalize()
     this.applyInlineStyles({fontWeight: value ? "bold" : null}, range)
     this.checkActiveStatus()
   }
   italic(value:boolean){
     let range: Range = getSelectionRange()
     splitRange(range)
+    this.editor.normalize()
     this.applyInlineStyles({fontStyle: value ? "italic" : null}, range)
     this.checkActiveStatus()
   }
   underline(value:boolean) {
     let range: Range = getSelectionRange()
     splitRange(range)
+    this.editor.normalize()
     this.applyInlineStyles({textDecoration: value ? "underline" : null}, range)
     this.checkActiveStatus()
   }
   strikethrough(value:boolean) {
     let range: Range = getSelectionRange()
     splitRange(range)
+    this.editor.normalize()
     this.applyInlineStyles({textDecoration: value ? "line-through" : null}, range)
     this.checkActiveStatus()
   }
   
   applyInlineStyles(styles:any, range: Range) {
-    console.log(range)
     iterateSubtree(new RangeIterator(range), (node) => {
       if (isCharacterDataNode(node)) {
         if (node.parentElement.nodeName == "SPAN") {

@@ -89,8 +89,18 @@ export class Editor {
       if (n.nodeType == Node.TEXT_NODE) {
         n.parentNode.removeChild(n);
       } else if (n.nodeType == Node.ELEMENT_NODE) {
+        // first level can only be DIV
         if (n.nodeName != "DIV") {
           n.parentNode.removeChild(n);
+        } else {
+          // remove the empty span
+          n.childNodes.forEach(n2 => {
+            if (n2.nodeType == Node.ELEMENT_NODE) {
+              if (n2.nodeName == "SPAN" && n2.textContent == "") {
+                n2.parentNode.removeChild(n2);
+              }
+            }
+          })
         }
       }
     })

@@ -13,7 +13,7 @@ export function getSelectionRange(): Range {
 }
 
 export function splitRange(range: Range) {
-  console.log(range)
+  console.log('splitRange:', range, range.startContainer, range.startOffset, range.endContainer, range.endOffset)
   let startIsText = isTextNode(range.startContainer)
   let endIsText = isTextNode(range.endContainer)
   if (!startIsText || !endIsText) {
@@ -32,7 +32,7 @@ export function splitRange(range: Range) {
     text3 = sc.data.substring(range.endOffset);
   }
   let isSpan = sc.parentElement.nodeName == 'SPAN'
-  // 选择了 span 的全部
+  // select all the span
   if (sameNode && isSpan && range.startOffset == 0 && range.endOffset == sc.data.length) {
     return;
   }
