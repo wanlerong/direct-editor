@@ -2,6 +2,7 @@ import {Editor} from "./editor"
 import {RangeIterator} from "./rangeIterator";
 import {isCharacterDataNode, supportStyles} from "./domUtils";
 import {getIntersectionStyle, getSelectionRange, iterateSubtree, splitRange} from "./range";
+import {HTitleLevel} from "./const/const";
 
 export class Toolbar{
   private editor: Editor
@@ -62,6 +63,32 @@ export class Toolbar{
           node.parentElement.replaceChild(span, node)
         }
       }
+    })
+  }
+  
+  // set the selection range to h1/h2/h3... title
+  title(level: HTitleLevel) {
+    console.log(level)
+    let range = getSelectionRange()
+    let targetDivs = []
+    iterateSubtree(new RangeIterator(range), (node) => {
+      console.log('111', node)
+      while (true) {
+        if (node.nodeName == "DIV") {
+          if (!targetDivs.includes(node)) {
+            targetDivs.push(node)
+          }
+          break
+        }
+        node = node.parentNode
+      }
+    })
+
+    targetDivs.forEach(td => {
+      let hTag: HTMLElement = document.createElement('H1')
+      hTag.innerText = (td as HTMLElement).innerText;
+      (td as HTMLElement).innerHTML = ''
+      td.appendChild(hTag)
     })
   }
   
