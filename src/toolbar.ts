@@ -15,12 +15,7 @@ export class Toolbar {
       italic: false,
       underline: false,
       strikethrough: false,
-      h1: false,
-      h2: false,
-      h3: false,
-      h4: false,
-      h5: false,
-      h6: false,
+      blockType: BlockType.BLOCK_TYPE_NONE,
     }
   }
 
@@ -110,27 +105,7 @@ export class Toolbar {
     this.activeStatus.italic = is['fontStyle'] == 'italic'
     this.activeStatus.strikethrough = is['textDecoration'] == 'line-through'
     this.activeStatus.underline = is['textDecoration'] == 'underline'
-
-    let blockType = getIntersectionBlockType()
-    this.activeStatus.h1 = false
-    this.activeStatus.h2 = false
-    this.activeStatus.h3 = false
-    this.activeStatus.h4 = false
-    this.activeStatus.h5 = false
-    this.activeStatus.h6 = false
-    if (blockType == BlockType.BLOCK_TYPE_H1) {
-      this.activeStatus.h1 = true
-    } else if (blockType == BlockType.BLOCK_TYPE_H2) {
-      this.activeStatus.h2 = true
-    } else if (blockType == BlockType.BLOCK_TYPE_H3) {
-      this.activeStatus.h3 = true
-    } else if (blockType == BlockType.BLOCK_TYPE_H4) {
-      this.activeStatus.h4 = true
-    } else if (blockType == BlockType.BLOCK_TYPE_H5) {
-      this.activeStatus.h5 = true
-    } else if (blockType == BlockType.BLOCK_TYPE_H6) {
-      this.activeStatus.h6 = true
-    }
+    this.activeStatus.blockType = getIntersectionBlockType()
     
     this.editor.asChange(this.activeStatus)
   }
