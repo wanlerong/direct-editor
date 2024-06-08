@@ -1,12 +1,6 @@
-import {
-  applyInlineStylesFormNode,
-  getInlineStyles,
-  insertAfter,
-  isCharacterDataNode,
-  isTextNode,
-  supportStyles
-} from "./domUtils";
+import {applyInlineStylesFormNode, getInlineStyles, insertAfter, isCharacterDataNode, isTextNode,} from "./domUtils";
 import {RangeIterator} from "./rangeIterator";
+import {BlockType, NodeToBlockType} from "./const/const";
 
 export function getSelectionRange(): Range {
   return window.getSelection().getRangeAt(0)
@@ -83,25 +77,22 @@ export function splitRange(range: Range) {
   }
 }
 
-export function getIntersectionStyle():any {
+export function getIntersectionStyle(): any {
   let range = getSelectionRange()
-  let spans = [] 
+  let spans = []
 
   iterateSubtree(new RangeIterator(range), (node) => {
     if (isCharacterDataNode(node)) {
       if (node.textContent == '') {
         return
       }
-      console.log(node, node.parentElement)
       if (node.parentElement.nodeName == "SPAN") {
         spans.push(node.parentElement)
       } else {
-        
         spans.push(null)
       }
     }
   })
-
 
   if (range.collapsed) {
     if (isCharacterDataNode(range.startContainer)) {
@@ -111,33 +102,76 @@ export function getIntersectionStyle():any {
     }
   }
 
-  console.log(spans)
   let is = {}
-  
   for (const i in spans) {
     if (spans[i] == null) {
       return {}
     }
     let styles = getInlineStyles(spans[i]);
-    supportStyles.forEach(v => {
-      if (i == '0') {
-        is = styles
-      } else {
-        for (const k in is) {
-          if (styles[k] != is[k]) {
-            delete is[k]
-          }
+    if (i == '0') {
+      is = styles
+    } else {
+      for (const k in is) {
+        if (styles[k] != is[k]) {
+          delete is[k]
         }
       }
-    })
+    }
   }
   return is
 }
 
+export function getIntersectionBlockType(): BlockType {
+  let range = getSelectionRange()
+  let targetBlocks = []
+  
+  let blockTypeNodeNames = ["H1","H2","H3","H4","H5","H6"]
+
+  iterateSubtree(new RangeIterator(range), (node) => {
+    if (isCharacterDataNode(node)) {
+      if (node.textContent == '') {
+        return
+      }
+      while (node) {
+        if (blockTypeNodeNames.includes(node.nodeName)) {
+          if (!targetBlocks.includes(node)) {
+            targetBlocks.push(node)
+          }
+          break
+        }
+        node = node.parentNode
+        if (node == null) {
+          targetBlocks.push(null)
+        }
+      }
+    }
+  })
+
+  let blockType = BlockType.BLOCK_TYPE_NONE
+  for (const i in targetBlocks) {
+    if (targetBlocks[i] == null) {
+      return BlockType.BLOCK_TYPE_NONE
+    }
+    let nodeBlockType = NodeToBlockType(targetBlocks[i]);
+    if (i == '0') {
+      blockType = nodeBlockType
+    } else {
+      if (nodeBlockType != blockType) {
+        return BlockType.BLOCK_TYPE_NONE
+      }
+    }
+  }
+  return blockType
+}
+
+
+
 export function iterateSubtree(rangeIterator: RangeIterator, func: (node: Node) => void) {
   for (let node: Node; (node = rangeIterator.traverse());) {
+    console.log('traverse node', node, node.nodeName, node.nodeType)
     func(node)
     let subRangeIterator: RangeIterator = rangeIterator.getSubtreeIterator();
+    console.log('subRangeIterator', subRangeIterator)
     if (subRangeIterator != null) {
       iterateSubtree(subRangeIterator, func);
     }

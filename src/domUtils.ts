@@ -49,5 +49,3 @@ export function applyInlineStylesFormNode(from:HTMLElement, to: HTMLElement) {
     to.style[property] = styles[property]
   }
 }
-
-export const supportStyles = ['fontWeight', 'fontStyle', 'textDecoration']

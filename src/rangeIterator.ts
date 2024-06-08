@@ -26,6 +26,8 @@ export class RangeIterator {
           this.last = getClosestAncestorIn(range.endContainer, range.commonAncestorContainer)
         }
       }
+    } else if (isCharacterDataNode(range.startContainer)) {
+      this.first = this.last = this.next = range.startContainer
     }
   }
 
