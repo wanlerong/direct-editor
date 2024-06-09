@@ -101,9 +101,15 @@ export class Editor {
               }
             }
           })
+          // add <br> for empty <div> 
+          if ((n as HTMLElement).innerHTML == "" || (n as HTMLElement).innerHTML == "\n") {
+            (n as HTMLElement).innerHTML = ""
+            n.appendChild(document.createElement("br"))
+          }
         }
       }
     })
+    
     if (!this.theDom.hasChildNodes()) {
       const div = document.createElement("div")
       div.appendChild(document.createElement("br"))

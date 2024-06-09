@@ -73,26 +73,44 @@ export class Toolbar {
   // set the selection range to h1/h2/h3... title
   title(level: HTitleLevel) {
     let range = getSelectionRange()
-    let targetDivs = []
+    let targetDivs : HTMLElement[] = []
     iterateSubtree(new RangeIterator(range), (node) => {
-      while (true) {
+      while (node) {
         if (node.nodeName == "DIV") {
-          if (!targetDivs.includes(node)) {
-            targetDivs.push(node)
+          if (!targetDivs.includes(node as HTMLElement)) {
+            targetDivs.push(node as HTMLElement)
           }
           break
         }
         node = node.parentNode
       }
     })
-
-    targetDivs.forEach((td: HTMLElement) => {
-      let hTag: HTMLElement = document.createElement(level)
-      hTag.innerText = td.innerText;
-      td.innerHTML = ''
-      td.appendChild(hTag)
-    })
+    if (targetDivs.length == 0) {
+      return
+    }
+    if (level == HTitleLevel.LEVEL_NONE) {
+      targetDivs.forEach((td: HTMLElement) => {
+        td.innerHTML = td.innerText
+      })
+    } else {
+      targetDivs.forEach((td: HTMLElement) => {
+        let hTag: HTMLElement = document.createElement(level)
+        hTag.innerText = td.innerText;
+        td.innerHTML = ''
+        td.appendChild(hTag)
+      })
+    }
+    
+    let sc = targetDivs[0].firstChild
+    let ec = targetDivs[targetDivs.length - 1].firstChild
+    if (!isCharacterDataNode(sc)){
+      sc = sc.firstChild
+      ec = ec.firstChild
+    }
+    range.setStart(sc, 0)
+    range.setEnd(ec, ec.textContent.length)
     this.checkActiveStatus()
+    this.editor.normalize()
   }
   
   getActiveStatus() {

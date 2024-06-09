@@ -1,4 +1,5 @@
 export enum HTitleLevel {
+  LEVEL_NONE = "None",
   H1 = "H1",
   H2 = "H2",
   H3 = "H3",
