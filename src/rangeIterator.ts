@@ -27,7 +27,11 @@ export class RangeIterator {
         }
       }
     } else if (isCharacterDataNode(range.startContainer)) {
+      // if is collapsed text node, the range is that text node 
       this.first = this.last = this.next = range.startContainer
+    } else {
+      // if is collapsed non-text node, assume that the range is the child node corresponding to the node
+      this.first = this.last = this.next = range.startContainer.childNodes[range.startOffset]
     }
   }
 
@@ -42,7 +46,10 @@ export class RangeIterator {
   // 在 current 节点内，根据边界点切分出新的 sub range
   getSubtreeIterator(): RangeIterator {
     let current: Node = this.current;
+    // text node，or other node without child (eg: <br>) has no subtree range
     if (isCharacterDataNode(current)) {
+      return null
+    } else if (getNodeLength(current) == 0) {
       return null
     }
 
