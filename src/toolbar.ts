@@ -69,11 +69,11 @@ export class Toolbar {
       }
     })
   }
-  
+
   // set the selection range to h1/h2/h3... title
   title(level: HTitleLevel) {
     let range = getSelectionRange()
-    let targetDivs : HTMLElement[] = []
+    let targetDivs: HTMLElement[] = []
     iterateSubtree(new RangeIterator(range), (node) => {
       while (node) {
         if (node.nodeName == "DIV") {
@@ -100,10 +100,10 @@ export class Toolbar {
         td.appendChild(hTag)
       })
     }
-    
+
     let sc = targetDivs[0].firstChild
     let ec = targetDivs[targetDivs.length - 1].firstChild
-    if (!isCharacterDataNode(sc)){
+    if (!isCharacterDataNode(sc)) {
       sc = sc.firstChild
       ec = ec.firstChild
     }
@@ -112,7 +112,7 @@ export class Toolbar {
     this.checkActiveStatus()
     this.editor.normalize()
   }
-  
+
   getActiveStatus() {
     return this.activeStatus
   }
@@ -124,7 +124,37 @@ export class Toolbar {
     this.activeStatus.strikethrough = is['textDecoration'] == 'line-through'
     this.activeStatus.underline = is['textDecoration'] == 'underline'
     this.activeStatus.blockType = getIntersectionBlockType()
-    
+
     this.editor.asChange(this.activeStatus)
+  }
+
+  unorderedList() {
+    let range = getSelectionRange()
+    let targetDivs: HTMLElement[] = []
+    iterateSubtree(new RangeIterator(range), (node) => {
+      while (node) {
+        if (node.nodeName == "DIV") {
+          if (!targetDivs.includes(node as HTMLElement)) {
+            targetDivs.push(node as HTMLElement)
+          }
+          break
+        }
+        node = node.parentNode
+      }
+    })
+    if (targetDivs.length == 0) {
+      return
+    }
+    let ul = document.createElement("ul")
+    targetDivs.forEach((targetDiv, idx) => {
+      let li = document.createElement("li")
+      li.innerText = targetDiv.innerText
+      ul.appendChild(li)
+      if (idx != 0) {
+        targetDiv.remove()
+      }
+    })
+    targetDivs[0].innerHTML = ''
+    targetDivs[0].appendChild(ul)
   }
 }
