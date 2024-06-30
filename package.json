@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "a rich-text editor",
   "scripts": {
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+    "test": "jest"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
