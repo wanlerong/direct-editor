@@ -7,3 +7,8 @@ node v16.0.0
 ```
 tsc --project ./tsconfig.json
 ```
+
+### test
+```
+npm run test
+```

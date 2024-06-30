@@ -1,10 +1,8 @@
-import {RangeIterator} from './rangeIterator'
-import {isCharacterDataNode, isTextNode} from "./domUtils";
 import {getJson0Path} from "./path";
 import JsonML from "./lib/jsonml-dom";
 import JsonMLHtml from "./lib/jsonml-html";
 import {Toolbar} from "./toolbar";
-import {getIntersectionStyle, getSelectionRange} from "./range";
+import {getSelectionRange} from "./range";
 
 export class Editor {
 

@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "moduleResolution": "nodenext",
     "target": "es6",
     "sourceMap": true,
     "rootDir": "src",
@@ -9,6 +10,7 @@
   },
   "exclude": [
     "node_modules",
-    "./dist/**/*"
+    "./dist/**/*",
+    "**/*.test.ts"
   ],
 }
