@@ -16,6 +16,7 @@ export enum BlockType {
   BLOCK_TYPE_H4,
   BLOCK_TYPE_H5,
   BLOCK_TYPE_H6,
+  BLOCK_TYPE_UL,
 }
 
 export function NodeToBlockType(node: Node) :BlockType {
@@ -36,6 +37,8 @@ export function NodeToBlockType(node: Node) :BlockType {
       return BlockType.BLOCK_TYPE_H5
     case "H6":
       return BlockType.BLOCK_TYPE_H6
+    case "UL":
+      return BlockType.BLOCK_TYPE_UL
     default:
       return BlockType.BLOCK_TYPE_NONE
   }

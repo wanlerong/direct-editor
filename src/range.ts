@@ -125,13 +125,10 @@ export function getIntersectionBlockType(): BlockType {
   let range = getSelectionRange()
   let targetBlocks = []
   
-  let blockTypeNodeNames = ["H1","H2","H3","H4","H5","H6"]
+  let blockTypeNodeNames = ["H1","H2","H3","H4","H5","H6","UL"]
 
   iterateSubtree(new RangeIterator(range), (node) => {
-    if (isCharacterDataNode(node)) {
-      if (node.textContent == '') {
-        return
-      }
+    if ((isCharacterDataNode(node) && node.textContent != '') || node.nodeName == "BR") {
       while (node) {
         if (blockTypeNodeNames.includes(node.nodeName)) {
           if (!targetBlocks.includes(node)) {

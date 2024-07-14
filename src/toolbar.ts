@@ -156,5 +156,7 @@ export class Toolbar {
     })
     targetDivs[0].innerHTML = ''
     targetDivs[0].appendChild(ul)
+    
+    this.checkActiveStatus()
   }
 }
