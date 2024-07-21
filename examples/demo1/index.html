@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>demo1</title>
+    <style>
+      #container {
+        /*min-height: 30rem;*/
+        /*display: flex;*/
+      }
+      body {
+        margin: 0;
+        padding: 1rem;
+      }
+      .direct-editor {
+        flex: 1;
+        border: 1px solid #999999;
+        padding: 1rem;
+        margin-top: 1rem;
+      }
+      .active {
+        background: #999999;
+      }
+    </style>
+</head>
+<body>
+<button id="btn1">加粗</button>
+<button id="btn2">倾斜</button>
+<button id="btn3">下滑线</button>
+<button id="btn4">删除线</button>
+<button id="btn5">H1</button>
+<button id="btn6">H2</button>
+<button id="btn7">H3</button>
+<button id="btn8">无序列表</button>
+<div id="container"></div>
+</body>
+<script src="dist/bundle.js"></script>
+</html>

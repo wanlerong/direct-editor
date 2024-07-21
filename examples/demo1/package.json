@@ -1,0 +1,11 @@
+{
+  "name": "direct-editor-demo",
+  "version": "1.0.0",
+  "dependencies": {
+    "direct-editor": "file:../../"
+  },
+  "devDependencies": {
+    "webpack": "^5.74.0",
+    "webpack-cli": "^4.10.0"
+  }
+}
