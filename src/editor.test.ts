@@ -14,3 +14,24 @@ test('normalize empty editor', () => {
   editor.normalize()
   expect(editorDom.innerHTML).toBe("<div><br></div>");
 });
+
+test('normalize merge ul', () => {
+  let div = document.createElement("div")
+  let editor = new Editor(div, null, null);
+  let editorDom = (div.firstChild as HTMLElement);
+  editorDom.innerHTML = '<div><ul><li>111</li></ul></div>' +
+    '<div><ul><li>222</li></ul></div>'
+  editor.normalize()
+  expect(editorDom.innerHTML).toBe("<div><ul><li>111</li><li>222</li></ul></div>");
+});
+
+
+test('normalize remove empty ul', () => {
+  let div = document.createElement("div")
+  let editor = new Editor(div, null, null);
+  let editorDom = (div.firstChild as HTMLElement);
+  editorDom.innerHTML = '<div><ul></ul></div>' +
+    '<div>111</div>'
+  editor.normalize()
+  expect(editorDom.innerHTML).toBe("<div>111</div>");
+});

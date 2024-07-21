@@ -20,6 +20,19 @@ export function getClosestAncestorIn(node: Node, ancestor: Node): Node {
   return null;
 }
 
+// div -> .... -> node
+// 返回的是 div
+export function getClosestAncestorByNodeName(node: Node, nodeName: string): Node {
+  let n = node;
+  while (n) {
+    if (n.nodeName == nodeName) {
+      return n
+    }
+    n = n.parentNode
+  }
+  return null;
+}
+
 export function getNodeLength(node: Node) {
   let childNodes;
   return isCharacterDataNode(node) ? (node as Text).length : ((childNodes = node.childNodes) ? childNodes.length : 0);

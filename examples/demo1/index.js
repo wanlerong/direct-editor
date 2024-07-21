@@ -55,5 +55,9 @@ btn7.addEventListener('click', (event) => {
 })
 
 btn8.addEventListener('click', (event) => {
-  e.toolbar.unorderedList()
+  if(btn8.classList.contains("active")){
+    e.toolbar.unUnorderedList()
+  } else {
+    e.toolbar.unorderedList()
+  }
 });

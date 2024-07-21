@@ -1,6 +1,6 @@
 import {Editor} from "./editor"
 import {RangeIterator} from "./rangeIterator";
-import {isCharacterDataNode} from "./domUtils";
+import {getClosestAncestorByNodeName, insertAfter, isCharacterDataNode} from "./domUtils";
 import {getIntersectionBlockType, getIntersectionStyle, getSelectionRange, iterateSubtree, splitRange} from "./range";
 import {BlockType, HTitleLevel} from "./const/const";
 
@@ -58,7 +58,7 @@ export class Toolbar {
           for (const property in styles) {
             node.parentElement.style[property] = styles[property]
           }
-        } else if (node.parentElement.nodeName == "DIV") {
+        } else if (node.parentElement.nodeName == "DIV" || node.parentElement.nodeName == "LI") {
           let span = document.createElement('SPAN')
           span.innerText = (node as Text).data
           for (const property in styles) {
@@ -156,7 +156,49 @@ export class Toolbar {
     })
     targetDivs[0].innerHTML = ''
     targetDivs[0].appendChild(ul)
+    this.editor.normalize()
+    this.checkActiveStatus()
+  }
+  
+  unUnorderedList() {
+    let range = getSelectionRange()
+    let ul: HTMLElement = getClosestAncestorByNodeName(range.startContainer, 'UL') as HTMLElement
+    if (!ul) {
+      return
+    }
+
+    let li1: HTMLElement = getClosestAncestorByNodeName(range.startContainer, 'LI') as HTMLElement
+    let li2: HTMLElement = getClosestAncestorByNodeName(range.endContainer, 'LI') as HTMLElement
+    let idx1 = Array.of(...ul.childNodes).indexOf(li1)
+    let idx2 = Array.of(...ul.childNodes).indexOf(li2)
+
+    let toRemove: HTMLElement[] = []
+    let newDiv,newUl: HTMLElement = null
+    let n1 = ul.parentNode
     
+    Array.of(...ul.childNodes).forEach((li, idx) => {
+      if (idx < idx1) {
+        return
+      } else if (idx >= idx1 && idx <= idx2) {
+        const div = document.createElement("div");
+        div.innerHTML = (li as HTMLElement).innerHTML
+        insertAfter(n1, div)
+        n1 = div
+        toRemove.push((li as HTMLElement))
+      } else {
+        if (newDiv == null) {
+          newDiv = document.createElement("div");
+          newUl = document.createElement("ul");
+          newDiv.appendChild(newUl)
+        } 
+        newUl.appendChild(li)
+      }
+    })
+    toRemove.forEach(it => it.remove())
+    if (newDiv) {
+      insertAfter(n1, newDiv)
+    }
+    this.editor.normalize()
     this.checkActiveStatus()
   }
 }

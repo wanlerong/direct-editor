@@ -83,6 +83,28 @@ export class Editor {
   }
 
   normalize() {
+    let i = 0;
+    // merge sibling ul nodes
+    while (i < this.theDom.childNodes.length) {
+      const currentDiv:HTMLElement = this.theDom.childNodes[i] as HTMLElement;
+      const ulInCurrentDiv = currentDiv.querySelector('ul');
+      i++;
+      if (ulInCurrentDiv) {
+        // Merge with subsequent divs containing ul elements
+        while (i < this.theDom.childNodes.length) {
+          const nextDiv = this.theDom.childNodes[i] as HTMLElement;
+          const ulInNextDiv = nextDiv.querySelector('ul');
+          if (ulInNextDiv) {
+            Array.from(ulInNextDiv.children).forEach(li => ulInCurrentDiv.appendChild(li));
+            i++;
+          } else {
+            break;
+          }
+        }
+      }
+    }
+    
+    let toRemove = [];
     this.theDom.childNodes.forEach(n => {
       if (n.nodeType == Node.TEXT_NODE) {
         n.parentNode.removeChild(n);
@@ -91,6 +113,11 @@ export class Editor {
         if (n.nodeName != "DIV") {
           n.parentNode.removeChild(n);
         } else {
+          // remove the empty UL
+          if (n.firstChild?.nodeName == "UL" && n.firstChild.childNodes.length == 0) {
+            toRemove.push(n)
+            return
+          }
           // remove the empty span
           n.childNodes.forEach(n2 => {
             if (n2.nodeType == Node.ELEMENT_NODE) {
@@ -107,6 +134,8 @@ export class Editor {
         }
       }
     })
+    
+    toRemove.forEach(it => it.remove())
     
     if (!this.theDom.hasChildNodes()) {
       const div = document.createElement("div")
