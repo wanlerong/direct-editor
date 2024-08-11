@@ -3,6 +3,7 @@ import JsonML from "./lib/jsonml-dom";
 import JsonMLHtml from "./lib/jsonml-html";
 import {Toolbar} from "./toolbar";
 import {getSelectionRange} from "./range";
+import {getClosestAncestorByNodeName} from "../dist/domUtils";
 
 export class Editor {
 
@@ -61,11 +62,26 @@ export class Editor {
 
     // 监听变化
     let _this = this
-    d.addEventListener("keydown", function () {
+    d.addEventListener("keydown", function (e:KeyboardEvent) {
       console.log("keydown")
       setTimeout(() => {
         _this.normalize()
       }, 1)
+      
+      let range = getSelectionRange();
+      if (e.key == 'Backspace') {
+        let currentLi = getClosestAncestorByNodeName(range.startContainer, 'LI') as HTMLElement;
+        if (currentLi && currentLi.textContent.length == 1) {
+          let currentUl = getClosestAncestorByNodeName(range.startContainer, 'UL') as HTMLElement;
+          e.preventDefault(); // Prevent the default backspace behavior which will remove whole ul
+          const previousLi = currentLi.previousElementSibling as HTMLElement;
+          if (previousLi) {
+            currentLi.remove();
+          } else {
+            currentUl.remove()
+          }
+        }
+      }
     })
 
     // selection change
