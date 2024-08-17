@@ -3,7 +3,13 @@ import JsonML from "./lib/jsonml-dom";
 import JsonMLHtml from "./lib/jsonml-html";
 import {Toolbar} from "./toolbar";
 import {getSelectionRange} from "./range";
-import {getClosestAncestorByNodeName} from "../dist/domUtils";
+import {
+  getClosestAncestorByNodeName,
+  getLastTextNode,
+  getTextPosition,
+  insertBefore,
+  isTextNode
+} from "./domUtils";
 
 export class Editor {
 
@@ -34,7 +40,7 @@ export class Editor {
     }
   }
 
-  constructor(dom: HTMLElement, callback: (jsonOp: any) => void, asChangeFunc:Function) {
+  constructor(dom: HTMLElement, callback: (jsonOp: any) => void, asChangeFunc: Function) {
     let d = document.createElement("div")
     d.setAttribute("class", "direct-editor")
     d.setAttribute("contenteditable", "true")
@@ -62,39 +68,69 @@ export class Editor {
 
     // 监听变化
     let _this = this
-    d.addEventListener("keydown", function (e:KeyboardEvent) {
+    d.addEventListener("keydown", function (e: KeyboardEvent) {
       console.log("keydown")
       setTimeout(() => {
         _this.normalize()
       }, 1)
-      
+
       let range = getSelectionRange();
       if (e.key == 'Backspace') {
         let currentLi = getClosestAncestorByNodeName(range.startContainer, 'LI') as HTMLElement;
-        if (currentLi && currentLi.textContent.length == 1) {
-          let currentUl = getClosestAncestorByNodeName(range.startContainer, 'UL') as HTMLElement;
-          e.preventDefault(); // Prevent the default backspace behavior which will remove whole ul
-          const previousLi = currentLi.previousElementSibling as HTMLElement;
-          if (previousLi) {
-            currentLi.remove();
+        if (currentLi && isTextNode(range.startContainer)) {
+          if (range.collapsed) {
+            let tp = getTextPosition(currentLi,range)
+            if (tp == 1 || tp == 0) {
+              e.preventDefault(); // Prevent the default backspace behavior which will remove parent div
+              if (tp == 1) {
+                range.startContainer.textContent = range.startContainer.textContent.substring(1, range.startContainer.textContent.length);
+              } else {
+                let currentUl = getClosestAncestorByNodeName(range.startContainer, 'UL') as HTMLElement;
+                const previousLi = currentLi.previousElementSibling as HTMLElement;
+                const nextLi = currentLi.nextElementSibling as HTMLElement;
+                if (previousLi) {
+                  let lastTextNode = getLastTextNode(previousLi)
+                  previousLi.append(...currentLi.childNodes)
+                  currentLi.remove();
+                  range.setStart(lastTextNode, lastTextNode.textContent.length)
+                  range.setEnd(lastTextNode, lastTextNode.textContent.length)
+                } else {
+                  if (nextLi) {
+                    let div = document.createElement("div")
+                    div.append(...currentLi.childNodes)
+                    currentLi.remove();
+                    insertBefore(currentUl.parentNode, div)
+                    range.setStart(div, 0)
+                    range.setEnd(div, 0)
+                  } else {
+                    currentUl.parentNode.append(...currentLi.childNodes)
+                    currentUl.remove()
+                  }
+                }
+              }
+            }
           } else {
-            currentUl.remove()
+            let sc = range.startContainer, so = range.startOffset
+            e.preventDefault();
+            range.deleteContents()
+            range.setStart(sc,so)
+            range.setEnd(sc,so)
           }
         }
       }
     })
 
     // selection change
-    d.addEventListener('mouseup', function (){
-      setTimeout(()=>{
+    d.addEventListener('mouseup', function () {
+      setTimeout(() => {
         _this.toolbar.checkActiveStatus()
-      },2)
+      }, 2)
     });
-    
-    d.addEventListener('keyup', function (){
-      setTimeout(()=>{
+
+    d.addEventListener('keyup', function () {
+      setTimeout(() => {
         _this.toolbar.checkActiveStatus()
-      },2)
+      }, 2)
     });
   }
 
@@ -102,7 +138,7 @@ export class Editor {
     let i = 0;
     // merge sibling ul nodes
     while (i < this.theDom.childNodes.length) {
-      const currentDiv:HTMLElement = this.theDom.childNodes[i] as HTMLElement;
+      const currentDiv: HTMLElement = this.theDom.childNodes[i] as HTMLElement;
       const ulInCurrentDiv = currentDiv.querySelector('ul');
       i++;
       if (ulInCurrentDiv) {
@@ -119,8 +155,9 @@ export class Editor {
         }
       }
     }
-    
+
     let toRemove = [];
+
     this.theDom.childNodes.forEach(n => {
       if (n.nodeType == Node.TEXT_NODE) {
         n.parentNode.removeChild(n);
@@ -150,9 +187,9 @@ export class Editor {
         }
       }
     })
-    
+
     toRemove.forEach(it => it.remove())
-    
+
     if (!this.theDom.hasChildNodes()) {
       const div = document.createElement("div")
       div.appendChild(document.createElement("br"))
