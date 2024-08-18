@@ -53,10 +53,10 @@ export function getLastTextNode(element: Node): Node | null {
   let lastTextNode: Node | null = null;
 
   function traverse(node: Node) {
-    if (lastTextNode) {
-      return
-    }
     for (let i = node.childNodes.length - 1; i >= 0; i--) {
+      if (lastTextNode) {
+        return
+      }
       const child = node.childNodes[i];
       if (child.nodeType === Node.TEXT_NODE && child.textContent?.trim() !== '') {
         lastTextNode = child;
@@ -75,10 +75,10 @@ export function getTextPosition(element: Node, range: Range): number {
   let find = false
 
   function traverse(node: Node) {
-    if (find) {
-      return
-    }
     for (let i = 0; i < node.childNodes.length; i++) {
+      if (find) {
+        return
+      }
       const child = node.childNodes[i];
       if (child.nodeType === Node.TEXT_NODE) {
         if (range.startContainer == child) {

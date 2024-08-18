@@ -130,10 +130,17 @@ export class Toolbar {
 
   unorderedList() {
     let range = getSelectionRange()
+    let targetDivsArr: HTMLElement[][] = []
     let targetDivs: HTMLElement[] = []
     iterateSubtree(new RangeIterator(range), (node) => {
       while (node) {
         if (node.nodeName == "DIV") {
+          const ulInCurrentDiv = (node as HTMLElement).querySelector('ul');
+          if (ulInCurrentDiv) {
+            targetDivsArr.push(targetDivs)
+            targetDivs = []
+            break
+          }
           if (!targetDivs.includes(node as HTMLElement)) {
             targetDivs.push(node as HTMLElement)
           }
@@ -142,20 +149,27 @@ export class Toolbar {
         node = node.parentNode
       }
     })
-    if (targetDivs.length == 0) {
-      return
+    if (targetDivs.length != 0) {
+      targetDivsArr.push(targetDivs)
     }
-    let ul = document.createElement("ul")
-    targetDivs.forEach((targetDiv, idx) => {
-      let li = document.createElement("li")
-      li.innerText = targetDiv.innerText
-      ul.appendChild(li)
-      if (idx != 0) {
-        targetDiv.remove()
+    
+    targetDivsArr.forEach((targetDivs2) => {
+      if (targetDivs2.length == 0) {
+        return
       }
+      let ul = document.createElement("ul")
+      targetDivs2.forEach((targetDiv, idx) => {
+        let li = document.createElement("li")
+        li.innerText = targetDiv.innerText
+        ul.appendChild(li)
+        if (idx != 0) {
+          targetDiv.remove()
+        }
+      })
+      targetDivs2[0].innerHTML = ''
+      targetDivs2[0].appendChild(ul)
     })
-    targetDivs[0].innerHTML = ''
-    targetDivs[0].appendChild(ul)
+    
     this.editor.normalize()
     this.checkActiveStatus()
   }

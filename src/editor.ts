@@ -10,6 +10,7 @@ import {
   insertBefore,
   isTextNode
 } from "./domUtils";
+import {isChromeBrowser} from "./lib/util";
 
 export class Editor {
 
@@ -41,6 +42,16 @@ export class Editor {
   }
 
   constructor(dom: HTMLElement, callback: (jsonOp: any) => void, asChangeFunc: Function) {
+    if (!isChromeBrowser()) {
+      dom.innerHTML = `
+            <div style="text-align: center; padding: 50px;">
+                <h1>仅支持在 Chrome 浏览器中使用</h1>
+                <p>请使用 Chrome 浏览器以继续使用该编辑器。</p>
+            </div>
+        `;
+      return;
+    }
+    
     let d = document.createElement("div")
     d.setAttribute("class", "direct-editor")
     d.setAttribute("contenteditable", "true")
@@ -70,9 +81,6 @@ export class Editor {
     let _this = this
     d.addEventListener("keydown", function (e: KeyboardEvent) {
       console.log("keydown")
-      setTimeout(() => {
-        _this.normalize()
-      }, 1)
 
       let range = getSelectionRange();
       if (e.key == 'Backspace') {
@@ -81,9 +89,12 @@ export class Editor {
           if (range.collapsed) {
             let tp = getTextPosition(currentLi,range)
             if (tp == 1 || tp == 0) {
-              e.preventDefault(); // Prevent the default backspace behavior which will remove parent div
+              // Prevent the default backspace behavior which will remove parent div
+              // and first level will be UL, which is conflict with "first level can only be DIV"
+              e.preventDefault();
               if (tp == 1) {
                 range.startContainer.textContent = range.startContainer.textContent.substring(1, range.startContainer.textContent.length);
+                console.log(range.startContainer,range.startOffset,range.startContainer.textContent,range.endContainer,range.endOffset,range.endContainer.textContent)
               } else {
                 let currentUl = getClosestAncestorByNodeName(range.startContainer, 'UL') as HTMLElement;
                 const previousLi = currentLi.previousElementSibling as HTMLElement;
@@ -118,6 +129,10 @@ export class Editor {
           }
         }
       }
+
+      setTimeout(() => {
+        _this.normalize()
+      }, 1)
     })
 
     // selection change
@@ -135,6 +150,17 @@ export class Editor {
   }
 
   normalize() {
+    this.theDom.childNodes.forEach(n => {
+      if (n.nodeType == Node.TEXT_NODE) {
+        n.parentNode.removeChild(n);
+      } else if (n.nodeType == Node.ELEMENT_NODE) {
+        // first level can only be DIV
+        if (n.nodeName != "DIV") {
+          n.parentNode.removeChild(n);
+        }
+      }
+    })
+    
     let i = 0;
     // merge sibling ul nodes
     while (i < this.theDom.childNodes.length) {
