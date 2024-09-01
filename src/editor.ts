@@ -42,7 +42,7 @@ export class Editor {
   }
 
   constructor(dom: HTMLElement, callback: (jsonOp: any) => void, asChangeFunc: Function) {
-    if (!isChromeBrowser()) {
+    if (!isChromeBrowser() && process.env.NODE_ENV !== 'test') {
       dom.innerHTML = `
             <div style="text-align: center; padding: 50px;">
                 <h1>仅支持在 Chrome 浏览器中使用</h1>
@@ -51,7 +51,6 @@ export class Editor {
         `;
       return;
     }
-    
     let d = document.createElement("div")
     d.setAttribute("class", "direct-editor")
     d.setAttribute("contenteditable", "true")

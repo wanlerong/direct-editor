@@ -19,36 +19,31 @@ export class Toolbar {
     }
   }
 
+  formatText(styleKey: string, value: string | null) {
+    let range = getSelectionRange();
+    if (range.collapsed) {
+      return;
+    }
+    splitRange(range);
+    this.editor.normalize();
+    this.applyInlineStyles({ [styleKey]: value }, range);
+    this.checkActiveStatus();
+  }
+  
   bold(value: boolean) {
-    let range: Range = getSelectionRange()
-    splitRange(range)
-    this.editor.normalize()
-    this.applyInlineStyles({fontWeight: value ? "bold" : null}, range)
-    this.checkActiveStatus()
+    this.formatText('fontWeight', value ? 'bold' : null);
   }
 
   italic(value: boolean) {
-    let range: Range = getSelectionRange()
-    splitRange(range)
-    this.editor.normalize()
-    this.applyInlineStyles({fontStyle: value ? "italic" : null}, range)
-    this.checkActiveStatus()
+    this.formatText('fontStyle', value ? 'italic' : null);
   }
 
   underline(value: boolean) {
-    let range: Range = getSelectionRange()
-    splitRange(range)
-    this.editor.normalize()
-    this.applyInlineStyles({textDecoration: value ? "underline" : null}, range)
-    this.checkActiveStatus()
+    this.formatText('textDecoration', value ? 'underline' : null);
   }
 
   strikethrough(value: boolean) {
-    let range: Range = getSelectionRange()
-    splitRange(range)
-    this.editor.normalize()
-    this.applyInlineStyles({textDecoration: value ? "line-through" : null}, range)
-    this.checkActiveStatus()
+    this.formatText('textDecoration', value ? 'line-through' : null);
   }
 
   applyInlineStyles(styles: any, range: Range) {

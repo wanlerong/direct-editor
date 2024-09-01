@@ -10,44 +10,34 @@ export function splitRange(range: Range) {
   console.log('splitRange:', range, range.startContainer, range.startOffset, range.endContainer, range.endOffset)
   let startIsText = isTextNode(range.startContainer)
   let endIsText = isTextNode(range.endContainer)
-  if (!startIsText || !endIsText) {
+  if (!startIsText || !endIsText || range.collapsed) {
     return
   }
   let sc = (range.startContainer as Text)
   let ec = (range.endContainer as Text)
   let sameNode = sc == ec
-
   // solve start container
-  let text1 = sc.data.substring(0, range.startOffset);
-  let text2 = sc.data.substring(range.startOffset);
-  let text3 = '';
-  if (sameNode) {
-    text2 = sc.data.substring(range.startOffset, range.endOffset);
-    text3 = sc.data.substring(range.endOffset);
-  }
+  let startText = splitTextNode(sc, range.startOffset, sameNode ? range.endOffset : undefined);
   let isSpan = sc.parentElement.nodeName == 'SPAN'
   // select all the span
   if (sameNode && isSpan && range.startOffset == 0 && range.endOffset == sc.data.length) {
     return;
   }
   let theSpan: HTMLElement;
-  if (text2 != '') {
-    sc.data = text1
+  if (startText.mid != '') {
+    sc.data = startText.before
     theSpan = document.createElement('SPAN')
     if (isSpan) {
       applyInlineStylesFormNode(sc.parentElement, theSpan)
     }
-    theSpan.innerText = text2
+    theSpan.innerText = startText.mid
     insertAfter(isSpan ? sc.parentElement : sc, theSpan)
-    range.setStart(theSpan.childNodes[0], 0)
+    range.setStart(theSpan.firstChild, 0)
   }
-
   // solve end container
-  text1 = ec.data.substring(0, range.endOffset);
-  text2 = ec.data.substring(range.endOffset);
   if (sameNode) {
-    if (text3 != '') {
-      let tn = document.createTextNode(text3)
+    if (startText.after != '') {
+      let tn = document.createTextNode(startText.after)
       if (isSpan) {
         let span = document.createElement('SPAN')
         span.appendChild(tn)
@@ -57,24 +47,31 @@ export function splitRange(range: Range) {
         insertAfter(sc.nextSibling, tn)
       }
     }
-    range.setEnd(theSpan.childNodes[0], (theSpan.childNodes[0] as Text).data.length)
+    range.setEnd(theSpan.firstChild, (theSpan.childNodes[0] as Text).data.length)
   } else {
+    let endText = splitTextNode(ec, range.endOffset);
     isSpan = ec.parentElement.nodeName == 'SPAN'
-    if (text1 != '') {
+    if (endText.before != '') {
       let span = document.createElement('SPAN')
-      span.innerText = text1
-      ec.data = text2
+      span.innerText = endText.before
+      ec.data = endText.mid
       if (isSpan) {
         applyInlineStylesFormNode(ec.parentElement, span)
-      }
-      if (isSpan) {
         ec.parentNode.parentNode.insertBefore(span, ec.parentNode)
       } else {
         ec.parentNode.insertBefore(span, ec)
       }
-      range.setEnd(span.childNodes[0], text1.length)
+      range.setEnd(span.firstChild, endText.before.length)
     }
   }
+}
+
+export function splitTextNode(node: Text, startOffset: number, endOffset?: number) {
+  let textBefore = node.data.substring(0, startOffset);
+  let textMid = endOffset !== undefined ? node.data.substring(startOffset, endOffset) : node.data.substring(startOffset);
+  let textAfter = endOffset !== undefined ? node.data.substring(endOffset) : '';
+  
+  return { before: textBefore, mid: textMid, after: textAfter };
 }
 
 export function getIntersectionStyle(): any {
