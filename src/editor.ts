@@ -122,6 +122,7 @@ export class Editor {
           } else {
             let sc = range.startContainer, so = range.startOffset
             e.preventDefault();
+            // todo 临时处理, 应该自己实现删除操作
             range.deleteContents()
             range.setStart(sc,so)
             range.setEnd(sc,so)

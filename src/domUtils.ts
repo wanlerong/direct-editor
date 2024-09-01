@@ -121,3 +121,9 @@ export function applyInlineStylesFormNode(from:HTMLElement, to: HTMLElement) {
     to.style[property] = styles[property]
   }
 }
+
+export function createSpanWithText(text:string) :HTMLElement {
+  let span = document.createElement('SPAN')
+  span.appendChild(document.createTextNode(text))
+  return span
+}

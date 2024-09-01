@@ -1,4 +1,11 @@
-import {applyInlineStylesFormNode, getInlineStyles, insertAfter, isCharacterDataNode, isTextNode,} from "./domUtils";
+import {
+  applyInlineStylesFormNode,
+  createSpanWithText,
+  getInlineStyles,
+  insertAfter,
+  isCharacterDataNode,
+  isTextNode,
+} from "./domUtils";
 import {RangeIterator} from "./rangeIterator";
 import {BlockType, NodeToBlockType} from "./const/const";
 
@@ -8,9 +15,7 @@ export function getSelectionRange(): Range {
 
 export function splitRange(range: Range) {
   console.log('splitRange:', range, range.startContainer, range.startOffset, range.endContainer, range.endOffset)
-  let startIsText = isTextNode(range.startContainer)
-  let endIsText = isTextNode(range.endContainer)
-  if (!startIsText || !endIsText || range.collapsed) {
+  if (!isTextNode(range.startContainer) || !isTextNode(range.endContainer) || range.collapsed) {
     return
   }
   let sc = (range.startContainer as Text)
@@ -23,37 +28,31 @@ export function splitRange(range: Range) {
   if (sameNode && isSpan && range.startOffset == 0 && range.endOffset == sc.data.length) {
     return;
   }
-  let theSpan: HTMLElement;
-  if (startText.mid != '') {
-    sc.data = startText.before
-    theSpan = document.createElement('SPAN')
-    if (isSpan) {
-      applyInlineStylesFormNode(sc.parentElement, theSpan)
-    }
-    theSpan.innerText = startText.mid
-    insertAfter(isSpan ? sc.parentElement : sc, theSpan)
-    range.setStart(theSpan.firstChild, 0)
+  let theSpan = createSpanWithText(startText.mid);
+  sc.data = startText.before
+  if (isSpan) {
+    applyInlineStylesFormNode(sc.parentElement, theSpan)
   }
+  insertAfter(isSpan ? sc.parentElement : sc, theSpan)
+  range.setStart(theSpan.firstChild, 0)
+
   // solve end container
   if (sameNode) {
     if (startText.after != '') {
-      let tn = document.createTextNode(startText.after)
       if (isSpan) {
-        let span = document.createElement('SPAN')
-        span.appendChild(tn)
+        let span = createSpanWithText(startText.after)
         applyInlineStylesFormNode(ec.parentElement, span)
         insertAfter(sc.parentElement.nextSibling, span)
       } else {
-        insertAfter(sc.nextSibling, tn)
+        insertAfter(sc.nextSibling, document.createTextNode(startText.after))
       }
     }
-    range.setEnd(theSpan.firstChild, (theSpan.childNodes[0] as Text).data.length)
+    range.setEnd(theSpan.firstChild, (theSpan.firstChild as Text).data.length)
   } else {
     let endText = splitTextNode(ec, range.endOffset);
     isSpan = ec.parentElement.nodeName == 'SPAN'
     if (endText.before != '') {
-      let span = document.createElement('SPAN')
-      span.innerText = endText.before
+      let span = createSpanWithText(endText.before)
       ec.data = endText.mid
       if (isSpan) {
         applyInlineStylesFormNode(ec.parentElement, span)
