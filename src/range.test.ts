@@ -1,4 +1,4 @@
-import {splitRange, splitTextNode} from "./range";
+import {getIntersectionStyle, splitRange, splitTextNode} from "./range";
 
 test('splitTextNode', () => {
   let div = document.createElement("div")
@@ -71,3 +71,42 @@ test('splitRange_node_in_span_not_same_node', () => {
   splitRange(range)
   expect(div.innerHTML).toBe("<div>12<span>3</span><span>456</span></div><div><span>abc</span><span>de</span>f</div>");
 });
+
+test('getIntersectionStyle', () => {
+  let div = document.createElement("div")
+  div.innerHTML = '<div>12<span style="font-weight: bold;">3456</span></div>' +
+    '<div><span style="font-weight: bold;">abcde</span>f</div>'
+  document.body.appendChild(div);
+  setRangeForTest(div.firstChild.childNodes[1].firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
+  let styles = getIntersectionStyle()
+  expect(styles).toEqual({"fontWeight":"bold"});
+});
+
+test('getIntersectionStyle_no_common_style', () => {
+  let div = document.createElement("div")
+  div.innerHTML = '<div>12<span style="font-weight: bold;">3456</span></div>' +
+    '<div><span style="text-decoration: underline;">abcde</span>f</div>'
+  document.body.appendChild(div);
+  setRangeForTest(div.firstChild.childNodes[1].firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
+  let styles = getIntersectionStyle()
+  expect(styles).toEqual({});
+});
+
+test('getIntersectionStyle_multi_common_style', () => {
+  let div = document.createElement("div")
+  div.innerHTML = '<div>12<span style="font-weight: bold;text-decoration: underline;">3456</span></div>' +
+    '<div><span style="font-weight: bold;text-decoration: underline;">abcde</span>f</div>'
+  document.body.appendChild(div);
+  setRangeForTest(div.firstChild.childNodes[1].firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
+  let styles = getIntersectionStyle()
+  expect(styles).toEqual({"fontWeight":"bold","textDecoration": "underline"});
+});
+
+function setRangeForTest(start:Node, startOffset:number, end:Node, endOffset:number) {
+  const range = document.createRange();
+  range.setStart(start, startOffset)
+  range.setEnd(end, endOffset)
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+}

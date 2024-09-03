@@ -100,26 +100,18 @@ export function getTextPosition(element: Node, range: Range): number {
   return textPosition;
 }
 
-
-export function getInlineStyles(ele: HTMLElement) :any {
-  let styles = {}
-  if (ele.style.fontWeight != '') {
-    styles['fontWeight'] = ele.style.fontWeight
-  }
-  if (ele.style.fontStyle != '') {
-    styles['fontStyle'] = ele.style.fontStyle
-  }
-  if (ele.style.textDecoration != '') {
-    styles['textDecoration'] = ele.style.textDecoration
-  }
-  return styles
+export function applyInlineStylesFormNode(from:HTMLElement, to: HTMLElement) {
+  Object.assign(to.style, getInlineStyles(from));
 }
 
-export function applyInlineStylesFormNode(from:HTMLElement, to: HTMLElement) {
-  let styles = getInlineStyles(from)
-  for (const property in styles) {
-    to.style[property] = styles[property]
-  }
+export function getInlineStyles(ele: HTMLElement): Record<string, string> {
+  const styles: Record<string, string> = {};
+  ['fontWeight', 'fontStyle', 'textDecoration'].forEach((prop) => {
+    if (ele.style[prop]) {
+      styles[prop] = ele.style[prop];
+    }
+  });
+  return styles;
 }
 
 export function createSpanWithText(text:string) :HTMLElement {

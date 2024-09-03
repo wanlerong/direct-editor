@@ -1,7 +1,6 @@
 import {
   applyInlineStylesFormNode,
-  createSpanWithText,
-  getInlineStyles,
+  createSpanWithText, getInlineStyles,
   insertAfter,
   isCharacterDataNode,
   isTextNode,
@@ -10,7 +9,11 @@ import {RangeIterator} from "./rangeIterator";
 import {BlockType, NodeToBlockType} from "./const/const";
 
 export function getSelectionRange(): Range {
-  return window.getSelection().getRangeAt(0)
+  const selection = window.getSelection();
+  if (selection && selection.rangeCount > 0) {
+    return selection.getRangeAt(0);
+  }
+  return null;
 }
 
 export function splitRange(range: Range) {
@@ -69,14 +72,13 @@ export function splitTextNode(node: Text, startOffset: number, endOffset?: numbe
   let textBefore = node.data.substring(0, startOffset);
   let textMid = endOffset !== undefined ? node.data.substring(startOffset, endOffset) : node.data.substring(startOffset);
   let textAfter = endOffset !== undefined ? node.data.substring(endOffset) : '';
-  
-  return { before: textBefore, mid: textMid, after: textAfter };
+
+  return {before: textBefore, mid: textMid, after: textAfter};
 }
 
-export function getIntersectionStyle(): any {
+export function getIntersectionStyle(): Record<string, string> {
   let range = getSelectionRange()
   let spans = []
-
   iterateSubtree(new RangeIterator(range), (node) => {
     if (isCharacterDataNode(node)) {
       if (node.textContent == '') {
@@ -90,38 +92,36 @@ export function getIntersectionStyle(): any {
     }
   })
 
-  if (range.collapsed) {
-    if (isCharacterDataNode(range.startContainer)) {
-      if (range.startContainer.parentElement.nodeName == "SPAN") {
-        spans.push(range.startContainer.parentElement)
-      }
-    }
+  if (range.collapsed && isCharacterDataNode(range.startContainer) && range.startContainer.parentElement.nodeName == "SPAN") {
+    spans.push(range.startContainer.parentElement)
   }
 
-  let is = {}
-  for (const i in spans) {
-    if (spans[i] == null) {
-      return {}
+  return spans.reduce((commonStyles, span, index) => {
+    if (span === null) {
+      return {};
     }
-    let styles = getInlineStyles(spans[i]);
-    if (i == '0') {
-      is = styles
-    } else {
-      for (const k in is) {
-        if (styles[k] != is[k]) {
-          delete is[k]
-        }
-      }
+    const styles = getInlineStyles(span);
+    if (index === 0) {
+      return styles;
+    }
+    return intersectStyles(commonStyles, styles);
+  }, {});
+}
+
+function intersectStyles(stylesA: Record<string, string>, stylesB: Record<string, string>): Record<string, string> {
+  const intersectedStyles: Record<string, string> = {};
+  for (const key in stylesA) {
+    if (stylesA[key] === stylesB[key]) {
+      intersectedStyles[key] = stylesA[key];
     }
   }
-  return is
+  return intersectedStyles;
 }
 
 export function getIntersectionBlockType(): BlockType {
   let range = getSelectionRange()
   let targetBlocks = []
-  
-  let blockTypeNodeNames = ["H1","H2","H3","H4","H5","H6","UL"]
+  let blockTypeNodeNames = ["H1", "H2", "H3", "H4", "H5", "H6", "UL"]
 
   iterateSubtree(new RangeIterator(range), (node) => {
     if (isCharacterDataNode(node) || node.nodeName == "BR") {
@@ -156,7 +156,6 @@ export function getIntersectionBlockType(): BlockType {
   }
   return blockType
 }
-
 
 
 export function iterateSubtree(rangeIterator: RangeIterator, func: (node: Node) => void) {
