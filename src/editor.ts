@@ -130,6 +130,15 @@ export class Editor {
         }
       }
 
+      if (e.key === 'Tab') {
+        let range = getSelectionRange()
+        const li = getClosestAncestorByNodeName(range.startContainer, 'LI');
+        if (li) {
+          e.preventDefault();
+          _this.indentLi(li as HTMLElement);
+        }
+      }
+      
       setTimeout(() => {
         _this.normalize()
       }, 1)
@@ -147,6 +156,20 @@ export class Editor {
         _this.toolbar.checkActiveStatus()
       }, 2)
     });
+  }
+  
+  indentLi(li: HTMLElement) {
+    const prevLi = li.previousElementSibling as HTMLElement;
+    if (!prevLi) {
+      return;
+    }
+    
+    let ul = prevLi.querySelector('ul');
+    if (!ul) {
+      ul = document.createElement('ul');
+      prevLi.appendChild(ul);
+    }
+    ul.appendChild(li);
   }
 
   normalize() {

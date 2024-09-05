@@ -1,4 +1,5 @@
-import {getIntersectionStyle, splitRange, splitTextNode} from "./range";
+import {getIntersectionBlockType, getIntersectionStyle, splitRange, splitTextNode} from "./range";
+import {BlockType} from "./const/const";
 
 test('splitTextNode', () => {
   let div = document.createElement("div")
@@ -100,6 +101,36 @@ test('getIntersectionStyle_multi_common_style', () => {
   setRangeForTest(div.firstChild.childNodes[1].firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
   let styles = getIntersectionStyle()
   expect(styles).toEqual({"fontWeight":"bold","textDecoration": "underline"});
+});
+
+test('getIntersectionBlockType', () => {
+  let div = document.createElement("div")
+  div.innerHTML = '<div><h1>3456</h1></div>' +
+    '<div><h1>3456</h1></div>'
+  document.body.appendChild(div);
+  setRangeForTest(div.firstChild.firstChild.firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
+  let got = getIntersectionBlockType()
+  expect(got).toEqual(BlockType.BLOCK_TYPE_H1);
+});
+
+test('getIntersectionBlockType_none', () => {
+  let div = document.createElement("div")
+  div.innerHTML = '<div><h1>3456</h1></div>' +
+    '<div><h2>3456</h2></div>'
+  document.body.appendChild(div);
+  setRangeForTest(div.firstChild.firstChild.firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
+  let got = getIntersectionBlockType()
+  expect(got).toEqual(BlockType.BLOCK_TYPE_NONE);
+});
+
+test('getIntersectionBlockType_none_2', () => {
+  let div = document.createElement("div")
+  div.innerHTML = '<div>3456</div>' +
+    '<div><h2>3456</h2></div>'
+  document.body.appendChild(div);
+  setRangeForTest(div.firstChild.firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
+  let got = getIntersectionBlockType()
+  expect(got).toEqual(BlockType.BLOCK_TYPE_NONE);
 });
 
 function setRangeForTest(start:Node, startOffset:number, end:Node, endOffset:number) {

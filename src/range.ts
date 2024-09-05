@@ -139,24 +139,18 @@ export function getIntersectionBlockType(): BlockType {
       }
     }
   })
-
-  let blockType = BlockType.BLOCK_TYPE_NONE
-  for (const i in targetBlocks) {
-    if (targetBlocks[i] == null) {
-      return BlockType.BLOCK_TYPE_NONE
+  
+  return targetBlocks.reduce((commonType, block, index) => {
+    if (block === null) {
+      return BlockType.BLOCK_TYPE_NONE;
     }
-    let nodeBlockType = NodeToBlockType(targetBlocks[i]);
-    if (i == '0') {
-      blockType = nodeBlockType
-    } else {
-      if (nodeBlockType != blockType) {
-        return BlockType.BLOCK_TYPE_NONE
-      }
+    const nodeBlockType = NodeToBlockType(block);
+    if (index === 0) {
+      return nodeBlockType;
     }
-  }
-  return blockType
+    return commonType == nodeBlockType ? commonType : BlockType.BLOCK_TYPE_NONE  
+  }, BlockType.BLOCK_TYPE_NONE);
 }
-
 
 export function iterateSubtree(rangeIterator: RangeIterator, func: (node: Node) => void) {
   for (let node: Node; (node = rangeIterator.traverse());) {
