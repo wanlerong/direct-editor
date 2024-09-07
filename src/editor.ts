@@ -2,15 +2,16 @@ import {getJson0Path} from "./path";
 import JsonML from "./lib/jsonml-dom";
 import JsonMLHtml from "./lib/jsonml-html";
 import {Toolbar} from "./toolbar";
-import {getSelectionRange} from "./range";
+import {getSelectionRange, iterateSubtree} from "./range";
 import {
   getClosestAncestorByNodeName,
   getLastTextNode,
   getTextPosition,
-  insertBefore,
+  insertBefore, isCharacterDataNode,
   isTextNode
 } from "./domUtils";
 import {isChromeBrowser} from "./lib/util";
+import {RangeIterator} from "./rangeIterator";
 
 export class Editor {
 
@@ -86,14 +87,14 @@ export class Editor {
         let currentLi = getClosestAncestorByNodeName(range.startContainer, 'LI') as HTMLElement;
         if (currentLi && isTextNode(range.startContainer)) {
           if (range.collapsed) {
-            let tp = getTextPosition(currentLi,range)
+            let tp = getTextPosition(currentLi, range)
             if (tp == 1 || tp == 0) {
               // Prevent the default backspace behavior which will remove parent div
               // and first level will be UL, which is conflict with "first level can only be DIV"
               e.preventDefault();
               if (tp == 1) {
                 range.startContainer.textContent = range.startContainer.textContent.substring(1, range.startContainer.textContent.length);
-                console.log(range.startContainer,range.startOffset,range.startContainer.textContent,range.endContainer,range.endOffset,range.endContainer.textContent)
+                console.log(range.startContainer, range.startOffset, range.startContainer.textContent, range.endContainer, range.endOffset, range.endContainer.textContent)
               } else {
                 let currentUl = getClosestAncestorByNodeName(range.startContainer, 'UL') as HTMLElement;
                 const previousLi = currentLi.previousElementSibling as HTMLElement;
@@ -124,21 +125,36 @@ export class Editor {
             e.preventDefault();
             // todo 临时处理, 应该自己实现删除操作
             range.deleteContents()
-            range.setStart(sc,so)
-            range.setEnd(sc,so)
+            range.setStart(sc, so)
+            range.setEnd(sc, so)
           }
         }
       }
 
       if (e.key === 'Tab') {
         let range = getSelectionRange()
-        const li = getClosestAncestorByNodeName(range.startContainer, 'LI');
-        if (li) {
+        const startLi = getClosestAncestorByNodeName(range.startContainer, 'LI');
+        const endLi = getClosestAncestorByNodeName(range.endContainer, 'LI');
+        if (startLi) {
           e.preventDefault();
-          _this.indentLi(li as HTMLElement);
+          if (startLi === endLi) {
+            _this.indentLi(startLi as HTMLElement)
+          } else {
+            iterateSubtree(new RangeIterator(range), (node) => {
+              if (node.nodeName != "LI") {
+                return false
+              }
+              if (node !== startLi && node.contains(startLi)) {
+                return false
+              }
+              _this.indentLi(node as HTMLElement)
+              // return true, means no need to indent sub range's li
+              return true
+            })
+          }
         }
       }
-      
+
       setTimeout(() => {
         _this.normalize()
       }, 1)
@@ -157,13 +173,12 @@ export class Editor {
       }, 2)
     });
   }
-  
+
   indentLi(li: HTMLElement) {
     const prevLi = li.previousElementSibling as HTMLElement;
     if (!prevLi) {
       return;
     }
-    
     let ul = prevLi.querySelector('ul');
     if (!ul) {
       ul = document.createElement('ul');
@@ -183,7 +198,7 @@ export class Editor {
         }
       }
     })
-    
+
     let i = 0;
     // merge sibling ul nodes
     while (i < this.theDom.childNodes.length) {

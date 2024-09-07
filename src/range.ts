@@ -90,6 +90,7 @@ export function getIntersectionStyle(): Record<string, string> {
         spans.push(null)
       }
     }
+    return false
   })
 
   if (range.collapsed && isCharacterDataNode(range.startContainer) && range.startContainer.parentElement.nodeName == "SPAN") {
@@ -138,6 +139,7 @@ export function getIntersectionBlockType(): BlockType {
         }
       }
     }
+    return false
   })
   
   return targetBlocks.reduce((commonType, block, index) => {
@@ -152,10 +154,15 @@ export function getIntersectionBlockType(): BlockType {
   }, BlockType.BLOCK_TYPE_NONE);
 }
 
-export function iterateSubtree(rangeIterator: RangeIterator, func: (node: Node) => void) {
+
+
+export function iterateSubtree(rangeIterator: RangeIterator, func: (node: Node) => boolean) {
   for (let node: Node; (node = rangeIterator.traverse());) {
     console.log('traverse node', node, node.nodeName, node.nodeType)
-    func(node)
+    let stopSub = func(node)
+    if (stopSub) {
+      continue
+    }
     let subRangeIterator: RangeIterator = rangeIterator.getSubtreeIterator();
     console.log('subRangeIterator', subRangeIterator)
     if (subRangeIterator != null) {

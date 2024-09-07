@@ -62,6 +62,7 @@ export class Toolbar {
           node.parentElement.replaceChild(span, node)
         }
       }
+      return false
     })
   }
 
@@ -79,6 +80,7 @@ export class Toolbar {
         }
         node = node.parentNode
       }
+      return false
     })
     if (targetDivs.length == 0) {
       return
@@ -143,6 +145,7 @@ export class Toolbar {
         }
         node = node.parentNode
       }
+      return false
     })
     if (targetDivs.length != 0) {
       targetDivsArr.push(targetDivs)
