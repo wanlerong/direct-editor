@@ -2,7 +2,7 @@ import {
   getIntersectionBlockType,
   getIntersectionStyle,
   getSelectionRange,
-  iterateSubtree,
+  iterateSubtree, setRangeForTest,
   splitRange,
   splitTextNode
 } from "./range";
@@ -199,11 +199,3 @@ test('iterateSubtree_03', () => {
 });
 
 
-function setRangeForTest(start: Node, startOffset: number, end: Node, endOffset: number) {
-  const range = document.createRange();
-  range.setStart(start, startOffset)
-  range.setEnd(end, endOffset)
-  const selection = window.getSelection();
-  selection.removeAllRanges();
-  selection.addRange(range);
-}

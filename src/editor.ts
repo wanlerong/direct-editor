@@ -2,16 +2,16 @@ import {getJson0Path} from "./path";
 import JsonML from "./lib/jsonml-dom";
 import JsonMLHtml from "./lib/jsonml-html";
 import {Toolbar} from "./toolbar";
-import {getSelectionRange, iterateSubtree} from "./range";
+import {getSelectionRange} from "./range";
 import {
   getClosestAncestorByNodeName,
   getLastTextNode,
   getTextPosition,
-  insertBefore, isCharacterDataNode,
+  insertBefore,
   isTextNode
 } from "./domUtils";
 import {isChromeBrowser} from "./lib/util";
-import {RangeIterator} from "./rangeIterator";
+import {handleTab} from "./handlers/keydownHandler";
 
 export class Editor {
 
@@ -55,10 +55,8 @@ export class Editor {
     let d = document.createElement("div")
     d.setAttribute("class", "direct-editor")
     d.setAttribute("contenteditable", "true")
-    let html = dom.innerHTML;
-    dom.innerHTML = '';
-    d.innerHTML = html;
-    dom.appendChild(d);
+    d.innerHTML = dom.innerHTML;
+    dom.replaceChildren(d)
     this.theDom = d
     this.normalize()
     this.toolbar = new Toolbar(this)
@@ -131,29 +129,7 @@ export class Editor {
         }
       }
 
-      if (e.key === 'Tab') {
-        let range = getSelectionRange()
-        const startLi = getClosestAncestorByNodeName(range.startContainer, 'LI');
-        const endLi = getClosestAncestorByNodeName(range.endContainer, 'LI');
-        if (startLi) {
-          e.preventDefault();
-          if (startLi === endLi) {
-            _this.indentLi(startLi as HTMLElement)
-          } else {
-            iterateSubtree(new RangeIterator(range), (node) => {
-              if (node.nodeName != "LI") {
-                return false
-              }
-              if (node !== startLi && node.contains(startLi)) {
-                return false
-              }
-              _this.indentLi(node as HTMLElement)
-              // return true, means no need to indent sub range's li
-              return true
-            })
-          }
-        }
-      }
+      handleTab(e)
 
       setTimeout(() => {
         _this.normalize()
@@ -161,7 +137,7 @@ export class Editor {
     })
 
     // selection change
-    d.addEventListener('mouseup', function () {
+    d.addEventListener('mouseup', function (e:MouseEvent) {
       setTimeout(() => {
         _this.toolbar.checkActiveStatus()
       }, 2)
@@ -172,19 +148,6 @@ export class Editor {
         _this.toolbar.checkActiveStatus()
       }, 2)
     });
-  }
-
-  indentLi(li: HTMLElement) {
-    const prevLi = li.previousElementSibling as HTMLElement;
-    if (!prevLi) {
-      return;
-    }
-    let ul = prevLi.querySelector('ul');
-    if (!ul) {
-      ul = document.createElement('ul');
-      prevLi.appendChild(ul);
-    }
-    ul.appendChild(li);
   }
 
   normalize() {
