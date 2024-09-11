@@ -40,3 +40,20 @@ function unindent(li: HTMLElement) {
     }
   }
 }
+
+export function isNestedLi(element: HTMLElement): boolean {
+  let currentElement: HTMLElement | null = element;
+  let ulCount = 0;
+  
+  while (currentElement) {
+    if (currentElement.tagName === 'UL') {
+      ulCount++;
+    }
+    if (ulCount > 1) {
+      return true;
+    }
+    currentElement = currentElement.parentElement;
+  }
+  
+  return false;
+}

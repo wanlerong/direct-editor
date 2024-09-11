@@ -2,7 +2,7 @@ import {getJson0Path} from "./path";
 import JsonML from "./lib/jsonml-dom";
 import JsonMLHtml from "./lib/jsonml-html";
 import {Toolbar} from "./toolbar";
-import {getSelectionRange} from "./range";
+import {getSelectionRange, setRange} from "./range";
 import {
   getClosestAncestorByNodeName,
   getLastTextNode,
@@ -12,6 +12,7 @@ import {
 } from "./domUtils";
 import {isChromeBrowser} from "./lib/util";
 import {handleTab} from "./handlers/keydownHandler";
+import {indentLi, isNestedLi} from "./components/ul";
 
 export class Editor {
 
@@ -131,6 +132,21 @@ export class Editor {
 
       handleTab(e)
 
+      if (e.key === 'Enter') {
+        let range = getSelectionRange()
+        const startLi = getClosestAncestorByNodeName(range.startContainer, 'LI') as HTMLElement;
+        if (startLi && range.collapsed && (startLi.innerText == '' || startLi.innerText == '\n')) {
+          e.preventDefault();
+          if (isNestedLi(startLi)) {
+            const { startContainer, startOffset, endContainer, endOffset } = range.cloneRange();
+            indentLi(startLi, false)
+            setRange(startContainer,startOffset,endContainer,endOffset)
+          } else {
+            _this.toolbar.unUnorderedList()
+          }
+        }
+      }
+      
       setTimeout(() => {
         _this.normalize()
       }, 1)

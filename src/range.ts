@@ -171,7 +171,7 @@ export function iterateSubtree(rangeIterator: RangeIterator, func: (node: Node) 
   }
 }
 
-export function setRangeForTest(start: Node, startOffset: number, end: Node, endOffset: number) {
+export function setRange(start: Node, startOffset: number, end: Node, endOffset: number) {
   const range = document.createRange();
   range.setStart(start, startOffset)
   range.setEnd(end, endOffset)

@@ -2,7 +2,7 @@ import {
   getIntersectionBlockType,
   getIntersectionStyle,
   getSelectionRange,
-  iterateSubtree, setRangeForTest,
+  iterateSubtree, setRange,
   splitRange,
   splitTextNode
 } from "./range";
@@ -86,7 +86,7 @@ test('getIntersectionStyle', () => {
   div.innerHTML = '<div>12<span style="font-weight: bold;">3456</span></div>' +
     '<div><span style="font-weight: bold;">abcde</span>f</div>'
   document.body.appendChild(div);
-  setRangeForTest(div.firstChild.childNodes[1].firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
+  setRange(div.firstChild.childNodes[1].firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
   let styles = getIntersectionStyle()
   expect(styles).toEqual({"fontWeight": "bold"});
 });
@@ -96,7 +96,7 @@ test('getIntersectionStyle_no_common_style', () => {
   div.innerHTML = '<div>12<span style="font-weight: bold;">3456</span></div>' +
     '<div><span style="text-decoration: underline;">abcde</span>f</div>'
   document.body.appendChild(div);
-  setRangeForTest(div.firstChild.childNodes[1].firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
+  setRange(div.firstChild.childNodes[1].firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
   let styles = getIntersectionStyle()
   expect(styles).toEqual({});
 });
@@ -106,7 +106,7 @@ test('getIntersectionStyle_multi_common_style', () => {
   div.innerHTML = '<div>12<span style="font-weight: bold;text-decoration: underline;">3456</span></div>' +
     '<div><span style="font-weight: bold;text-decoration: underline;">abcde</span>f</div>'
   document.body.appendChild(div);
-  setRangeForTest(div.firstChild.childNodes[1].firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
+  setRange(div.firstChild.childNodes[1].firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
   let styles = getIntersectionStyle()
   expect(styles).toEqual({"fontWeight": "bold", "textDecoration": "underline"});
 });
@@ -116,7 +116,7 @@ test('getIntersectionBlockType', () => {
   div.innerHTML = '<div><h1>3456</h1></div>' +
     '<div><h1>3456</h1></div>'
   document.body.appendChild(div);
-  setRangeForTest(div.firstChild.firstChild.firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
+  setRange(div.firstChild.firstChild.firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
   let got = getIntersectionBlockType()
   expect(got).toEqual(BlockType.BLOCK_TYPE_H1);
 });
@@ -126,7 +126,7 @@ test('getIntersectionBlockType_none', () => {
   div.innerHTML = '<div><h1>3456</h1></div>' +
     '<div><h2>3456</h2></div>'
   document.body.appendChild(div);
-  setRangeForTest(div.firstChild.firstChild.firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
+  setRange(div.firstChild.firstChild.firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
   let got = getIntersectionBlockType()
   expect(got).toEqual(BlockType.BLOCK_TYPE_NONE);
 });
@@ -136,7 +136,7 @@ test('getIntersectionBlockType_none_2', () => {
   div.innerHTML = '<div>3456</div>' +
     '<div><h2>3456</h2></div>'
   document.body.appendChild(div);
-  setRangeForTest(div.firstChild.firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
+  setRange(div.firstChild.firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
   let got = getIntersectionBlockType()
   expect(got).toEqual(BlockType.BLOCK_TYPE_NONE);
 });
@@ -146,7 +146,7 @@ test('iterateSubtree', () => {
   div.innerHTML = '<div>3456</div>' +
     '<div>3456</div>'
   document.body.appendChild(div);
-  setRangeForTest(div.firstChild.firstChild, 1, div.childNodes[1].firstChild, 3)
+  setRange(div.firstChild.firstChild, 1, div.childNodes[1].firstChild, 3)
 
   let got: Node[] = []
   iterateSubtree(new RangeIterator(getSelectionRange()), (node) => {
@@ -157,14 +157,13 @@ test('iterateSubtree', () => {
   expect(got).toEqual([div.firstChild, div.firstChild.firstChild, div.childNodes[1], div.childNodes[1].firstChild]);
 });
 
-
 test('iterateSubtree_02', () => {
   let div = document.createElement("div")
   div.innerHTML = '<div>34<span>56</span></div>' +
     '<div>3456</div>' +
     '<div>1234</div>'
   document.body.appendChild(div);
-  setRangeForTest(div.firstChild.firstChild, 1, div.childNodes[2].firstChild, 3)
+  setRange(div.firstChild.firstChild, 1, div.childNodes[2].firstChild, 3)
 
   let got: Node[] = []
   iterateSubtree(new RangeIterator(getSelectionRange()), (node) => {
@@ -184,7 +183,7 @@ test('iterateSubtree_03', () => {
     '<div>3456</div>' +
     '<div>1234</div>'
   document.body.appendChild(div);
-  setRangeForTest(div.firstChild.childNodes[1].firstChild, 1, div.childNodes[2].firstChild, 3)
+  setRange(div.firstChild.childNodes[1].firstChild, 1, div.childNodes[2].firstChild, 3)
 
   let got: Node[] = []
   iterateSubtree(new RangeIterator(getSelectionRange()), (node) => {

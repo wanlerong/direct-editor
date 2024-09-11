@@ -1,7 +1,14 @@
 import {Editor} from "./editor"
 import {RangeIterator} from "./rangeIterator";
-import {getClosestAncestorByNodeName, insertAfter, isCharacterDataNode} from "./domUtils";
-import {getIntersectionBlockType, getIntersectionStyle, getSelectionRange, iterateSubtree, splitRange} from "./range";
+import {getClosestAncestorByNodeName, insertAfter, isCharacterDataNode, isTextNode} from "./domUtils";
+import {
+  getIntersectionBlockType,
+  getIntersectionStyle,
+  getSelectionRange,
+  iterateSubtree,
+  setRange,
+  splitRange
+} from "./range";
 import {BlockType, HTitleLevel} from "./const/const";
 
 export class Toolbar {
@@ -127,6 +134,7 @@ export class Toolbar {
 
   unorderedList() {
     let range = getSelectionRange()
+    const { startContainer, startOffset, endContainer, endOffset } = range.cloneRange();
     let targetDivsArr: HTMLElement[][] = []
     let targetDivs: HTMLElement[] = []
     iterateSubtree(new RangeIterator(range), (node) => {
@@ -158,7 +166,7 @@ export class Toolbar {
       let ul = document.createElement("ul")
       targetDivs2.forEach((targetDiv, idx) => {
         let li = document.createElement("li")
-        li.innerText = targetDiv.innerText
+        li.replaceChildren(...targetDiv.childNodes)
         ul.appendChild(li)
         if (idx != 0) {
           targetDiv.remove()
@@ -169,6 +177,7 @@ export class Toolbar {
     })
     
     this.editor.normalize()
+    setRange(startContainer,startOffset,endContainer,endOffset)
     this.checkActiveStatus()
   }
   
@@ -177,6 +186,16 @@ export class Toolbar {
     let ul: HTMLElement = getClosestAncestorByNodeName(range.startContainer, 'UL') as HTMLElement
     if (!ul) {
       return
+    }
+    const { startContainer, startOffset, endContainer, endOffset } = range.cloneRange();
+    let startContainerChild,endContainerChild
+    // if unUnorderedList on an 'empty' li, which contains <br> only, the range.startContainer will be li, start offset will be 0
+    // store the child, and then use startContainerChild.parentNode to restore the range
+    if (!isTextNode(range.startContainer)) {
+      startContainerChild = range.startContainer.firstChild
+    }
+    if (!isTextNode(range.endContainer)) {
+      endContainerChild = range.endContainer.firstChild
     }
 
     let li1: HTMLElement = getClosestAncestorByNodeName(range.startContainer, 'LI') as HTMLElement
@@ -193,7 +212,7 @@ export class Toolbar {
         return
       } else if (idx >= idx1 && idx <= idx2) {
         const div = document.createElement("div");
-        div.innerHTML = (li as HTMLElement).innerHTML
+        div.replaceChildren(...li.childNodes)
         insertAfter(n1, div)
         n1 = div
         toRemove.push((li as HTMLElement))
@@ -211,6 +230,9 @@ export class Toolbar {
       insertAfter(n1, newDiv)
     }
     this.editor.normalize()
+    
+    setRange(startContainerChild ? startContainerChild.parentNode : startContainer, startOffset,
+      endContainerChild ? endContainerChild.parentNode: endContainer, endOffset)
     this.checkActiveStatus()
   }
 }

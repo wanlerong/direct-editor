@@ -1,5 +1,5 @@
 import {handleTab} from "./keydownHandler";
-import {setRangeForTest} from "../range";
+import {setRange} from "../range";
 
 test('handleTab', () => {
   let div = document.createElement("div")
@@ -13,7 +13,7 @@ test('handleTab', () => {
     shiftKey: false,
   });
 
-  setRangeForTest(div.firstChild.firstChild.childNodes[1].firstChild, 1, div.firstChild.firstChild.childNodes[1].firstChild, 1)
+  setRange(div.firstChild.firstChild.childNodes[1].firstChild, 1, div.firstChild.firstChild.childNodes[1].firstChild, 1)
 
   handleTab(keyboardEvent)
 
@@ -34,7 +34,7 @@ test('handleTab_02', () => {
     shiftKey: false,
   });
 
-  setRangeForTest(div.firstChild.firstChild.childNodes[1].firstChild, 1, div.firstChild.firstChild.childNodes[2].firstChild, 1)
+  setRange(div.firstChild.firstChild.childNodes[1].firstChild, 1, div.firstChild.firstChild.childNodes[2].firstChild, 1)
 
   handleTab(keyboardEvent)
 
@@ -61,7 +61,7 @@ test('handleTab_03', () => {
   });
 
   let ul = div.firstChild.firstChild
-  setRangeForTest(ul.firstChild.childNodes[1].firstChild.childNodes[1].childNodes[1].firstChild, 1, ul.firstChild.childNodes[1].childNodes[1].firstChild, 1)
+  setRange(ul.firstChild.childNodes[1].firstChild.childNodes[1].childNodes[1].firstChild, 1, ul.firstChild.childNodes[1].childNodes[1].firstChild, 1)
 
   handleTab(keyboardEvent)
 
@@ -88,7 +88,7 @@ test('handleTab_shift', () => {
   });
 
   let ul = div.firstChild.firstChild
-  setRangeForTest(ul.firstChild.childNodes[1].childNodes[1].firstChild, 1, ul.firstChild.childNodes[1].childNodes[1].firstChild, 1)
+  setRange(ul.firstChild.childNodes[1].childNodes[1].firstChild, 1, ul.firstChild.childNodes[1].childNodes[1].firstChild, 1)
 
   handleTab(keyboardEvent)
 
@@ -112,7 +112,7 @@ test('handleTab_shift_02', () => {
   });
 
   let ul = div.firstChild.firstChild
-  setRangeForTest(ul.firstChild.childNodes[1].childNodes[1].firstChild, 1, ul.firstChild.childNodes[1].childNodes[2].firstChild, 1)
+  setRange(ul.firstChild.childNodes[1].childNodes[1].firstChild, 1, ul.firstChild.childNodes[1].childNodes[2].firstChild, 1)
 
   handleTab(keyboardEvent)
 

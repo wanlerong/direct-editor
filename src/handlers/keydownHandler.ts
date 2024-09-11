@@ -1,4 +1,4 @@
-import {getSelectionRange, iterateSubtree} from "../range";
+import {getSelectionRange, iterateSubtree, setRange} from "../range";
 import {getClosestAncestorByNodeName, isTextNode} from "../domUtils";
 import {indentLi} from "../components/ul";
 import {RangeIterator} from "../rangeIterator";
@@ -9,6 +9,7 @@ export function handleTab(e: KeyboardEvent) {
     const startLi = getClosestAncestorByNodeName(range.startContainer, 'LI') as HTMLElement;
     const endLi = getClosestAncestorByNodeName(range.endContainer, 'LI') as HTMLElement;
     if (startLi) {
+      const { startContainer, startOffset, endContainer, endOffset } = range.cloneRange();
       e.preventDefault();
       if (startLi === endLi) {
         indentLi(startLi, !e.shiftKey)
@@ -34,6 +35,7 @@ export function handleTab(e: KeyboardEvent) {
           return true // return true, means no need to indent sub range's li
         })
       }
+      setRange(startContainer,startOffset,endContainer,endOffset)
     }
   }
 }
