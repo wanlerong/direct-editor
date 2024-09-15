@@ -11,7 +11,7 @@ import {
   isTextNode
 } from "./domUtils";
 import {isChromeBrowser} from "./lib/util";
-import {handleTab} from "./handlers/keydownHandler";
+import {handleBackspace, handleTab} from "./handlers/keydownHandler";
 import {indentLi, isNestedLi} from "./components/ul";
 
 export class Editor {
@@ -81,54 +81,7 @@ export class Editor {
     d.addEventListener("keydown", function (e: KeyboardEvent) {
       console.log("keydown")
 
-      let range = getSelectionRange();
-      if (e.key == 'Backspace') {
-        let currentLi = getClosestAncestorByNodeName(range.startContainer, 'LI') as HTMLElement;
-        if (currentLi && isTextNode(range.startContainer)) {
-          if (range.collapsed) {
-            let tp = getTextPosition(currentLi, range)
-            if (tp == 1 || tp == 0) {
-              // Prevent the default backspace behavior which will remove parent div
-              // and first level will be UL, which is conflict with "first level can only be DIV"
-              e.preventDefault();
-              if (tp == 1) {
-                range.startContainer.textContent = range.startContainer.textContent.substring(1, range.startContainer.textContent.length);
-                console.log(range.startContainer, range.startOffset, range.startContainer.textContent, range.endContainer, range.endOffset, range.endContainer.textContent)
-              } else {
-                let currentUl = getClosestAncestorByNodeName(range.startContainer, 'UL') as HTMLElement;
-                const previousLi = currentLi.previousElementSibling as HTMLElement;
-                const nextLi = currentLi.nextElementSibling as HTMLElement;
-                if (previousLi) {
-                  let lastTextNode = getLastTextNode(previousLi)
-                  previousLi.append(...currentLi.childNodes)
-                  currentLi.remove();
-                  range.setStart(lastTextNode, lastTextNode.textContent.length)
-                  range.setEnd(lastTextNode, lastTextNode.textContent.length)
-                } else {
-                  if (nextLi) {
-                    let div = document.createElement("div")
-                    div.append(...currentLi.childNodes)
-                    currentLi.remove();
-                    insertBefore(currentUl.parentNode, div)
-                    range.setStart(div, 0)
-                    range.setEnd(div, 0)
-                  } else {
-                    currentUl.parentNode.append(...currentLi.childNodes)
-                    currentUl.remove()
-                  }
-                }
-              }
-            }
-          } else {
-            let sc = range.startContainer, so = range.startOffset
-            e.preventDefault();
-            // todo 临时处理, 应该自己实现删除操作
-            range.deleteContents()
-            range.setStart(sc, so)
-            range.setEnd(sc, so)
-          }
-        }
-      }
+      handleBackspace(e)
 
       handleTab(e)
 
@@ -198,6 +151,14 @@ export class Editor {
         }
       }
     }
+    
+    // remove all empty span
+    const spanItems = this.theDom.querySelectorAll('span');
+    spanItems.forEach((span) => {
+      if (span.textContent == "") {
+        span.remove()
+      }
+    });
 
     let toRemove = [];
 
@@ -214,14 +175,6 @@ export class Editor {
             toRemove.push(n)
             return
           }
-          // remove the empty span
-          n.childNodes.forEach(n2 => {
-            if (n2.nodeType == Node.ELEMENT_NODE) {
-              if (n2.nodeName == "SPAN" && n2.textContent == "") {
-                n2.parentNode.removeChild(n2);
-              }
-            }
-          })
           // add <br> for empty <div> 
           if ((n as HTMLElement).innerHTML == "" || (n as HTMLElement).innerHTML == "\n") {
             (n as HTMLElement).innerHTML = ""
@@ -238,6 +191,33 @@ export class Editor {
       div.appendChild(document.createElement("br"))
       this.theDom.appendChild(div);
     }
+    
+    // br is like a "placeholder" for text
+    const listItems = this.theDom.querySelectorAll('li');
+    listItems.forEach((li) => {
+      const childNodes = Array.from(li.childNodes);
+      let hasText = false;
+      childNodes.forEach((node) => {
+        if (
+          (node.nodeType === Node.TEXT_NODE && node.textContent?.trim() !== '') ||
+          (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'SPAN' && node.textContent?.trim() !== '')
+        ) {
+          hasText = true;
+        }
+      });
+      
+      if (hasText) {
+        childNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'BR') {
+            li.removeChild(node);
+          }
+        });
+      } else {
+        if (!childNodes.some(node => node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'BR')) {
+          li.insertBefore(document.createElement('br'), li.firstChild);
+        }
+      }
+    });
   }
 
   hi(): void {

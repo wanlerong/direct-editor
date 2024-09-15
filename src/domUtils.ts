@@ -71,6 +71,9 @@ export function getLastTextNode(element: Node): Node | null {
 }
 
 export function getTextPosition(element: Node, range: Range): number {
+  if (range.startContainer == element && range.startOffset == 0) {
+    return 0
+  }
   let textPosition = 0
   let find = false
 
