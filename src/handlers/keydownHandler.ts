@@ -1,6 +1,6 @@
 import {getSelectionRange, iterateSubtree, setRange} from "../range";
 import {getClosestAncestorByNodeName, getLastTextNode, getTextPosition, insertBefore, isTextNode} from "../domUtils";
-import {indentLi} from "../components/ul";
+import {indentLi, isNestedLi} from "../components/ul";
 import {RangeIterator} from "../rangeIterator";
 
 export function handleBackspace(e: KeyboardEvent) {
@@ -18,7 +18,7 @@ export function handleBackspace(e: KeyboardEvent) {
         e.preventDefault();
         if (tp == 1) {
           range.startContainer.textContent = range.startContainer.textContent.substring(1, range.startContainer.textContent.length);
-          setRange(currentLi,0,currentLi,0)
+          setRange(currentLi, 0, currentLi, 0)
           console.log(range.startContainer, range.startOffset, range.startContainer.textContent, range.endContainer, range.endOffset, range.endContainer.textContent)
         } else {
           let currentUl = getClosestAncestorByNodeName(range.startContainer, 'UL') as HTMLElement;
@@ -32,12 +32,20 @@ export function handleBackspace(e: KeyboardEvent) {
             range.setEnd(lastTextNode, lastTextNode.textContent.length)
           } else {
             if (nextLi) {
-              let div = document.createElement("div")
-              div.append(...currentLi.childNodes)
-              currentLi.remove();
-              insertBefore(currentUl.parentNode, div)
-              range.setStart(div, 0)
-              range.setEnd(div, 0)
+              if (isNestedLi(currentLi)) {
+                let cnt = Array.from(currentUl.parentNode.childNodes).indexOf(currentUl)
+                currentLi.childNodes.forEach(n => {
+                  insertBefore(currentUl, n)
+                })
+                currentLi.remove()
+                setRange(currentUl.parentNode, cnt, currentUl.parentNode, cnt)
+              } else {
+                let div = document.createElement("div")
+                div.append(...currentLi.childNodes)
+                currentLi.remove();
+                insertBefore(currentUl.parentNode, div)
+                setRange(div, 0, div, 0)
+              }
             } else {
               currentUl.parentNode.append(...currentLi.childNodes)
               currentUl.remove()

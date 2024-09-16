@@ -1,5 +1,6 @@
-import {handleTab} from "./keydownHandler";
+import {handleBackspace, handleTab} from "./keydownHandler";
 import {setRange} from "../range";
+import {Editor} from "../editor";
 
 test('handleTab', () => {
   let div = document.createElement("div")
@@ -122,3 +123,183 @@ test('handleTab_shift_02', () => {
     '</ul></div>'
   );
 });
+
+test('handleBackspace', () => {
+  let div = document.createElement("div")
+  div.innerHTML = '<div>' +
+    '<ul>' +
+      '<li>111</li>' +
+    '</ul>' +
+  '</div>'
+  document.body.appendChild(div);
+  const keyboardEvent = new KeyboardEvent('keydown', {
+    key: 'Backspace',
+  });
+  let ul = div.firstChild.firstChild
+  setRange(ul.firstChild.firstChild, 1,ul.firstChild.firstChild, 1)
+  handleBackspace(keyboardEvent)
+  expect(div.innerHTML).toBe('<div>' +
+      '<ul>' +
+      '<li>11</li>' +
+      '</ul>' +
+    '</div>'
+  );
+})
+
+test('handleBackspace_02', () => {
+  let div = document.createElement("div")
+  div.innerHTML = '<div>' +
+    '<ul>' +
+    '<li><br></li>' +
+    '</ul>' +
+    '</div>'
+  document.body.appendChild(div);
+  const keyboardEvent = new KeyboardEvent('keydown', {
+    key: 'Backspace',
+  });
+  let ul = div.firstChild.firstChild
+  setRange(ul.firstChild, 0,ul.firstChild, 0)
+  handleBackspace(keyboardEvent)
+  expect(div.innerHTML).toBe('<div><br>' +
+    '</div>'
+  );
+})
+
+test('handleBackspace_03', () => {
+  let div = document.createElement("div")
+  let editor = new Editor(div, null, null);
+  let editorDom = (div.firstChild as HTMLElement);
+  
+  editorDom.innerHTML = '<div>' +
+    '<ul>' +
+      '<li>1</li>' +
+      '<li><br>' +
+        '<ul>' +
+          '<li>3</li>' +
+        '</ul>' +
+      '</li>' +
+      '<li>4</li>' +
+    '</ul>' +
+    '</div>'
+  document.body.appendChild(div);
+  const keyboardEvent = new KeyboardEvent('keydown', {
+    key: 'Backspace',
+  });
+  let ul = editorDom.firstChild.firstChild
+  setRange(ul.childNodes[1], 0,ul.childNodes[1], 0)
+  handleBackspace(keyboardEvent)
+  editor.normalize()
+  
+  expect(editorDom.innerHTML).toBe('<div>' +
+    '<ul>' +
+      '<li>1' +
+        '<ul>' +
+          '<li>3</li>' +
+        '</ul>' +
+      '</li>' +
+      '<li>4</li>' +
+    '</ul>' +
+    '</div>');
+})
+
+test('handleBackspace_04', () => {
+  let div = document.createElement("div")
+  let editor = new Editor(div, null, null);
+  let editorDom = (div.firstChild as HTMLElement);
+
+  editorDom.innerHTML = '<div>' +
+    '<ul>' +
+      '<li><br>' +
+        '<ul>' +
+        '<li>3</li>' +
+        '</ul>' +
+      '</li>' +
+      '<li>4</li>' +
+    '</ul>' +
+    '</div>'
+  document.body.appendChild(div);
+  const keyboardEvent = new KeyboardEvent('keydown', {
+    key: 'Backspace',
+  });
+  let ul = editorDom.firstChild.firstChild
+  setRange(ul.firstChild, 0,ul.firstChild, 0)
+  handleBackspace(keyboardEvent)
+  editor.normalize()
+
+  expect(editorDom.innerHTML).toBe( '<div><br></div><div>' +
+    '<ul>' +
+    '<li>3</li>' +
+    '<li>4</li>' +
+    '</ul>' +
+    '</div>');
+})
+
+test('handleBackspace_05', () => {
+  let div = document.createElement("div")
+  let editor = new Editor(div, null, null);
+  let editorDom = (div.firstChild as HTMLElement);
+
+  editorDom.innerHTML = '<div>' +
+    '<ul>' +
+      '<li>1</li>' +
+      '<li>2345' +
+        '<ul>' +
+          '<li>3</li>' +
+        '</ul>' +
+      '</li>' +
+      '<li>4</li>' +
+    '</ul>' +
+    '</div>'
+  document.body.appendChild(div);
+  const keyboardEvent = new KeyboardEvent('keydown', {
+    key: 'Backspace',
+  });
+  let ul = editorDom.firstChild.firstChild
+  setRange(ul.childNodes[1], 0,ul.childNodes[1], 0)
+  handleBackspace(keyboardEvent)
+  editor.normalize()
+
+  expect(editorDom.innerHTML).toBe('<div>' +
+    '<ul>' +
+      '<li>12345' +
+        '<ul>' +
+        '<li>3</li>' +
+        '</ul>' +
+      '</li>' +
+      '<li>4</li>' +
+    '</ul>' +
+    '</div>');
+})
+
+test('handleBackspace_06', () => {
+  let div = document.createElement("div")
+  let editor = new Editor(div, null, null);
+  let editorDom = (div.firstChild as HTMLElement);
+
+  editorDom.innerHTML = '<div>' +
+      '<ul>' +
+        '<li>1234' +
+          '<ul>' +
+            '<li>3</li>' +
+          '</ul>' +
+        '</li>' +
+        '<li>4</li>' +
+      '</ul>' +
+    '</div>'
+  document.body.appendChild(div);
+  const keyboardEvent = new KeyboardEvent('keydown', {
+    key: 'Backspace',
+  });
+  let ul = editorDom.firstChild.firstChild
+  setRange(ul.firstChild, 0,ul.firstChild, 0)
+  handleBackspace(keyboardEvent)
+  editor.normalize()
+
+  expect(editorDom.innerHTML).toBe('<div>1234</div>'+
+    '<div>' +
+      '<ul>' +
+      '<li>3</li>' +
+      '<li>4</li>' +
+      '</ul>' +
+    '</div>');
+})

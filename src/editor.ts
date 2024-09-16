@@ -162,7 +162,7 @@ export class Editor {
 
     let toRemove = [];
 
-    this.theDom.childNodes.forEach(n => {
+    Array.from(this.theDom.childNodes).forEach(n => {
       if (n.nodeType == Node.TEXT_NODE) {
         n.parentNode.removeChild(n);
       } else if (n.nodeType == Node.ELEMENT_NODE) {
@@ -180,6 +180,15 @@ export class Editor {
             (n as HTMLElement).innerHTML = ""
             n.appendChild(document.createElement("br"))
           }
+          
+          // div should only have one child, which is ul
+          let firstLevelUl = Array.from(n.childNodes).find(node => node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'UL')
+          if (firstLevelUl && n.childNodes.length > 1) {
+            let newDiv = document.createElement("div")
+            newDiv.appendChild(firstLevelUl);
+            (n as HTMLElement).insertAdjacentElement('afterend', newDiv)
+          }
+          
         }
       }
     })
@@ -197,12 +206,18 @@ export class Editor {
     listItems.forEach((li) => {
       const childNodes = Array.from(li.childNodes);
       let hasText = false;
+      let ulCollection: HTMLElement[] = [];
+      
       childNodes.forEach((node) => {
         if (
           (node.nodeType === Node.TEXT_NODE && node.textContent?.trim() !== '') ||
           (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'SPAN' && node.textContent?.trim() !== '')
         ) {
           hasText = true;
+        }
+        
+        if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'UL') {
+          ulCollection.push(node as HTMLElement);
         }
       });
       
@@ -216,6 +231,15 @@ export class Editor {
         if (!childNodes.some(node => node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'BR')) {
           li.insertBefore(document.createElement('br'), li.firstChild);
         }
+      }
+      
+      if (ulCollection.length > 1) {
+        const firstUl = ulCollection[0];
+        // 将其他 <ul> 的 <li> 移入第一个 <ul>
+        ulCollection.slice(1).forEach((nextUl) => {
+          nextUl.childNodes.forEach(item => firstUl.appendChild(item));
+          nextUl.remove();
+        });
       }
     });
   }
