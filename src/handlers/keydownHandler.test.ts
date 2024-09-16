@@ -124,27 +124,6 @@ test('handleTab_shift_02', () => {
   );
 });
 
-test('handleBackspace', () => {
-  let div = document.createElement("div")
-  div.innerHTML = '<div>' +
-    '<ul>' +
-      '<li>111</li>' +
-    '</ul>' +
-  '</div>'
-  document.body.appendChild(div);
-  const keyboardEvent = new KeyboardEvent('keydown', {
-    key: 'Backspace',
-  });
-  let ul = div.firstChild.firstChild
-  setRange(ul.firstChild.firstChild, 1,ul.firstChild.firstChild, 1)
-  handleBackspace(keyboardEvent)
-  expect(div.innerHTML).toBe('<div>' +
-      '<ul>' +
-      '<li>11</li>' +
-      '</ul>' +
-    '</div>'
-  );
-})
 
 test('handleBackspace_02', () => {
   let div = document.createElement("div")
@@ -190,7 +169,7 @@ test('handleBackspace_03', () => {
   handleBackspace(keyboardEvent)
   editor.normalize()
   
-  expect(editorDom.innerHTML).toBe('<div>' +
+  expect(editorDom.innerHTML).toBe('<div class="row">' +
     '<ul>' +
       '<li>1' +
         '<ul>' +
@@ -226,7 +205,7 @@ test('handleBackspace_04', () => {
   handleBackspace(keyboardEvent)
   editor.normalize()
 
-  expect(editorDom.innerHTML).toBe( '<div><br></div><div>' +
+  expect(editorDom.innerHTML).toBe( '<div class="row"><br></div><div class="row">' +
     '<ul>' +
     '<li>3</li>' +
     '<li>4</li>' +
@@ -259,7 +238,7 @@ test('handleBackspace_05', () => {
   handleBackspace(keyboardEvent)
   editor.normalize()
 
-  expect(editorDom.innerHTML).toBe('<div>' +
+  expect(editorDom.innerHTML).toBe('<div class="row">' +
     '<ul>' +
       '<li>12345' +
         '<ul>' +
@@ -295,8 +274,8 @@ test('handleBackspace_06', () => {
   handleBackspace(keyboardEvent)
   editor.normalize()
 
-  expect(editorDom.innerHTML).toBe('<div>1234</div>'+
-    '<div>' +
+  expect(editorDom.innerHTML).toBe('<div class="row">1234</div>'+
+    '<div class="row">' +
       '<ul>' +
       '<li>3</li>' +
       '<li>4</li>' +

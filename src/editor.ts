@@ -82,7 +82,6 @@ export class Editor {
       console.log("keydown")
 
       handleBackspace(e)
-
       handleTab(e)
 
       if (e.key === 'Enter') {
@@ -91,22 +90,22 @@ export class Editor {
         if (startLi && range.collapsed && (startLi.innerText == '' || startLi.innerText == '\n')) {
           e.preventDefault();
           if (isNestedLi(startLi)) {
-            const { startContainer, startOffset, endContainer, endOffset } = range.cloneRange();
+            const {startContainer, startOffset, endContainer, endOffset} = range.cloneRange();
             indentLi(startLi, false)
-            setRange(startContainer,startOffset,endContainer,endOffset)
+            setRange(startContainer, startOffset, endContainer, endOffset)
           } else {
             _this.toolbar.unUnorderedList()
           }
         }
       }
-      
+
       setTimeout(() => {
         _this.normalize()
       }, 1)
     })
 
     // selection change
-    d.addEventListener('mouseup', function (e:MouseEvent) {
+    d.addEventListener('mouseup', function (e: MouseEvent) {
       setTimeout(() => {
         _this.toolbar.checkActiveStatus()
       }, 2)
@@ -151,7 +150,7 @@ export class Editor {
         }
       }
     }
-    
+
     // remove all empty span
     const spanItems = this.theDom.querySelectorAll('span');
     spanItems.forEach((span) => {
@@ -180,7 +179,7 @@ export class Editor {
             (n as HTMLElement).innerHTML = ""
             n.appendChild(document.createElement("br"))
           }
-          
+
           // div should only have one child, which is ul
           let firstLevelUl = Array.from(n.childNodes).find(node => node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'UL')
           if (firstLevelUl && n.childNodes.length > 1) {
@@ -188,7 +187,7 @@ export class Editor {
             newDiv.appendChild(firstLevelUl);
             (n as HTMLElement).insertAdjacentElement('afterend', newDiv)
           }
-          
+
         }
       }
     })
@@ -200,14 +199,14 @@ export class Editor {
       div.appendChild(document.createElement("br"))
       this.theDom.appendChild(div);
     }
-    
+
     // br is like a "placeholder" for text
     const listItems = this.theDom.querySelectorAll('li');
     listItems.forEach((li) => {
       const childNodes = Array.from(li.childNodes);
       let hasText = false;
       let ulCollection: HTMLElement[] = [];
-      
+
       childNodes.forEach((node) => {
         if (
           (node.nodeType === Node.TEXT_NODE && node.textContent?.trim() !== '') ||
@@ -215,12 +214,12 @@ export class Editor {
         ) {
           hasText = true;
         }
-        
+
         if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'UL') {
           ulCollection.push(node as HTMLElement);
         }
       });
-      
+
       if (hasText) {
         childNodes.forEach((node) => {
           if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'BR') {
@@ -232,7 +231,7 @@ export class Editor {
           li.insertBefore(document.createElement('br'), li.firstChild);
         }
       }
-      
+
       if (ulCollection.length > 1) {
         const firstUl = ulCollection[0];
         // 将其他 <ul> 的 <li> 移入第一个 <ul>
@@ -242,6 +241,13 @@ export class Editor {
         });
       }
     });
+
+    Array.from(this.theDom.childNodes).forEach(n => {
+      if ((n as HTMLElement).className !== 'row') {
+        (n as HTMLElement).className = 'row'
+      }
+    })
+
   }
 
   hi(): void {
