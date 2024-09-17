@@ -30,11 +30,19 @@ export function handleBackspace(e: KeyboardEvent) {
             if (n.nodeName == "UL") {
               previousLi.append(n)
             } else {
-              insertAfter(lastTextNode, n)
+              if (lastTextNode) {
+                insertAfter(lastTextNode, n)
+              } else {
+                insertBefore(previousLi.firstChild, n)
+              }
             }
           })
           currentLi.remove();
-          setRange(lastTextNode, lastTextNode.textContent.length, lastTextNode, lastTextNode.textContent.length)
+          if (lastTextNode) {
+            setRange(lastTextNode, lastTextNode.textContent.length, lastTextNode, lastTextNode.textContent.length)
+          } else {
+            setRange(previousLi, 0, previousLi, 0)
+          }
         } else {
           if (nextLi) {
             if (isNestedLi(currentLi)) {

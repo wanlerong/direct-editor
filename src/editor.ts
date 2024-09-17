@@ -180,7 +180,7 @@ export class Editor {
             n.appendChild(document.createElement("br"))
           }
 
-          // div should only have one child, which is ul
+          // if div contain ul, it should only have one child which is ul
           let firstLevelUl = Array.from(n.childNodes).find(node => node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'UL')
           if (firstLevelUl && n.childNodes.length > 1) {
             let newDiv = document.createElement("div")
@@ -232,6 +232,7 @@ export class Editor {
         }
       }
 
+      // merge nested ul elements
       if (ulCollection.length > 1) {
         const firstUl = ulCollection[0];
         // 将其他 <ul> 的 <li> 移入第一个 <ul>
