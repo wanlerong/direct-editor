@@ -1,6 +1,6 @@
 import {getSelectionRange, iterateSubtree, setRange} from "../range";
 import {
-  getClosestAncestorByNodeName,
+  getClosestAncestorByNodeName, getClosestAncestorByNodeNames,
   getLastTextNode,
   getTextPosition,
   insertAfter,
@@ -21,13 +21,13 @@ export function handleBackspace(e: KeyboardEvent) {
       let tp = getTextPosition(currentLi, range)
       if (tp == 0) {
         e.preventDefault();
-        let currentUl = getClosestAncestorByNodeName(range.startContainer, 'UL') as HTMLElement;
+        let currentUl = getClosestAncestorByNodeNames(range.startContainer, ['UL', 'OL']) as HTMLElement;
         const previousLi = currentLi.previousElementSibling as HTMLElement;
         const nextLi = currentLi.nextElementSibling as HTMLElement;
         if (previousLi) {
           let lastTextNode = getLastTextNode(previousLi)
           Array.from(currentLi.childNodes).forEach(n => {
-            if (n.nodeName == "UL") {
+            if (n.nodeName == "UL" || n.nodeName == "OL") {
               previousLi.append(n)
             } else {
               if (lastTextNode) {

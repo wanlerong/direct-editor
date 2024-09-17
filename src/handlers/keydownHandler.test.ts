@@ -24,8 +24,11 @@ test('handleTab', () => {
 });
 
 test('handleTab_02', () => {
-  let div = document.createElement("div")
-  div.innerHTML = '<div><ul>' +
+  let div = document.createElement("div");
+  let editor = new Editor(div, null, null);
+  let editorDom = (div.firstChild as HTMLElement);
+
+  editorDom.innerHTML = '<div><ul>' +
     '<li>111</li><li>222</li><li>333</li><li>444</li>' +
     '</ul></div>'
   document.body.appendChild(div);
@@ -35,22 +38,31 @@ test('handleTab_02', () => {
     shiftKey: false,
   });
 
-  setRange(div.firstChild.firstChild.childNodes[1].firstChild, 1, div.firstChild.firstChild.childNodes[2].firstChild, 1)
+  setRange(editorDom.firstChild.firstChild.childNodes[1].firstChild, 1, editorDom.firstChild.firstChild.childNodes[2].firstChild, 1)
 
   handleTab(keyboardEvent)
+  editor.normalize()
 
-  expect(div.innerHTML).toBe("<div><ul>" +
-    "<li>111<ul><li>222</li><li>333</li></ul></li><li>444</li>" +
-    "</ul></div>");
+  expect(editorDom.innerHTML).toBe('<div class="row"><ul>' +
+    '<li>111<ul><li>222</li><li>333</li></ul></li><li>444</li>' +
+    '</ul></div>');
 });
 
 test('handleTab_03', () => {
-  let div = document.createElement("div")
-  div.innerHTML = '<div><ul><li>111' +
-    '<ul><li>222' +
-    '<ul><li>333</li><li>444</li></ul>' +
-    '</li><li>555</li></ul>' +
-    '</li><li>666</li>' +
+  let div = document.createElement("div");
+  let editor = new Editor(div, null, null);
+  let editorDom = (div.firstChild as HTMLElement);
+
+  editorDom.innerHTML = '<div><ul>' +
+      '<li>111' +
+        '<ul>' +
+          '<li>222' +
+            '<ul><li>333</li><li>444</li></ul>' +
+          '</li>' +
+          '<li>555</li>' +
+        '</ul>' +
+      '</li>' +
+      '<li>666</li>' +
     '</ul>' +
     '</div>';
 
@@ -61,17 +73,27 @@ test('handleTab_03', () => {
     shiftKey: false,
   });
 
-  let ul = div.firstChild.firstChild
+  let ul = editorDom.firstChild.firstChild
   setRange(ul.firstChild.childNodes[1].firstChild.childNodes[1].childNodes[1].firstChild, 1, ul.firstChild.childNodes[1].childNodes[1].firstChild, 1)
 
   handleTab(keyboardEvent)
-
-  expect(div.innerHTML).toBe('<div>' +
-    '<ul><li>111' +
-    '<ul><li>222' +
-    '<ul><li>333<ul><li>444</li></ul></li><li>555</li></ul>' +
-    '</li></ul>' +
-    '</li><li>666</li>' +
+  editor.normalize()
+  
+  expect(editorDom.innerHTML).toBe('<div class="row">' +
+    '<ul>' +
+      '<li>111' +
+        '<ul>' +
+          '<li>222' +
+            '<ul>' +
+                '<li>333' +
+                  '<ul><li>444</li></ul>' +
+                '</li>' +
+                '<li>555</li>' +
+            '</ul>' +
+          '</li>' +
+        '</ul>' +
+      '</li>' +
+      '<li>666</li>' +
     '</ul></div>'
   );
 });

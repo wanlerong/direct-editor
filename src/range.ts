@@ -122,7 +122,7 @@ function intersectStyles(stylesA: Record<string, string>, stylesB: Record<string
 export function getIntersectionBlockType(): BlockType {
   let range = getSelectionRange()
   let targetBlocks = []
-  let blockTypeNodeNames = ["H1", "H2", "H3", "H4", "H5", "H6", "UL"]
+  let blockTypeNodeNames = ["H1", "H2", "H3", "H4", "H5", "H6", "UL", "OL"]
 
   iterateSubtree(new RangeIterator(range), (node) => {
     if (isCharacterDataNode(node) || node.nodeName == "BR") {

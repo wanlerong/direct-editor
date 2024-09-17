@@ -33,6 +33,19 @@ export function getClosestAncestorByNodeName(node: Node, nodeName: string): Node
   return null;
 }
 
+// div -> .... -> node
+// 返回的是 div
+export function getClosestAncestorByNodeNames(node: Node, nodeNames: string[]): Node {
+  let n = node;
+  while (n) {
+    if (nodeNames.includes(n.nodeName)) {
+      return n
+    }
+    n = n.parentNode
+  }
+  return null;
+}
+
 export function getNodeLength(node: Node) {
   let childNodes;
   return isCharacterDataNode(node) ? (node as Text).length : ((childNodes = node.childNodes) ? childNodes.length : 0);

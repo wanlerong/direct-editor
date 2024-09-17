@@ -132,7 +132,7 @@ export class Toolbar {
     this.editor.asChange(this.activeStatus)
   }
 
-  unorderedList() {
+  toggleList(listType: 'ul' | 'ol') {
     let range = getSelectionRange()
     const { startContainer, startOffset, endContainer, endOffset } = range.cloneRange();
     let targetDivsArr: HTMLElement[][] = []
@@ -140,8 +140,8 @@ export class Toolbar {
     iterateSubtree(new RangeIterator(range), (node) => {
       while (node) {
         if (node.nodeName == "DIV") {
-          const ulInCurrentDiv = (node as HTMLElement).querySelector('ul');
-          if (ulInCurrentDiv) {
+          const listInCurrentDiv = (node as HTMLElement).querySelector(listType);
+          if (listInCurrentDiv) {
             targetDivsArr.push(targetDivs)
             targetDivs = []
             break
@@ -163,7 +163,7 @@ export class Toolbar {
       if (targetDivs2.length == 0) {
         return
       }
-      let ul = document.createElement("ul")
+      let ul = document.createElement(listType)
       targetDivs2.forEach((targetDiv, idx) => {
         let li = document.createElement("li")
         li.replaceChildren(...targetDiv.childNodes)
@@ -180,16 +180,16 @@ export class Toolbar {
     setRange(startContainer,startOffset,endContainer,endOffset)
     this.checkActiveStatus()
   }
-  
-  unUnorderedList() {
+
+  unToggleList(listType: 'ul' | 'ol') {
     let range = getSelectionRange()
-    let ul: HTMLElement = getClosestAncestorByNodeName(range.startContainer, 'UL') as HTMLElement
+    let ul: HTMLElement = getClosestAncestorByNodeName(range.startContainer, listType) as HTMLElement
     if (!ul) {
       return
     }
     const { startContainer, startOffset, endContainer, endOffset } = range.cloneRange();
     let startContainerChild,endContainerChild
-    // if unUnorderedList on an 'empty' li, which contains <br> only, the range.startContainer will be li, start offset will be 0
+    // if unToggleList on an 'empty' li, which contains <br> only, the range.startContainer will be li, start offset will be 0
     // store the child, and then use startContainerChild.parentNode to restore the range
     if (!isTextNode(range.startContainer)) {
       startContainerChild = range.startContainer.firstChild
@@ -204,7 +204,7 @@ export class Toolbar {
     let idx2 = Array.of(...ul.childNodes).indexOf(li2)
 
     let toRemove: HTMLElement[] = []
-    let newDiv,newUl: HTMLElement = null
+    let newDiv,newList: HTMLElement = null
     let n1 = ul.parentNode
     
     Array.of(...ul.childNodes).forEach((li, idx) => {
@@ -219,10 +219,10 @@ export class Toolbar {
       } else {
         if (newDiv == null) {
           newDiv = document.createElement("div");
-          newUl = document.createElement("ul");
-          newDiv.appendChild(newUl)
+          newList = document.createElement(listType);
+          newDiv.appendChild(newList)
         } 
-        newUl.appendChild(li)
+        newList.appendChild(li)
       }
     })
     toRemove.forEach(it => it.remove())

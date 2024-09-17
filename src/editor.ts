@@ -94,7 +94,7 @@ export class Editor {
             indentLi(startLi, false)
             setRange(startContainer, startOffset, endContainer, endOffset)
           } else {
-            _this.toolbar.unUnorderedList()
+            _this.toolbar.unToggleList(startLi.parentElement.nodeName == "UL" ? 'ul' : 'ol')
           }
         }
       }
@@ -128,28 +128,32 @@ export class Editor {
           n.parentNode.removeChild(n);
         }
       }
-    })
-
-    let i = 0;
-    // merge sibling ul nodes
-    while (i < this.theDom.childNodes.length) {
-      const currentDiv: HTMLElement = this.theDom.childNodes[i] as HTMLElement;
-      const ulInCurrentDiv = currentDiv.querySelector('ul');
-      i++;
-      if (ulInCurrentDiv) {
-        // Merge with subsequent divs containing ul elements
-        while (i < this.theDom.childNodes.length) {
-          const nextDiv = this.theDom.childNodes[i] as HTMLElement;
-          const ulInNextDiv = nextDiv.querySelector('ul');
-          if (ulInNextDiv) {
-            Array.from(ulInNextDiv.children).forEach(li => ulInCurrentDiv.appendChild(li));
-            i++;
-          } else {
-            break;
+    });
+    
+    ['ul', 'ol'].forEach(listtype => {
+      let i = 0;
+      // merge sibling ul nodes
+      while (i < this.theDom.childNodes.length) {
+        const currentDiv: HTMLElement = this.theDom.childNodes[i] as HTMLElement;
+        const ulInCurrentDiv = currentDiv.querySelector(listtype);
+        i++;
+        if (ulInCurrentDiv) {
+          // Merge with subsequent divs containing ul elements
+          while (i < this.theDom.childNodes.length) {
+            const nextDiv = this.theDom.childNodes[i] as HTMLElement;
+            const ulInNextDiv = nextDiv.querySelector(listtype);
+            if (ulInNextDiv) {
+              Array.from(ulInNextDiv.children).forEach(li => ulInCurrentDiv.appendChild(li));
+              i++;
+            } else {
+              break;
+            }
           }
         }
       }
-    }
+      
+    });
+ 
 
     // remove all empty span
     const spanItems = this.theDom.querySelectorAll('span');
@@ -169,8 +173,8 @@ export class Editor {
         if (n.nodeName != "DIV") {
           n.parentNode.removeChild(n);
         } else {
-          // remove the empty UL
-          if (n.firstChild?.nodeName == "UL" && n.firstChild.childNodes.length == 0) {
+          // remove the empty UL/OL
+          if ((n.firstChild?.nodeName == "UL" || n.firstChild?.nodeName == "OL") && n.firstChild.childNodes.length == 0) {
             toRemove.push(n)
             return
           }
@@ -181,7 +185,7 @@ export class Editor {
           }
 
           // if div contain ul, it should only have one child which is ul
-          let firstLevelUl = Array.from(n.childNodes).find(node => node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'UL')
+          let firstLevelUl = Array.from(n.childNodes).find(node => node.nodeType === Node.ELEMENT_NODE && ((node as HTMLElement).tagName === 'UL' || (node as HTMLElement).tagName === 'OL'))
           if (firstLevelUl && n.childNodes.length > 1) {
             let newDiv = document.createElement("div")
             newDiv.appendChild(firstLevelUl);
@@ -215,7 +219,7 @@ export class Editor {
           hasText = true;
         }
 
-        if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'UL') {
+        if (node.nodeType === Node.ELEMENT_NODE && ((node as HTMLElement).tagName === 'UL' || (node as HTMLElement).tagName === 'OL')) {
           ulCollection.push(node as HTMLElement);
         }
       });
@@ -232,7 +236,7 @@ export class Editor {
         }
       }
 
-      // merge nested ul elements
+      // merge nested ul/ol elements
       if (ulCollection.length > 1) {
         const firstUl = ulCollection[0];
         // 将其他 <ul> 的 <li> 移入第一个 <ul>

@@ -8,6 +8,7 @@ let btn5 = document.getElementById("btn5")
 let btn6 = document.getElementById("btn6")
 let btn7 = document.getElementById("btn7")
 let btn8 = document.getElementById("btn8")
+let btn9 = document.getElementById("btn9")
 
 let e = new Editor(document.getElementById("container"), null, (as)=>{
   btn1.className = as.bold ? 'active' : ''
@@ -18,6 +19,7 @@ let e = new Editor(document.getElementById("container"), null, (as)=>{
   btn6.className = as.blockType === Const.BlockType.BLOCK_TYPE_H2 ? 'active' : ''
   btn7.className = as.blockType === Const.BlockType.BLOCK_TYPE_H3 ? 'active' : ''
   btn8.className = as.blockType === Const.BlockType.BLOCK_TYPE_UL ? 'active' : ''
+  btn9.className = as.blockType === Const.BlockType.BLOCK_TYPE_OL ? 'active' : ''
 })
 btn1.addEventListener('click', (event) => {
   e.toolbar.bold(!btn1.classList.contains("active"))
@@ -56,8 +58,16 @@ btn7.addEventListener('click', (event) => {
 
 btn8.addEventListener('click', (event) => {
   if(btn8.classList.contains("active")){
-    e.toolbar.unUnorderedList()
+    e.toolbar.unToggleList("ul")
   } else {
-    e.toolbar.unorderedList()
+    e.toolbar.toggleList("ul")
+  }
+});
+
+btn9.addEventListener('click', (event) => {
+  if(btn9.classList.contains("active")){
+    e.toolbar.unToggleList("ol")
+  } else {
+    e.toolbar.toggleList("ol")
   }
 });

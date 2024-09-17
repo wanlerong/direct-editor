@@ -11,9 +11,9 @@ function indent(li: HTMLElement) {
   if (!prevLi) {
     return;
   }
-  let ul = prevLi.querySelector('ul');
+  let ul = prevLi.querySelector(li.parentElement.tagName);
   if (!ul) {
-    ul = document.createElement('ul');
+    ul = document.createElement(li.parentElement.tagName);
     prevLi.appendChild(ul);
   }
   ul.appendChild(li);
@@ -25,7 +25,7 @@ function unindent(li: HTMLElement) {
   if (parentLi.nodeName === 'LI') {
     let nextSibling = li.nextElementSibling;
     if (nextSibling) {
-      const newUl = document.createElement('ul');
+      const newUl = document.createElement(parentUl.tagName);
       li.appendChild(newUl);
 
       while (nextSibling) {
@@ -46,7 +46,7 @@ export function isNestedLi(element: HTMLElement): boolean {
   let ulCount = 0;
   
   while (currentElement) {
-    if (currentElement.tagName === 'UL') {
+    if (currentElement.tagName === 'UL' || currentElement.tagName === 'OL') {
       ulCount++;
     }
     if (ulCount > 1) {
