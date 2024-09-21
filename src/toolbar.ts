@@ -10,6 +10,7 @@ import {
   splitRange
 } from "./range";
 import {BlockType, HTitleLevel} from "./const/const";
+import {replaceListType} from "./components/ul";
 
 export class Toolbar {
   private editor: Editor
@@ -137,19 +138,22 @@ export class Toolbar {
     const { startContainer, startOffset, endContainer, endOffset } = range.cloneRange();
     let targetDivsArr: HTMLElement[][] = []
     let targetDivs: HTMLElement[] = []
+    let diffLists: HTMLElement[] = []
     iterateSubtree(new RangeIterator(range), (node) => {
       while (node) {
         if (node.nodeName == "DIV") {
-          const listInCurrentDiv = (node as HTMLElement).querySelector(listType);
+          let firstLevelNodeName = (node as HTMLElement).firstChild.nodeName
+          const listInCurrentDiv = firstLevelNodeName == 'UL' || firstLevelNodeName == 'OL'
           if (listInCurrentDiv) {
             targetDivsArr.push(targetDivs)
             targetDivs = []
-            break
-          }
-          if (!targetDivs.includes(node as HTMLElement)) {
+            if (firstLevelNodeName != listType.toUpperCase()) {
+              diffLists.push((node.firstChild as HTMLElement))
+            }
+          } else if (!targetDivs.includes(node as HTMLElement)) {
             targetDivs.push(node as HTMLElement)
           }
-          break
+          return true
         }
         node = node.parentNode
       }
@@ -176,6 +180,10 @@ export class Toolbar {
       targetDivs2[0].appendChild(ul)
     })
     
+    diffLists.forEach((node) => {
+      replaceListType(node, listType)
+    })
+
     this.editor.normalize()
     setRange(startContainer,startOffset,endContainer,endOffset)
     this.checkActiveStatus()
@@ -183,7 +191,7 @@ export class Toolbar {
 
   unToggleList(listType: 'ul' | 'ol') {
     let range = getSelectionRange()
-    let ul: HTMLElement = getClosestAncestorByNodeName(range.startContainer, listType) as HTMLElement
+    let ul: HTMLElement = getClosestAncestorByNodeName(range.startContainer, listType.toUpperCase()) as HTMLElement
     if (!ul) {
       return
     }

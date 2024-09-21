@@ -44,7 +44,7 @@ function unindent(li: HTMLElement) {
 export function isNestedLi(element: HTMLElement): boolean {
   let currentElement: HTMLElement | null = element;
   let ulCount = 0;
-  
+
   while (currentElement) {
     if (currentElement.tagName === 'UL' || currentElement.tagName === 'OL') {
       ulCount++;
@@ -54,6 +54,21 @@ export function isNestedLi(element: HTMLElement): boolean {
     }
     currentElement = currentElement.parentElement;
   }
-  
+
   return false;
+}
+
+export function replaceListType(node: HTMLElement, listType: 'ul' | 'ol') {
+  let newList = document.createElement(listType);
+  newList.replaceChildren(...node.childNodes)
+  node.replaceWith(newList);
+  
+  Array.from(newList.childNodes).forEach((child) => {
+    Array.from(child.childNodes).forEach((childNode) => {
+      if (childNode.nodeType === Node.ELEMENT_NODE &&
+        (childNode.nodeName.toLowerCase() === 'ul' || childNode.nodeName.toLowerCase() === 'ol')) {
+        replaceListType(childNode as HTMLElement, listType);
+      }
+    });
+  })
 }
