@@ -154,8 +154,6 @@ export function getIntersectionBlockType(): BlockType {
   }, BlockType.BLOCK_TYPE_NONE);
 }
 
-
-
 export function iterateSubtree(rangeIterator: RangeIterator, func: (node: Node) => boolean) {
   for (let node: Node; (node = rangeIterator.traverse());) {
     console.log('traverse node', node, node.nodeName, node.nodeType)

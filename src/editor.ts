@@ -13,6 +13,7 @@ import {
 import {isChromeBrowser} from "./lib/util";
 import {handleBackspace, handleTab} from "./handlers/keydownHandler";
 import {indentLi, isNestedLi} from "./components/ul";
+import {ActiveStatus} from "./const/activeStatus";
 
 export class Editor {
 
@@ -23,7 +24,7 @@ export class Editor {
   private theDom: HTMLDivElement;
 
   private customCallback: Function;
-  public asChange: Function;
+  public asChange: (as: ActiveStatus) => void;
 
   private mutationCallback: MutationCallback = (mutations: MutationRecord[], observer: MutationObserver) => {
     // 来自外部的dom变更不需要再向外发送 op
@@ -43,7 +44,7 @@ export class Editor {
     }
   }
 
-  constructor(dom: HTMLElement, callback: (jsonOp: any) => void, asChangeFunc: Function) {
+  constructor(dom: HTMLElement, callback: (jsonOp: any) => void, asChangeFunc: (as: ActiveStatus) => void) {
     if (!isChromeBrowser() && process.env.NODE_ENV !== 'test') {
       dom.innerHTML = `
             <div style="text-align: center; padding: 50px;">

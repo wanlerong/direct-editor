@@ -1,4 +1,4 @@
-import {Editor,Const} from "direct-editor"
+import {Editor,Const,ActiveStatusConst} from "direct-editor"
 
 let btn1 = document.getElementById("btn1")
 let btn2 = document.getElementById("btn2")
@@ -15,11 +15,25 @@ let e = new Editor(document.getElementById("container"), null, (as)=>{
   btn2.className = as.italic ? 'active' : ''
   btn3.className = as.underline ? 'active' : ''
   btn4.className = as.strikethrough ? 'active' : ''
+  
   btn5.className = as.blockType === Const.BlockType.BLOCK_TYPE_H1 ? 'active' : ''
   btn6.className = as.blockType === Const.BlockType.BLOCK_TYPE_H2 ? 'active' : ''
   btn7.className = as.blockType === Const.BlockType.BLOCK_TYPE_H3 ? 'active' : ''
+  if (as.disableActions.includes(ActiveStatusConst.Action.HTITLE)) {
+    btn5.className = 'disable'
+    btn6.className = 'disable'
+    btn7.className = 'disable'
+  }
+  
   btn8.className = as.blockType === Const.BlockType.BLOCK_TYPE_UL ? 'active' : ''
+  if (as.disableActions.includes(ActiveStatusConst.Action.UN_ORDERED_LIST)) {
+    btn8.className = 'disable'
+  }
+  
   btn9.className = as.blockType === Const.BlockType.BLOCK_TYPE_OL ? 'active' : ''
+  if (as.disableActions.includes(ActiveStatusConst.Action.ORDERED_LIST)) {
+    btn9.className = 'disable'
+  }
 })
 btn1.addEventListener('click', (event) => {
   e.toolbar.bold(!btn1.classList.contains("active"))
@@ -37,7 +51,6 @@ btn4.addEventListener('click', (event) => {
 })
 
 btn5.addEventListener('click', (event) => {
-  console.log("click")
   e.toolbar.title(btn5.classList.contains("active") ? Const.HTitleLevel.LEVEL_NONE : Const.HTitleLevel.H1)
 })
 

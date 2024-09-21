@@ -6,6 +6,10 @@ export function isTextNode(node: Node): boolean {
   return node.nodeType == Node.TEXT_NODE
 }
 
+export function isElementNode(node: Node): boolean {
+  return node.nodeType == Node.ELEMENT_NODE
+}
+
 // ancestor -> ancestor1 -> .... -> node
 // 返回的是 ancestor1
 export function getClosestAncestorIn(node: Node, ancestor: Node): Node {

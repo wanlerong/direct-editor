@@ -1,6 +1,6 @@
 import {Editor} from "./editor"
 import {RangeIterator} from "./rangeIterator";
-import {getClosestAncestorByNodeName, insertAfter, isCharacterDataNode, isTextNode} from "./domUtils";
+import {getClosestAncestorByNodeName, insertAfter, isCharacterDataNode, isElementNode, isTextNode} from "./domUtils";
 import {
   getIntersectionBlockType,
   getIntersectionStyle,
@@ -11,10 +11,11 @@ import {
 } from "./range";
 import {BlockType, HTitleLevel} from "./const/const";
 import {replaceListType} from "./components/ul";
+import {Action, ActiveStatus} from "./const/activeStatus";
 
 export class Toolbar {
   private editor: Editor
-  private activeStatus: any
+  private activeStatus: ActiveStatus
 
   constructor(editor: Editor) {
     this.editor = editor
@@ -24,6 +25,7 @@ export class Toolbar {
       underline: false,
       strikethrough: false,
       blockType: BlockType.BLOCK_TYPE_NONE,
+      disableActions: []
     }
   }
 
@@ -34,10 +36,10 @@ export class Toolbar {
     }
     splitRange(range);
     this.editor.normalize();
-    this.applyInlineStyles({ [styleKey]: value }, range);
+    this.applyInlineStyles({[styleKey]: value}, range);
     this.checkActiveStatus();
   }
-  
+
   bold(value: boolean) {
     this.formatText('fontWeight', value ? 'bold' : null);
   }
@@ -76,6 +78,9 @@ export class Toolbar {
 
   // set the selection range to h1/h2/h3... title
   title(level: HTitleLevel) {
+    if (this.activeStatus.disableActions.includes(Action.HTITLE)) {
+      return;
+    }
     let range = getSelectionRange()
     let targetDivs: HTMLElement[] = []
     iterateSubtree(new RangeIterator(range), (node) => {
@@ -129,13 +134,79 @@ export class Toolbar {
     this.activeStatus.strikethrough = is['textDecoration'] == 'line-through'
     this.activeStatus.underline = is['textDecoration'] == 'underline'
     this.activeStatus.blockType = getIntersectionBlockType()
-
+    this.activeStatus.disableActions = this.calculateDisableActions()
     this.editor.asChange(this.activeStatus)
   }
 
+  calculateDisableActions(): Action[] {
+    let range = getSelectionRange();
+    let actions: Action[] = [];
+    const {hasListOverlap, hasTitleOverlap} = this.checkOverlap(range);
+    if (hasListOverlap) {
+      actions.push(Action.HTITLE);
+    }
+    if (hasTitleOverlap) {
+      actions.push(Action.ORDERED_LIST);
+      actions.push(Action.UN_ORDERED_LIST);
+    }
+    return actions;
+  }
+
+  // ul/ol 和 h 互斥，计算当前选区是否存在重叠
+  checkOverlap(range: Range): { hasListOverlap: boolean, hasTitleOverlap: boolean } {
+    let hasListOverlap = false;
+    let hasTitleOverlap = false;
+
+    // 判断节点是否在 ul、ol 或 h 标题中
+    const isNodeInListOrTitle = (node: Node): { inList: boolean, inTitle: boolean } => {
+      while (node) {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          const tagName = (node as HTMLElement).tagName.toLowerCase();
+          if (tagName === 'ul' || tagName === 'ol') {
+            return {inList: true, inTitle: false};
+          } else if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tagName)) {
+            return {inList: false, inTitle: true};
+          }
+        }
+        node = node.parentNode;
+      }
+      return {inList: false, inTitle: false};
+    };
+
+    let startResult = isNodeInListOrTitle(range.startContainer);
+    let endResult = isNodeInListOrTitle(range.endContainer);
+
+    hasListOverlap = startResult.inList || endResult.inList;
+    hasTitleOverlap = startResult.inTitle || endResult.inTitle;
+
+    if (hasListOverlap && hasTitleOverlap) {
+      return {hasListOverlap, hasTitleOverlap};
+    }
+
+    iterateSubtree(new RangeIterator(range), (node) => {
+      if (isCharacterDataNode(node) || isElementNode(node)) {
+        let result = isNodeInListOrTitle(node);
+        if (result.inList) {
+          hasListOverlap = true;
+          return true;
+        }
+        if (result.inTitle) {
+          hasTitleOverlap = true;
+          return true;
+        }
+      }
+      return false;
+    });
+
+    return {hasListOverlap, hasTitleOverlap};
+  }
+
   toggleList(listType: 'ul' | 'ol') {
+    if (this.activeStatus.disableActions.includes(Action.UN_ORDERED_LIST) || this.activeStatus.disableActions.includes(Action.ORDERED_LIST)) {
+      return;
+    }
     let range = getSelectionRange()
-    const { startContainer, startOffset, endContainer, endOffset } = range.cloneRange();
+    const {startContainer, startOffset, endContainer, endOffset} = range.cloneRange();
     let targetDivsArr: HTMLElement[][] = []
     let targetDivs: HTMLElement[] = []
     let diffLists: HTMLElement[] = []
@@ -162,7 +233,7 @@ export class Toolbar {
     if (targetDivs.length != 0) {
       targetDivsArr.push(targetDivs)
     }
-    
+
     targetDivsArr.forEach((targetDivs2) => {
       if (targetDivs2.length == 0) {
         return
@@ -179,13 +250,13 @@ export class Toolbar {
       targetDivs2[0].innerHTML = ''
       targetDivs2[0].appendChild(ul)
     })
-    
+
     diffLists.forEach((node) => {
       replaceListType(node, listType)
     })
 
     this.editor.normalize()
-    setRange(startContainer,startOffset,endContainer,endOffset)
+    setRange(startContainer, startOffset, endContainer, endOffset)
     this.checkActiveStatus()
   }
 
@@ -195,8 +266,8 @@ export class Toolbar {
     if (!ul) {
       return
     }
-    const { startContainer, startOffset, endContainer, endOffset } = range.cloneRange();
-    let startContainerChild,endContainerChild
+    const {startContainer, startOffset, endContainer, endOffset} = range.cloneRange();
+    let startContainerChild, endContainerChild
     // if unToggleList on an 'empty' li, which contains <br> only, the range.startContainer will be li, start offset will be 0
     // store the child, and then use startContainerChild.parentNode to restore the range
     if (!isTextNode(range.startContainer)) {
@@ -212,9 +283,9 @@ export class Toolbar {
     let idx2 = Array.of(...ul.childNodes).indexOf(li2)
 
     let toRemove: HTMLElement[] = []
-    let newDiv,newList: HTMLElement = null
+    let newDiv, newList: HTMLElement = null
     let n1 = ul.parentNode
-    
+
     Array.of(...ul.childNodes).forEach((li, idx) => {
       if (idx < idx1) {
         return
@@ -229,7 +300,7 @@ export class Toolbar {
           newDiv = document.createElement("div");
           newList = document.createElement(listType);
           newDiv.appendChild(newList)
-        } 
+        }
         newList.appendChild(li)
       }
     })
@@ -238,9 +309,9 @@ export class Toolbar {
       insertAfter(n1, newDiv)
     }
     this.editor.normalize()
-    
+
     setRange(startContainerChild ? startContainerChild.parentNode : startContainer, startOffset,
-      endContainerChild ? endContainerChild.parentNode: endContainer, endOffset)
+      endContainerChild ? endContainerChild.parentNode : endContainer, endOffset)
     this.checkActiveStatus()
   }
 }
