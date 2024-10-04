@@ -14,14 +14,16 @@ import {isChromeBrowser} from "./lib/util";
 import {handleBackspace, handleTab} from "./handlers/keydownHandler";
 import {indentLi, isNestedLi} from "./components/ul";
 import {ActiveStatus} from "./const/activeStatus";
+import {EditorState, RangeSnapshot, UndoManager} from "./undoManager";
 
 export class Editor {
 
   public toolbar: Toolbar;
+  public undoManager: UndoManager;
 
   private idMap = {};
 
-  private theDom: HTMLDivElement;
+  public theDom: HTMLDivElement;
 
   private customCallback: Function;
   public asChange: (as: ActiveStatus) => void;
@@ -62,6 +64,7 @@ export class Editor {
     this.theDom = d
     this.normalize()
     this.toolbar = new Toolbar(this)
+    this.undoManager = new UndoManager(this)
     this.asChange = asChangeFunc
 
     if (callback) {
@@ -77,11 +80,11 @@ export class Editor {
       });
     }
 
+    this.saveState()
+
     // 监听变化
     let _this = this
     d.addEventListener("keydown", function (e: KeyboardEvent) {
-      console.log("keydown")
-
       handleBackspace(e)
       handleTab(e)
 
@@ -99,7 +102,16 @@ export class Editor {
           }
         }
       }
-
+      
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          _this.undoManager.redo();
+        } else {
+          _this.undoManager.undo();
+        }
+      }
+      
       setTimeout(() => {
         _this.normalize()
       }, 1)
@@ -116,6 +128,18 @@ export class Editor {
       setTimeout(() => {
         _this.toolbar.checkActiveStatus()
       }, 2)
+    });
+
+    let debounceTimer
+    // The input event fires when the value of a contenteditable element has been changed 
+    // as a direct result of a user action such as typing in it.
+    d.addEventListener('input', () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+      debounceTimer = setTimeout(() => {
+        this.saveState()
+      }, 300);
     });
   }
 
@@ -255,6 +279,77 @@ export class Editor {
     })
 
   }
+  
+  saveState() {
+    let editorState = this.takeEditorState()
+    // console.log('saveState', this.theDom.innerHTML)
+    this.undoManager.saveState(editorState)
+  }
+  
+  applyEditorState(editorState: EditorState) {
+    this.theDom.innerHTML = editorState.content
+    let range = this.restoreRange(editorState.selection)
+    if (range) {
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  }
+  
+  takeEditorState(): EditorState {
+    return {
+      content: this.theDom.innerHTML,
+      selection: this.takeRangeSnapshot(getSelectionRange())
+    }
+  }
+  
+  takeRangeSnapshot(range: Range): RangeSnapshot {
+    if (!range) {
+      return null
+    }
+    const startContainerPath = this.getNodePath(range.startContainer, this.theDom);
+    const endContainerPath = this.getNodePath(range.endContainer, this.theDom);
+
+    return {
+      startContainerPath,
+      startOffset: range.startOffset,
+      endContainerPath,
+      endOffset: range.endOffset,
+    };
+  }
+
+  restoreRange(snapshot: RangeSnapshot): Range {
+    if (!snapshot) {
+      return null
+    }
+    const range = document.createRange();
+    const startContainer = this.getNodeFromPath(snapshot.startContainerPath, this.theDom);
+    const endContainer = this.getNodeFromPath(snapshot.endContainerPath, this.theDom);
+    range.setStart(startContainer, snapshot.startOffset);
+    range.setEnd(endContainer, snapshot.endOffset);
+    return range;
+  }
+  
+  getNodeFromPath(path: string, rootNode: Node): Node {
+    const indices = path.split('.').map(Number);
+    let node: Node = rootNode;
+    indices.forEach(index => {
+      node = node.childNodes[index];
+    });
+    return node;
+  }
+
+  // 获取路径辅助函数
+  getNodePath(node: Node, rootNode: Node): string {
+    const indices: number[] = [];
+    while (node && node !== rootNode) {
+      const index = Array.prototype.indexOf.call(node.parentNode!.childNodes, node);
+      indices.unshift(index);
+      node = node.parentNode!;
+    }
+    return indices.join('.');
+  }
+  
 
   hi(): void {
     console.log("say hi")
