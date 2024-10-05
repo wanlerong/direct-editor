@@ -14,7 +14,8 @@ import {isChromeBrowser} from "./lib/util";
 import {handleBackspace, handleTab} from "./handlers/keydownHandler";
 import {indentLi, isNestedLi} from "./components/ul";
 import {ActiveStatus} from "./const/activeStatus";
-import {EditorState, RangeSnapshot, UndoManager} from "./undoManager";
+import {UndoManager} from "./undoManager";
+import {Delta, DeltaItem} from "./lib/delta";
 
 export class Editor {
 
@@ -37,8 +38,12 @@ export class Editor {
         return;
       }
     }
+    let ops = this.transformMutationsToOps(mutations)
+    this.undoManager.push({
+      delta: new Delta(ops)
+    })
+    
     if (this.customCallback) {
-      let ops = this.transformMutationsToOps(mutations)
       ops.forEach(op => {
         console.log("send op", JSON.stringify(op))
         this.customCallback(op)
@@ -67,20 +72,16 @@ export class Editor {
     this.undoManager = new UndoManager(this)
     this.asChange = asChangeFunc
 
-    if (callback) {
-      this.customCallback = callback
-      const observer = new MutationObserver(this.mutationCallback);
-      observer.observe(d, {
-        attributes: true,
-        childList: true,
-        characterData: true,
-        subtree: true,
-        attributeOldValue: true,
-        characterDataOldValue: true,
-      });
-    }
-
-    this.saveState()
+    this.customCallback = callback
+    const observer = new MutationObserver(this.mutationCallback);
+    observer.observe(d, {
+      attributes: true,
+      childList: true,
+      characterData: true,
+      subtree: true,
+      attributeOldValue: true,
+      characterDataOldValue: true,
+    });
 
     // 监听变化
     let _this = this
@@ -130,17 +131,17 @@ export class Editor {
       }, 2)
     });
 
-    let debounceTimer
+    // let debounceTimer
     // The input event fires when the value of a contenteditable element has been changed 
     // as a direct result of a user action such as typing in it.
-    d.addEventListener('input', () => {
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
-      }
-      debounceTimer = setTimeout(() => {
-        this.saveState()
-      }, 300);
-    });
+    // d.addEventListener('input', () => {
+    //   if (debounceTimer) {
+    //     clearTimeout(debounceTimer);
+    //   }
+    //   debounceTimer = setTimeout(() => {
+    //     this.saveState()
+    //   }, 300);
+    // });
   }
 
   normalize() {
@@ -280,75 +281,75 @@ export class Editor {
 
   }
   
-  saveState() {
-    let editorState = this.takeEditorState()
-    // console.log('saveState', this.theDom.innerHTML)
-    this.undoManager.saveState(editorState)
-  }
+  // saveState() {
+  //   let editorState = this.takeEditorState()
+  //   console.log('saveState', this.theDom.innerHTML)
+    // this.undoManager.saveState(editorState)
+  // }
   
-  applyEditorState(editorState: EditorState) {
-    this.theDom.innerHTML = editorState.content
-    let range = this.restoreRange(editorState.selection)
-    if (range) {
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
-  }
+  // applyEditorState(editorState: EditorState) {
+  //   this.theDom.innerHTML = editorState.content
+  //   let range = this.restoreRange(editorState.selection)
+  //   if (range) {
+  //     const selection = window.getSelection();
+  //     selection.removeAllRanges();
+  //     selection.addRange(range);
+  //   }
+  // }
   
-  takeEditorState(): EditorState {
-    return {
-      content: this.theDom.innerHTML,
-      selection: this.takeRangeSnapshot(getSelectionRange())
-    }
-  }
+  // takeEditorState(): EditorState {
+  //   return {
+  //     content: this.theDom.innerHTML,
+  //     selection: this.takeRangeSnapshot(getSelectionRange())
+  //   }
+  // }
   
-  takeRangeSnapshot(range: Range): RangeSnapshot {
-    if (!range) {
-      return null
-    }
-    const startContainerPath = this.getNodePath(range.startContainer, this.theDom);
-    const endContainerPath = this.getNodePath(range.endContainer, this.theDom);
+  // takeRangeSnapshot(range: Range): RangeSnapshot {
+  //   if (!range) {
+  //     return null
+  //   }
+  //   const startContainerPath = this.getNodePath(range.startContainer, this.theDom);
+  //   const endContainerPath = this.getNodePath(range.endContainer, this.theDom);
+  //
+  //   return {
+  //     startContainerPath,
+  //     startOffset: range.startOffset,
+  //     endContainerPath,
+  //     endOffset: range.endOffset,
+  //   };
+  // }
 
-    return {
-      startContainerPath,
-      startOffset: range.startOffset,
-      endContainerPath,
-      endOffset: range.endOffset,
-    };
-  }
-
-  restoreRange(snapshot: RangeSnapshot): Range {
-    if (!snapshot) {
-      return null
-    }
-    const range = document.createRange();
-    const startContainer = this.getNodeFromPath(snapshot.startContainerPath, this.theDom);
-    const endContainer = this.getNodeFromPath(snapshot.endContainerPath, this.theDom);
-    range.setStart(startContainer, snapshot.startOffset);
-    range.setEnd(endContainer, snapshot.endOffset);
-    return range;
-  }
+  // restoreRange(snapshot: RangeSnapshot): Range {
+  //   if (!snapshot) {
+  //     return null
+  //   }
+  //   const range = document.createRange();
+  //   const startContainer = this.getNodeFromPath(snapshot.startContainerPath, this.theDom);
+  //   const endContainer = this.getNodeFromPath(snapshot.endContainerPath, this.theDom);
+  //   range.setStart(startContainer, snapshot.startOffset);
+  //   range.setEnd(endContainer, snapshot.endOffset);
+  //   return range;
+  // }
   
-  getNodeFromPath(path: string, rootNode: Node): Node {
-    const indices = path.split('.').map(Number);
-    let node: Node = rootNode;
-    indices.forEach(index => {
-      node = node.childNodes[index];
-    });
-    return node;
-  }
+  // getNodeFromPath(path: string, rootNode: Node): Node {
+  //   const indices = path.split('.').map(Number);
+  //   let node: Node = rootNode;
+  //   indices.forEach(index => {
+  //     node = node.childNodes[index];
+  //   });
+  //   return node;
+  // }
 
   // 获取路径辅助函数
-  getNodePath(node: Node, rootNode: Node): string {
-    const indices: number[] = [];
-    while (node && node !== rootNode) {
-      const index = Array.prototype.indexOf.call(node.parentNode!.childNodes, node);
-      indices.unshift(index);
-      node = node.parentNode!;
-    }
-    return indices.join('.');
-  }
+  // getNodePath(node: Node, rootNode: Node): string {
+  //   const indices: number[] = [];
+  //   while (node && node !== rootNode) {
+  //     const index = Array.prototype.indexOf.call(node.parentNode!.childNodes, node);
+  //     indices.unshift(index);
+  //     node = node.parentNode!;
+  //   }
+  //   return indices.join('.');
+  // }
   
 
   hi(): void {
@@ -676,8 +677,8 @@ export class Editor {
     return ops
   }
 
-  applyOpToDom(ops) {
-    ops.forEach(op => {
+  applyDelta(delta: Delta) {
+    delta.ops.forEach(op => {
       console.log("apply received op")
       let hasLd = op.ld !== undefined
       let hasLi = op.li !== undefined
@@ -691,9 +692,9 @@ export class Editor {
 
       if (hasSi || hasSd) {
         let strIdx = path.pop();
-        let idx = path.pop() - 2;
+        let idx = path.pop() as number - 2;
         path.forEach(p => {
-          target = ele.childNodes[p - 2]
+          target = ele.childNodes[p as number - 2]
           ele = target
         })
         let outOp = document.createElement("span")
@@ -711,9 +712,9 @@ export class Editor {
       }
 
       if (hasLd || hasLi) {
-        let idx = path.pop() - 2;
+        let idx = path.pop() as number - 2;
         path.forEach(p => {
-          target = ele.childNodes[p - 2]
+          target = ele.childNodes[p as number - 2]
           ele = target
         })
         let outOp = document.createElement("span")
@@ -741,7 +742,7 @@ export class Editor {
         path.pop();
 
         path.forEach(p => {
-          target = ele.childNodes[p - 2]
+          target = ele.childNodes[p as number - 2]
           ele = target
         })
         let outOp = document.createElement("span");

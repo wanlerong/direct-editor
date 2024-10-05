@@ -10,7 +10,9 @@ let btn7 = document.getElementById("btn7")
 let btn8 = document.getElementById("btn8")
 let btn9 = document.getElementById("btn9")
 
-let e = new Editor(document.getElementById("container"), null, (as)=>{
+let e = new Editor(document.getElementById("container"), (param) => {
+  console.log(param)
+}, (as)=>{
   btn1.className = as.bold ? 'active' : ''
   btn2.className = as.italic ? 'active' : ''
   btn3.className = as.underline ? 'active' : ''

@@ -8,6 +8,13 @@ import {
 import {RangeIterator} from "./rangeIterator";
 import {BlockType, NodeToBlockType} from "./const/const";
 
+export type RangeSnapshot = {
+  startContainerPath: string;
+  startOffset: number;
+  endContainerPath: string;
+  endOffset: number;
+};
+
 export function getSelectionRange(): Range {
   const selection = window.getSelection();
   if (selection && selection.rangeCount > 0) {
@@ -156,13 +163,13 @@ export function getIntersectionBlockType(): BlockType {
 
 export function iterateSubtree(rangeIterator: RangeIterator, func: (node: Node) => boolean) {
   for (let node: Node; (node = rangeIterator.traverse());) {
-    console.log('traverse node', node, node.nodeName, node.nodeType)
+    // console.log('traverse node', node, node.nodeName, node.nodeType)
     let stopSub = func(node)
     if (stopSub) {
       continue
     }
     let subRangeIterator: RangeIterator = rangeIterator.getSubtreeIterator();
-    console.log('subRangeIterator', subRangeIterator)
+    // console.log('subRangeIterator', subRangeIterator)
     if (subRangeIterator != null) {
       iterateSubtree(subRangeIterator, func);
     }
