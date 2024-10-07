@@ -13,7 +13,8 @@ export class UndoManager {
   }
   
   push(deltaItem: DeltaItem): void {
-    console.log(JSON.stringify(deltaItem))
+    console.log('push undo stack', JSON.stringify(deltaItem))
+    
     this.undoStack.push(deltaItem);
     this.redoStack = [];  // 每次保存新状态时清空 redo 栈
     if (this.undoStack.length > this.MAX_STACK_SIZE) {
@@ -24,16 +25,22 @@ export class UndoManager {
   undo() {
     if (this.undoStack.length > 0) {
       const item = this.undoStack.pop();
-      this.redoStack.push(item);
-      this.editor.applyDelta(item.delta.inverse())
+      let iDelta = item.delta.inverse(this.editor.deltas)
+      console.log('inverse', JSON.stringify(item), JSON.stringify(iDelta))
+      this.redoStack.push({delta:iDelta});
+      this.editor.applyDelta(iDelta, 'undoRedo')
     }
   }
 
   redo() {
     if (this.redoStack.length > 0) {
-      const toRedo = this.redoStack.pop();
-      this.undoStack.push(toRedo);
-      this.editor.applyDelta(toRedo.delta)
+      const item = this.redoStack.pop();
+      let iDelta = item.delta.inverse(this.editor.deltas)
+      
+      console.log('inverse', JSON.stringify(item), JSON.stringify(iDelta))
+      
+      this.undoStack.push({delta:iDelta});
+      this.editor.applyDelta(iDelta, 'undoRedo')
     }
   }
 }
