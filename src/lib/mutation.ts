@@ -40,11 +40,11 @@ export class MutationHandler {
         })
       }
     })
-    console.log(mutations.length, "===================")
+    // console.log(mutations.length, "===================")
     mutations.forEach(mu => {
-      console.log(mu)
+      // console.log(mu)
     })
-    // console.log("addedNodes", theAddedNodes, tmpNodes)
+    // // console.log("addedNodes", theAddedNodes, tmpNodes)
     mutations = this.filterMutations(mutations, theAddedNodes)
 
     let childListMutations = mutations.filter(m => m.type == "childList")
@@ -168,23 +168,6 @@ export class MutationHandler {
   getChildListOp(mutation, everAddedNodes, mutations, tmpNodes) {
     tmpNodes = everAddedNodes.filter(n => tmpNodes.includes(n))
     let ops = [];
-    mutation.addedNodes.forEach(addedNode => {
-      // 新增的节点，最终被remove了，无需处理
-      if (!this.editor.theDom.contains(addedNode)) {
-        return;
-      }
-      if (addedNode.nodeType == Node.TEXT_NODE) {
-        ops.push({
-          p: this.getPath(mutation, mutations, tmpNodes),
-          li: (addedNode as Text).data
-        })
-      } else if (addedNode.nodeType == Node.ELEMENT_NODE) {
-        ops.push({
-          p: this.getPath(mutation, mutations, tmpNodes),
-          li: JsonML.fromHTML(addedNode, null)
-        })
-      }
-    })
     mutation.removedNodes.forEach(removedNode => {
       // 曾经add过这个节点，但最终被remove了。在 add 和 remove 时都不用处理
       if (everAddedNodes.includes(removedNode) && !this.editor.theDom.contains(removedNode)) {
@@ -199,6 +182,24 @@ export class MutationHandler {
         ops.push({
           p: this.getPath(mutation, mutations, tmpNodes),
           ld: JsonML.fromHTML(removedNode, null) // ld 的内容实际不是特别重要，因为是把idx直接删掉
+        })
+      }
+    })
+
+    mutation.addedNodes.forEach(addedNode => {
+      // 新增的节点，最终被remove了，无需处理
+      if (!this.editor.theDom.contains(addedNode)) {
+        return;
+      }
+      if (addedNode.nodeType == Node.TEXT_NODE) {
+        ops.push({
+          p: this.getPath(mutation, mutations, tmpNodes),
+          li: (addedNode as Text).data
+        })
+      } else if (addedNode.nodeType == Node.ELEMENT_NODE) {
+        ops.push({
+          p: this.getPath(mutation, mutations, tmpNodes),
+          li: JsonML.fromHTML(addedNode, null)
         })
       }
     })
@@ -268,7 +269,7 @@ export class MutationHandler {
 
     let p = getJson0Path(mutation.target)
     p.push(1, mutation.attributeName)
-    console.log(mutation.attributeName, oldValue, value)
+    // console.log(mutation.attributeName, oldValue, value)
 
     if (oldValue == null && value) {
       ops.push({
@@ -318,7 +319,7 @@ export class MutationHandler {
 
     let p = getJson0Path(mutation.target)
     p.push(idx)
-    // console.log(oldValue, value, idx, del, insert)
+    // // console.log(oldValue, value, idx, del, insert)
     if (del.length) {
       ops.push({
         p: p,

@@ -28,13 +28,20 @@ export class Editor {
   private mutationCallback: MutationCallback = (mutations: MutationRecord[], observer: MutationObserver) => {
     // applyDelta 所产生的 mutation，直接 return。因为已经知道 op 了，无需通过 mutation 再转 op。
     // 来自外部的 dom 变更不需要再向外发送 op
+    console.log("callback", mutations.length)
+    mutations.forEach(mu => {
+      console.log(mu)
+    })
+    
     if (mutations.length >= 1) {
       if (mutations[0].addedNodes.length == 1 && mutations[0].addedNodes[0].nodeName == "SPAN"
         && (mutations[0].addedNodes[0] as Element).getAttribute("class") === "out-op"
       ) {
+        console.log("mutationout")
         return;
       }
     }
+    console.log("mutationself")
     let ops = this.mutationHandler.transformMutationsToOps(mutations)
     if (ops.length == 0) {
       return;
@@ -376,5 +383,9 @@ export class Editor {
     }
     
     this.deltas.push(delta)
+  }
+
+  applyOps(ops: Op[]) {
+    this.applyDelta(new Delta(ops))
   }
 }
