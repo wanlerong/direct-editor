@@ -46,3 +46,8 @@ export function NodeToBlockType(node: Node) :BlockType {
       return BlockType.BLOCK_TYPE_NONE
   }
 }
+
+export enum DeltaSource {
+  UndoRedo = "UNDO_REDO",
+  OUT = "OUT",
+}

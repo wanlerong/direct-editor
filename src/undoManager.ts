@@ -1,5 +1,6 @@
 import {Editor} from "./editor";
 import {DeltaItem} from "./lib/delta";
+import {DeltaSource} from "./const/const";
 
 export class UndoManager {
 
@@ -28,7 +29,7 @@ export class UndoManager {
       let iDelta = item.delta.inverse(this.editor.deltas)
       console.log('inverse', JSON.stringify(item), JSON.stringify(iDelta))
       this.redoStack.push({delta:iDelta});
-      this.editor.applyDelta(iDelta, 'undoRedo')
+      this.editor.applyDelta(iDelta, DeltaSource.UndoRedo)
     }
   }
 
@@ -40,7 +41,7 @@ export class UndoManager {
       console.log('inverse', JSON.stringify(item), JSON.stringify(iDelta))
       
       this.undoStack.push({delta:iDelta});
-      this.editor.applyDelta(iDelta, 'undoRedo')
+      this.editor.applyDelta(iDelta, DeltaSource.UndoRedo)
     }
   }
 }

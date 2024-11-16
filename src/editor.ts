@@ -1,16 +1,15 @@
 import JsonMLHtml from "./lib/jsonml-html";
 import {Toolbar} from "./toolbar";
 import {getSelectionRange, setRange} from "./range";
-import {
-  getClosestAncestorByNodeName,
-} from "./domUtils";
+import {getClosestAncestorByNodeName,} from "./domUtils";
 import {isChromeBrowser} from "./lib/util";
 import {handleBackspace, handleTab} from "./handlers/keydownHandler";
 import {indentLi, isNestedLi} from "./components/ul";
 import {ActiveStatus} from "./const/activeStatus";
 import {UndoManager} from "./undoManager";
-import {Delta, DeltaItem, Op} from "./lib/delta";
+import {Delta, Op} from "./lib/delta";
 import {MutationHandler} from "./lib/mutation";
+import {DeltaSource} from "./const/const";
 
 export class Editor {
 
@@ -18,6 +17,7 @@ export class Editor {
   public undoManager: UndoManager;
   public mutationHandler: MutationHandler;
   public theDom: HTMLDivElement;
+  private mutationObserver: MutationObserver;
   
   // whole deltas for the editor content
   public deltas: Delta[]
@@ -26,22 +26,10 @@ export class Editor {
   public asChange: (as: ActiveStatus) => void;
 
   private mutationCallback: MutationCallback = (mutations: MutationRecord[], observer: MutationObserver) => {
-    // applyDelta 所产生的 mutation，直接 return。因为已经知道 op 了，无需通过 mutation 再转 op。
-    // 来自外部的 dom 变更不需要再向外发送 op
     console.log("callback", mutations.length)
     mutations.forEach(mu => {
       console.log(mu)
     })
-    
-    if (mutations.length >= 1) {
-      if (mutations[0].addedNodes.length == 1 && mutations[0].addedNodes[0].nodeName == "SPAN"
-        && (mutations[0].addedNodes[0] as Element).getAttribute("class") === "out-op"
-      ) {
-        console.log("mutationout")
-        return;
-      }
-    }
-    console.log("mutationself")
     let ops = this.mutationHandler.transformMutationsToOps(mutations)
     if (ops.length == 0) {
       return;
@@ -81,15 +69,8 @@ export class Editor {
     this.asChange = asChangeFunc
 
     this.customCallback = callback
-    const observer = new MutationObserver(this.mutationCallback);
-    observer.observe(d, {
-      attributes: true,
-      childList: true,
-      characterData: true,
-      subtree: true,
-      attributeOldValue: true,
-      characterDataOldValue: true,
-    });
+    this.mutationObserver = new MutationObserver(this.mutationCallback)
+    this.observe()
 
     // 监听变化
     let _this = this
@@ -288,10 +269,22 @@ export class Editor {
     })
 
   }
+
+  observe() {
+    this.mutationObserver.observe(this.theDom, {
+      attributes: true,
+      childList: true,
+      characterData: true,
+      subtree: true,
+      attributeOldValue: true,
+      characterDataOldValue: true,
+    })
+  }
   
   // undo redo
   // op from other client
-  applyDelta(delta: Delta, source ?: string) {
+  applyDelta(delta: Delta, source ?: DeltaSource) {
+    this.mutationObserver.disconnect()
     console.log("apply delta")
     delta.ops.forEach(op => {
       let hasLd = op.ld !== undefined
@@ -312,17 +305,12 @@ export class Editor {
           target = ele.childNodes[p as number - 2]
           ele = target
         })
-        let outOp = document.createElement("span")
-        outOp.setAttribute("class", "out-op")
         let targetTextNode: any = target.childNodes[idx]
-        target.insertBefore(outOp, targetTextNode)
-        outOp.appendChild(targetTextNode)
         if (hasSd) {
           targetTextNode.deleteData(strIdx, op.sd.length)
         } else {
           targetTextNode.insertData(strIdx, op.si)
         }
-        target.replaceChild(outOp.childNodes[0], outOp)
         // todo set selection if in one line
       }
 
@@ -332,23 +320,18 @@ export class Editor {
           target = ele.childNodes[p as number - 2]
           ele = target
         })
-        let outOp = document.createElement("span")
-        outOp.setAttribute("class", "out-op")
+        var childLi
         if (typeof op.li === "string") {
-          outOp.appendChild(document.createTextNode(op.li))
+          childLi = document.createTextNode(op.li)
         } else if (Array.isArray(op.li)) {
-          outOp.appendChild(JsonMLHtml.toHTML(op.li, null))
+          childLi = JsonMLHtml.toHTML(op.li, null)
         }
-
         if (hasLd && hasLi) {
-          target.replaceChild(outOp, target.childNodes[idx])
-          target.replaceChild(outOp.childNodes[0], outOp)
+          target.replaceChild(childLi, target.childNodes[idx])
         } else if (hasLi && !hasLd) {
-          target.insertBefore(outOp, target.childNodes[idx])
-          target.replaceChild(outOp.childNodes[0], outOp)
+          target.insertBefore(childLi, target.childNodes[idx])
         } else {
-          target.replaceChild(outOp, target.childNodes[idx])
-          target.removeChild(outOp)
+          target.removeChild(target.childNodes[idx])
         }
       }
 
@@ -360,22 +343,18 @@ export class Editor {
           target = ele.childNodes[p as number - 2]
           ele = target
         })
-        let outOp = document.createElement("span");
-        outOp.setAttribute("class", "out-op");
         let parentNode = (target as Element).parentNode;
-        parentNode.insertBefore(outOp, target)
-
-        outOp.appendChild(target)
         if (hasOi) {
           target.setAttribute(attrName, op.oi)
         } else {
           target.removeAttribute(attrName)
         }
-        parentNode.replaceChild(outOp.childNodes[0], outOp)
       }
     })
     
-    if (source === 'undoRedo') {
+    this.observe()
+    
+    if (source === DeltaSource.UndoRedo) {
       if (this.customCallback) {
         console.log("send ops", JSON.stringify(delta.ops))
         this.customCallback(delta.ops)
@@ -386,6 +365,6 @@ export class Editor {
   }
 
   applyOps(ops: Op[]) {
-    this.applyDelta(new Delta(ops))
+    this.applyDelta(new Delta(ops), DeltaSource.OUT)
   }
 }
