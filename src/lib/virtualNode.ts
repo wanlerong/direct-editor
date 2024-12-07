@@ -1,4 +1,5 @@
 export interface VirtualNode {
+  dom: Node;
   type: string; // 'element' | 'text'
   tagName?: string;
   attributes?: { [key: string]: any };
@@ -14,6 +15,7 @@ export interface VirtualNode {
 export function domToVirtualNode(domNode: Node): VirtualNode {
   if (domNode.nodeType === Node.TEXT_NODE) {
     return {
+      dom: domNode,
       type: "text",
       text: domNode.textContent || "",
     };
@@ -30,6 +32,7 @@ export function domToVirtualNode(domNode: Node): VirtualNode {
     const children = Array.from(element.childNodes).map(domToVirtualNode);
 
     return {
+      dom: domNode,
       type: "element",
       tagName: element.tagName.toLowerCase(),
       attributes,
@@ -38,4 +41,57 @@ export function domToVirtualNode(domNode: Node): VirtualNode {
   }
 
   throw new Error("Unsupported node type");
+}
+
+/**
+ * Finds the corresponding VirtualNode in the VirtualNode tree based on the provided DOM node.
+ * @param virtualNode - The root VirtualNode to start searching from.
+ * @param targetDom - The DOM node to find in the VirtualNode tree.
+ * @returns The corresponding VirtualNode, or null if not found.
+ */
+export function findVirtualNodeByDom(virtualNode: VirtualNode, targetDom: Node): VirtualNode | null {
+  if (virtualNode.dom === targetDom) {
+    return virtualNode;
+  }
+
+  if (virtualNode.children) {
+    for (let child of virtualNode.children) {
+      const foundNode = findVirtualNodeByDom(child, targetDom);
+      if (foundNode) {
+        return foundNode;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Converts a VirtualNode to JSONML.
+ * @param virtualNode - The VirtualNode to convert.
+ * @returns The JSONML representation of the VirtualNode.
+ */
+export function virtualNodeToJsonML(virtualNode: VirtualNode): any {
+  if (!virtualNode) {
+    return null
+  }
+  if (virtualNode.type === "text") {
+    return virtualNode.text;
+  }
+
+  const jsonML: any[] = [virtualNode.tagName!.toUpperCase()]; // Tag name in uppercase
+
+  if (virtualNode.attributes) {
+    jsonML.push(virtualNode.attributes);
+  } else {
+    jsonML.push({});
+  }
+  
+  if (virtualNode.children && virtualNode.children.length > 0) {
+    jsonML.push(
+      ...virtualNode.children.map((child) => virtualNodeToJsonML(child))
+    );
+  }
+
+  return jsonML;
 }

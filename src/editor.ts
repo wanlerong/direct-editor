@@ -34,6 +34,7 @@ export class Editor {
       console.log(mu)
     })
     let ops = this.mutationHandler.transformMutationsToOps(mutations)
+    this.virtualNode = domToVirtualNode(this.theDom)
     if (ops.length == 0) {
       return;
     }
@@ -368,6 +369,7 @@ export class Editor {
     }
     
     this.deltas.push(delta)
+    this.virtualNode = domToVirtualNode(this.theDom)
   }
 
   applyOps(ops: Op[]) {

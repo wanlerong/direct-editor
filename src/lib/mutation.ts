@@ -3,6 +3,7 @@ import {getJson0Path} from "../path";
 import JsonML from "./jsonml-dom";
 import {getSelectionRange} from "../range";
 import {Editor} from "../editor";
+import {findVirtualNodeByDom, virtualNodeToJsonML} from "./virtualNode";
 
 export class MutationHandler {
   private editor: Editor
@@ -159,15 +160,17 @@ export class MutationHandler {
       if (tmpNodes.includes(removedNode) && !this.editor.theDom.contains(removedNode)) {
         return;
       }
+      let vn = findVirtualNodeByDom(this.editor.virtualNode, removedNode)
+      
       if (removedNode.nodeType == Node.TEXT_NODE) {
         ops.push({
           p: this.getPath(mutation, mutations, tmpNodes),
-          ld: (removedNode as Text).data
+          ld: virtualNodeToJsonML(vn)
         })
       } else if (removedNode.nodeType == Node.ELEMENT_NODE) {
         ops.push({
           p: this.getPath(mutation, mutations, tmpNodes),
-          ld: JsonML.fromHTML(removedNode, null) // ld 的内容实际不是特别重要，因为是把idx直接删掉
+          ld: virtualNodeToJsonML(vn)
         })
       }
     })
