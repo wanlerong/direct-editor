@@ -241,22 +241,13 @@ export class Toolbar {
       let ul = document.createElement(listType)
       targetDivs2.forEach((targetDiv, idx) => {
         let li = document.createElement("li")
-        
-        // for undo op has the info
-        let cloneNodes = []
-        targetDiv.childNodes.forEach(cnode => {
-          cloneNodes.push(cnode.cloneNode(true))
-        })
-        
         li.replaceChildren(...targetDiv.childNodes)
         ul.appendChild(li)
         if (idx != 0) {
-          targetDiv.replaceChildren(...cloneNodes)
           targetDiv.remove()
         }
       })
-      targetDivs2[0].innerHTML = ''
-      targetDivs2[0].appendChild(ul)
+      targetDivs2[0].replaceChildren(ul)
     })
 
     diffLists.forEach((node) => {

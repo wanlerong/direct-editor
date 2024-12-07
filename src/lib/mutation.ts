@@ -14,8 +14,6 @@ export class MutationHandler {
 
   transformMutationsToOps(mutations: MutationRecord[]): Op[] {
     let submitOps = []
-    // 曾经添加过的nodes
-    let everAddedNodes = []
     // 最终新增的nodes
     let theAddedNodes = []
     // 新增的nodes, 但最终被remove的
@@ -41,25 +39,14 @@ export class MutationHandler {
       }
     })
     // console.log(mutations.length, "===================")
-    mutations.forEach(mu => {
-      // console.log(mu)
-    })
     // // console.log("addedNodes", theAddedNodes, tmpNodes)
     mutations = this.filterMutations(mutations, theAddedNodes)
 
     let childListMutations = mutations.filter(m => m.type == "childList")
-    // 对 mutations 进行排序，先处理父级，可以使得最终观测到的 path 就是需要发送的 op 的 path
-    childListMutations.sort((m1, m2) => {
-      return getJson0Path(m1.target).length - getJson0Path(m2.target).length
-    })
     childListMutations.forEach(mutation => {
-      // 删，增，删时，第一个删要处理
-      mutation.addedNodes.forEach(addedNode => {
-        everAddedNodes.push(addedNode)
-      })
       let pathRelatedMutations = mutations.filter(m => m.type === "childList"
         && m.target === mutation.target).reverse()
-      let ops = this.getChildListOp(mutation, everAddedNodes, pathRelatedMutations, tmpNodes);
+      let ops = this.getChildListOp(mutation, pathRelatedMutations, tmpNodes);
       submitOps.push(...ops)
     });
 
@@ -165,12 +152,11 @@ export class MutationHandler {
     return mutations.filter(m => m)
   }
 
-  getChildListOp(mutation, everAddedNodes, mutations, tmpNodes) {
-    tmpNodes = everAddedNodes.filter(n => tmpNodes.includes(n))
+  getChildListOp(mutation, mutations, tmpNodes) {
     let ops = [];
     mutation.removedNodes.forEach(removedNode => {
       // 曾经add过这个节点，但最终被remove了。在 add 和 remove 时都不用处理
-      if (everAddedNodes.includes(removedNode) && !this.editor.theDom.contains(removedNode)) {
+      if (tmpNodes.includes(removedNode) && !this.editor.theDom.contains(removedNode)) {
         return;
       }
       if (removedNode.nodeType == Node.TEXT_NODE) {

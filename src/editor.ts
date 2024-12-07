@@ -10,6 +10,7 @@ import {UndoManager} from "./undoManager";
 import {Delta, Op} from "./lib/delta";
 import {MutationHandler} from "./lib/mutation";
 import {DeltaSource} from "./const/const";
+import {domToVirtualNode, VirtualNode} from "./lib/virtualNode";
 
 export class Editor {
 
@@ -21,6 +22,8 @@ export class Editor {
   
   // whole deltas for the editor content
   public deltas: Delta[]
+  
+  public virtualNode: VirtualNode
 
   private customCallback: (ops: Op[]) => void;
   public asChange: (as: ActiveStatus) => void;
@@ -71,6 +74,9 @@ export class Editor {
     this.customCallback = callback
     this.mutationObserver = new MutationObserver(this.mutationCallback)
     this.observe()
+    
+    this.virtualNode = domToVirtualNode(this.theDom)
+    console.log(this.virtualNode)
 
     // 监听变化
     let _this = this
