@@ -111,7 +111,7 @@ export class Delta {
   }
 
   private static isPathAffected(path: key[], opPath: key[]): boolean {
-    for (let i = 0; i < opPath.length - 1; i++) {
+    for (let i = 0; i < opPath.length; i++) {
       if (path[i] !== opPath[i]) {
         return false;
       }
