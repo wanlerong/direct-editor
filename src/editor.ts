@@ -34,6 +34,7 @@ export class Editor {
       console.log(mu)
     })
     let ops = this.mutationHandler.transformMutationsToOps(mutations)
+    // todo 增量更新
     this.virtualNode = domToVirtualNode(this.theDom)
     if (ops.length == 0) {
       return;
@@ -369,6 +370,7 @@ export class Editor {
     }
     
     this.deltas.push(delta)
+    // todo 增量更新
     this.virtualNode = domToVirtualNode(this.theDom)
   }
 
