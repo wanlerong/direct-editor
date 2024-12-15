@@ -39,6 +39,9 @@ export class Delta {
       let isS = op.si || op.sd
       let isL = op.li || op.ld
       nextDeltas.forEach(nextDelta => {
+        if (!nextDelta) {
+          return
+        }
         nextDelta.ops.forEach(nextOp => {
           let targetNodePath = adjustedPath.slice(0, -1)
           if (isS) {
