@@ -23,89 +23,145 @@ export interface Op {
 }
 
 export class Delta {
+  public seq: number
   public ops: Op[]
+  public nextReserve: Delta
 
   constructor(opList?: Op[]) {
     this.ops = opList ? opList : []
   }
 
-  inverse(baseDeltas: Delta[]): Delta {
-    // 获取当前 delta 在 baseDeltas 中的 index，作为序列号
-    const sequenceNumber = baseDeltas.indexOf(this);
+  adjustPurePath(nextDeltas: Delta[]): Delta {
     let delta = new Delta()
+    let canAdjust = true
     Array.from(this.ops).reverse().forEach(op => {
       let adjustedPath = [...op.p];  // 基于当前 path
-      let needUndo = true
-
       let isS = op.si || op.sd
       let isL = op.li || op.ld
-
-      baseDeltas.forEach((baseDelta, idx) => {
-        if (idx <= sequenceNumber) {
-          // 忽略所有序列号小于当前 deltaA 的操作
-          return;
-        }
-
-        baseDelta.ops.forEach(baseOp => {
+      nextDeltas.forEach(nextDelta => {
+        nextDelta.ops.forEach(nextOp => {
           let targetNodePath = adjustedPath.slice(0, -1)
           if (isS) {
             targetNodePath = adjustedPath.slice(0, -2) // text node's parent path
           }
-          if (baseOp.li) {
-            let parentPath = baseOp.p.slice(0, -1) // 该 path 下有 insert 子元素
+          if (nextOp.li) {
+            let parentPath = nextOp.p.slice(0, -1) // 该 path 下有 insert 子元素
             if (parentPath.length <= targetNodePath.length && Delta.isPathAffected(targetNodePath, parentPath)) {
-              // baseOp.p.length - 1 即发生 insert 的那一层的深度
-              const insertionIndex = baseOp.p[baseOp.p.length - 1] as number;
-              const pathIndex = adjustedPath[baseOp.p.length - 1] as number;
+              // nextOp.p.length - 1 即发生 insert 的那一层的深度
+              const insertionIndex = nextOp.p[nextOp.p.length - 1] as number;
+              const pathIndex = adjustedPath[nextOp.p.length - 1] as number;
               if (insertionIndex <= pathIndex) {
-                adjustedPath[baseOp.p.length - 1] = pathIndex + 1;
+                adjustedPath[nextOp.p.length - 1] = pathIndex + 1;
               }
             }
-          } else if (baseOp.ld) {
-            let parentPath = baseOp.p.slice(0, -1)
+          } else if (nextOp.ld) {
+            let parentPath = nextOp.p.slice(0, -1)
             if (parentPath.length <= targetNodePath.length && Delta.isPathAffected(targetNodePath, parentPath)) {
-              const delIndex = baseOp.p[baseOp.p.length - 1] as number;
-              const pathIndex = adjustedPath[baseOp.p.length - 1] as number;
+              const delIndex = nextOp.p[nextOp.p.length - 1] as number;
+              const pathIndex = adjustedPath[nextOp.p.length - 1] as number;
               if (delIndex < pathIndex) {
-                adjustedPath[baseOp.p.length - 1] = pathIndex - 1;
+                adjustedPath[nextOp.p.length - 1] = pathIndex - 1;
               } else if (delIndex == pathIndex) {
-                // del by other，do not need undo anymore
-                needUndo = false
+                // del by other，do not need undo anymore, 也不会对更前面的 path 造成影响
+                canAdjust = false
+                return
               }
             }
-          } else if (baseOp.si || baseOp.sd) {
+          } else if (nextOp.si || nextOp.sd) {
             if (isL) {
               return
             }
             let targetTextPath = adjustedPath.slice(0, -1) // text node's path
-            let baseTextPath = baseOp.p.slice(0, -1) // text node's path
-            if (arrayEquals(targetTextPath, baseTextPath)) {
-              if (baseOp.si) {
-                if (baseOp.p[baseOp.p.length - 1] <= adjustedPath[adjustedPath.length - 1]) {
-                  (adjustedPath[adjustedPath.length - 1] as number) += baseOp.si.length;
+            let nextTextPath = nextOp.p.slice(0, -1) // text node's path
+            if (arrayEquals(targetTextPath, nextTextPath)) {
+              if (nextOp.si) {
+                if (nextOp.p[nextOp.p.length - 1] <= adjustedPath[adjustedPath.length - 1]) {
+                  (adjustedPath[adjustedPath.length - 1] as number) += nextOp.si.length;
                 }
-              } else if (baseOp.sd) {
-                if (baseOp.p[baseOp.p.length - 1] <= adjustedPath[adjustedPath.length - 1]) {
-                  (adjustedPath[adjustedPath.length - 1] as number) -= baseOp.sd.length;
+              }
+              if (nextOp.sd) {
+                if (nextOp.p[nextOp.p.length - 1] <= adjustedPath[adjustedPath.length - 1]) {
+                  (adjustedPath[adjustedPath.length - 1] as number) -= nextOp.sd.length;
                 }
               }
             }
           }
         })
       });
+      delta.ops.push({
+        ...op,
+        p: adjustedPath,
+      })
+    })
 
-      if (needUndo) {
-        delta.ops.push({
-          p: adjustedPath,
-          si: op.sd,
-          sd: op.si,
-          li: op.ld,
-          ld: op.li,
-          oi: op.od,
-          od: op.oi,
+    if (canAdjust) {
+      // console.log("pure", JSON.stringify(delta))
+      return delta
+    } else {
+      return null
+    }
+  }
+
+  // delta 依据后面发生的 delta 去 adjustPath
+  // nextDeltas 中可能包含成对的
+  adjustPath(nextDeltas: Delta[]): Delta {
+    let finalPureDeltas = []
+    let pureDeltas = [] // 不含成对的
+    let reverseDeltasMap = {}
+    let reverseDeltasCount = 0
+
+    nextDeltas.forEach(nextDelta => {
+      if (reverseDeltasMap[nextDelta.seq]) {
+        pureDeltas = pureDeltas.map(it => {
+          return it.adjustPurePath([reverseDeltasMap[nextDelta.seq]])
         })
+        delete reverseDeltasMap[nextDelta.seq]
+        reverseDeltasCount--
+        // console.log(reverseDeltasCount)
+        if (reverseDeltasCount == 0) {
+          finalPureDeltas.push(...pureDeltas)
+          // console.log(JSON.stringify(pureDeltas), JSON.stringify(finalPureDeltas))
+          pureDeltas = []
+        }
+        return;
       }
+      
+      if (nextDelta.nextReserve) {
+        reverseDeltasMap[nextDelta.nextReserve.seq] = nextDelta.nextReserve
+        reverseDeltasCount++
+        return
+      } else {
+        if (reverseDeltasCount > 0){
+          pureDeltas.push(nextDelta)
+        } else {
+          finalPureDeltas.push(nextDelta)
+        }
+      }
+    })
 
+    // console.log("11111 final", JSON.stringify(finalPureDeltas))
+    return this.adjustPurePath(finalPureDeltas)
+  }
+
+  /**
+   * @param nextDeltas 后续的deltas，会对前面的 deltas 的 path 有影响
+   */
+  inverse(nextDeltas: Delta[]): Delta {
+    let delta = this.adjustPath(nextDeltas)
+    if (!delta) {
+      return null
+    }
+    
+    delta.ops = delta.ops.map(op => {
+      return {
+        p: op.p,
+        si: op.sd,
+        sd: op.si,
+        li: op.ld,
+        ld: op.li,
+        oi: op.od,
+        od: op.oi,
+      }
     })
     return delta
   }

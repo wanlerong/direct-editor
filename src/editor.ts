@@ -14,6 +14,7 @@ import {domToVirtualNode, VirtualNode} from "./lib/virtualNode";
 
 export class Editor {
 
+  public deltaSeq: number;
   public toolbar: Toolbar;
   public undoManager: UndoManager;
   public mutationHandler: MutationHandler;
@@ -43,13 +44,25 @@ export class Editor {
     this.undoManager.push({
       delta: delta
     })
-    this.deltas.push(delta)
+    
+    this.appendDelta(delta)
     if (this.customCallback) {
       console.log("send ops", JSON.stringify(ops))
       this.customCallback(ops)
     }
   }
-
+  
+  appendDelta(delta: Delta) {
+    this.deltaSeq++
+    delta.seq = this.deltaSeq
+    this.deltas.push(delta)
+    console.log("deltas", JSON.stringify(this.deltas))
+  }
+  
+  getNextDeltas(delta: Delta) {
+    return this.deltas.filter(it => it.seq > delta.seq)
+  }
+  
   constructor(dom: HTMLElement, callback: (ops: Op[]) => void, asChangeFunc: (as: ActiveStatus) => void) {
     if (!isChromeBrowser() && process.env.NODE_ENV !== 'test') {
       dom.innerHTML = `
@@ -71,6 +84,7 @@ export class Editor {
     this.undoManager = new UndoManager(this)
     this.mutationHandler = new MutationHandler(this)
     this.deltas = []
+    this.deltaSeq = 0
     this.asChange = asChangeFunc
 
     this.customCallback = callback
@@ -351,7 +365,6 @@ export class Editor {
           target = ele.childNodes[p as number - 2]
           ele = target
         })
-        let parentNode = (target as Element).parentNode;
         if (hasOi) {
           target.setAttribute(attrName, op.oi)
         } else {
@@ -361,7 +374,6 @@ export class Editor {
     })
     
     this.observe()
-    
     if (source === DeltaSource.UndoRedo) {
       if (this.customCallback) {
         console.log("send ops", JSON.stringify(delta.ops))
@@ -369,7 +381,7 @@ export class Editor {
       }
     }
     
-    this.deltas.push(delta)
+    this.appendDelta(delta)
     // todo 增量更新
     this.virtualNode = domToVirtualNode(this.theDom)
   }
