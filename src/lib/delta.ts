@@ -78,12 +78,33 @@ export class Delta {
             let nextTextPath = nextOp.p.slice(0, -1) // text node's path
             if (arrayEquals(targetTextPath, nextTextPath)) {
               if (nextOp.si) {
+                if (op.si && op.si.length > 1) {
+                  let left = adjustedPath[adjustedPath.length - 1] as number
+                  let right = left + (op.si as string).length - 1
+                  let siLeft = nextOp.p[nextOp.p.length - 1] as number
+                  if (siLeft > left && siLeft <= right) {
+                    // next op insert between prev range, can't undo anymore
+                    canAdjust = false
+                    return;
+                  }
+                }
                 if (nextOp.p[nextOp.p.length - 1] <= adjustedPath[adjustedPath.length - 1]) {
                   (adjustedPath[adjustedPath.length - 1] as number) += nextOp.si.length;
                 }
               }
               if (nextOp.sd) {
-                if (nextOp.p[nextOp.p.length - 1] <= adjustedPath[adjustedPath.length - 1]) {
+                if (op.si && nextOp.sd.length > 0) {
+                  let left = adjustedPath[adjustedPath.length - 1] as number
+                  let right = left + (op.si as string).length - 1
+                  let sdLeft = nextOp.p[nextOp.p.length - 1] as number
+                  let sdRight = sdLeft + nextOp.sd.length - 1
+                  if (left <= sdRight && sdLeft <= right) {
+                    // del by other，do not need undo anymore
+                    canAdjust = false
+                    return;
+                  }
+                }
+                if (nextOp.p[nextOp.p.length - 1] < adjustedPath[adjustedPath.length - 1]) {
                   (adjustedPath[adjustedPath.length - 1] as number) -= nextOp.sd.length;
                 }
               }
