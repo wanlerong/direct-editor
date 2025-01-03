@@ -1,7 +1,7 @@
 A rich-text editor
 
 ### environment：
-node v16.0.0
+node v18.16.0
 
 ### build
 ```
