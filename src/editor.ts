@@ -20,21 +20,39 @@ export class Editor {
   public mutationHandler: MutationHandler;
   public theDom: HTMLDivElement;
   private mutationObserver: MutationObserver;
-  
   // whole deltas for the editor content
   public deltas: Delta[]
   
   public virtualNode: VirtualNode
+  private mutationsBuffer: MutationRecord[];
+  private debounceTimeout: NodeJS.Timeout;
 
   private customCallback: (ops: Op[]) => void;
   public asChange: (as: ActiveStatus) => void;
 
-  private mutationCallback: MutationCallback = (mutations: MutationRecord[], observer: MutationObserver) => {
-    console.log("callback", mutations.length)
-    mutations.forEach(mu => {
-      console.log(mu)
-    })
-    let ops = this.mutationHandler.transformMutationsToOps(mutations)
+  private mutationCallback = (mutations: MutationRecord[], observer: MutationObserver) => {
+    this.mutationsBuffer.push(...mutations);
+    
+    if (this.debounceTimeout) {
+      clearTimeout(this.debounceTimeout);
+    }
+    // Set a buffer for mutations and process them every 200ms.
+    // 1. Improves overall performance.
+    // 2. Since normalization usually follows immediately, undoing a batch will return the state to the normalized one, 
+    // avoiding undoing to a non-normalized state, which would be immediately normalized back and make the undo ineffective.
+    this.debounceTimeout = setTimeout(() => {
+      this.processMutations();
+    }, 200);
+  };
+
+  processMutations = () => {
+    const mutationsToProcess = [...this.mutationsBuffer];
+    this.mutationsBuffer = [];
+    if (mutationsToProcess.length === 0) {
+      return;
+    }
+    console.log("Processing mutations", mutationsToProcess.length);
+    let ops = this.mutationHandler.transformMutationsToOps(mutationsToProcess)
     // todo 增量更新
     this.virtualNode = domToVirtualNode(this.theDom)
     if (ops.length == 0) {
@@ -44,13 +62,12 @@ export class Editor {
     this.undoManager.push({
       delta: delta
     })
-    
     this.appendDelta(delta)
     if (this.customCallback) {
       console.log("send ops", JSON.stringify(ops))
       this.customCallback(ops)
     }
-  }
+  };
   
   appendDelta(delta: Delta) {
     this.deltaSeq++
@@ -89,6 +106,8 @@ export class Editor {
 
     this.customCallback = callback
     this.mutationObserver = new MutationObserver(this.mutationCallback)
+    this.mutationsBuffer = [];
+    this.debounceTimeout = null;
     this.observe()
     
     this.virtualNode = domToVirtualNode(this.theDom)
@@ -141,18 +160,6 @@ export class Editor {
         _this.toolbar.checkActiveStatus()
       }, 2)
     });
-
-    // let debounceTimer
-    // The input event fires when the value of a contenteditable element has been changed 
-    // as a direct result of a user action such as typing in it.
-    // d.addEventListener('input', () => {
-    //   if (debounceTimer) {
-    //     clearTimeout(debounceTimer);
-    //   }
-    //   debounceTimer = setTimeout(() => {
-    //     this.saveState()
-    //   }, 300);
-    // });
   }
 
   normalize() {
