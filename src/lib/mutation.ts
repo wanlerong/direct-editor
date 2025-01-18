@@ -82,7 +82,7 @@ export class MutationHandler {
   generateIdForNode(n: Element) {
     let id = (n as Element).getAttribute("id")
     if (!id || this.idMap[id]) {
-      let newId = this.makeId(10);
+      let newId = this.makeId(7);
       (n as Element).setAttribute("id", newId);
       this.idMap[newId] = 1;
     }

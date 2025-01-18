@@ -2,7 +2,6 @@ import JsonMLHtml from "./lib/jsonml-html";
 import {Toolbar} from "./toolbar";
 import {getSelectionRange, setRange} from "./range";
 import {getClosestAncestorByNodeName,} from "./domUtils";
-import {isChromeBrowser} from "./lib/util";
 import {handleBackspace, handleTab} from "./handlers/keydownHandler";
 import {indentLi, isNestedLi} from "./components/ul";
 import {ActiveStatus} from "./const/activeStatus";
@@ -81,15 +80,6 @@ export class Editor {
   }
   
   constructor(dom: HTMLElement, callback: (ops: Op[]) => void, asChangeFunc: (as: ActiveStatus) => void) {
-    if (!isChromeBrowser() && process.env.NODE_ENV !== 'test') {
-      dom.innerHTML = `
-            <div style="text-align: center; padding: 50px;">
-                <h1>仅支持在 Chrome 浏览器中使用</h1>
-                <p>请使用 Chrome 浏览器以继续使用该编辑器。</p>
-            </div>
-        `;
-      return;
-    }
     let d = document.createElement("div")
     d.setAttribute("class", "direct-editor")
     d.setAttribute("contenteditable", "true")
