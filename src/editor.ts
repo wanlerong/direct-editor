@@ -1,7 +1,7 @@
 import JsonMLHtml from "./lib/jsonml-html";
 import {Toolbar} from "./toolbar";
 import {getSelectionRange, setRange} from "./range";
-import {getClosestAncestorByNodeName,} from "./domUtils";
+import {getClosestAncestorByNodeName} from "./domUtils";
 import {handleBackspace, handleTab} from "./handlers/keydownHandler";
 import {indentLi, isNestedLi} from "./components/ul";
 import {ActiveStatus} from "./const/activeStatus";
@@ -10,6 +10,7 @@ import {Delta, Op} from "./lib/delta";
 import {MutationHandler} from "./lib/mutation";
 import {DeltaSource} from "./const/const";
 import {domToVirtualNode, VirtualNode} from "./lib/virtualNode";
+import {handlePaste} from "./handlers/pasteHandler";
 
 export class Editor {
 
@@ -150,6 +151,8 @@ export class Editor {
         _this.toolbar.checkActiveStatus()
       }, 2)
     });
+
+    d.addEventListener("paste", handlePaste);
   }
 
   normalize() {
