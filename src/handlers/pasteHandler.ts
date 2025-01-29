@@ -1,14 +1,8 @@
-import {getSelectionRange, iterateSubtree, setRange} from "../range";
+import {getSelectionRange} from "../range";
 import {
-  getClosestAncestorByNodeName, getClosestAncestorByNodeNames,
-  getLastTextNode,
-  getTextPosition,
+  getClosestAncestorByNodeName,
   insertAfter,
-  insertBefore,
-  isTextNode
 } from "../domUtils";
-import {indentLi, isNestedLi} from "../components/ul";
-import {RangeIterator} from "../rangeIterator";
 
 export function handlePaste(event: ClipboardEvent) {
   event.preventDefault();
