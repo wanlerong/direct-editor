@@ -61,13 +61,11 @@ test('handlePaste2', () => {
   setRange(div.firstChild.firstChild, 1, div.firstChild.firstChild, 1)
   handlePaste(event);
 
-  expect(div.innerHTML).toBe('<div class="row">1</div>' +
-    '<div class="row">111<span>aaa</span></div>' +
+  expect(div.innerHTML).toBe('<div class="row">1111<span>aaa</span></div>' +
     '<div class="row">222</div>' +
     '<div class="row">333</div>'
   );
 });
-
 
 test('handlePaste3', () => {
   let div = document.createElement("div")

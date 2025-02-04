@@ -1,3 +1,8 @@
+interface ProcessResult {
+  inlineContent: DocumentFragment | null;
+  blockElements: HTMLElement[];
+}
+
 export function handlePaste(e: ClipboardEvent): void {
   e.preventDefault();
   const clipboardData = e.clipboardData || (window as any).clipboardData;
@@ -7,43 +12,37 @@ export function handlePaste(e: ClipboardEvent): void {
   console.log(html)
   if (!html) return;
 
-  const rowElements = processHTML(html);
-  if (rowElements.length === 0) return;
-
-  insertElementsAtCursor(rowElements);
+  const result = processHTML(html);
+  insertContentAtCursor(result);
 }
 
-function insertElementsAtCursor(elements: HTMLElement[]): void {
+function insertContentAtCursor(result: ProcessResult): void {
   const selection = window.getSelection();
   if (!selection || selection.rangeCount === 0) return;
 
   const range = selection.getRangeAt(0);
-  const container = range.startContainer;
-  let insertAfterNode: Element = null;
+  const currentRow = getCurrentRow(selection);
 
-  // 确定插入位置
-  if (container.nodeType === Node.TEXT_NODE) {
-    const parentRow = (container.parentNode as HTMLElement).closest?.('.row');
-    if (parentRow) insertAfterNode = parentRow;
-  } else if (container.nodeType === Node.ELEMENT_NODE) {
-    insertAfterNode = (container as HTMLElement).closest?.('.row');
+  // 优先处理 inline 内容插入
+  if (result.inlineContent && currentRow) {
+    insertInlineContent(currentRow, range, result.inlineContent);
   }
 
   const directEditor = document.querySelector('.direct-editor');
-  if (!directEditor) return;
 
-  elements.forEach(el => {
-    if (insertAfterNode) {
-      insertAfterNode.insertAdjacentElement('afterend', el);
-      insertAfterNode = el;
-    } else {
-      directEditor.appendChild(el);
-    }
-  });
-  
+  // 插入块级元素
+  if (result.blockElements.length > 0) {
+    insertBlockElementsAfter(currentRow || directEditor.lastChild as HTMLElement, result.blockElements);
+  }
+
   // 更新光标位置
   const newRange = document.createRange();
-  newRange.setStartAfter(elements[elements.length - 1]);
+  if (result.blockElements.length > 0) {
+    const lastBlock = result.blockElements[result.blockElements.length - 1];
+    newRange.setStartAfter(lastBlock);
+  } else if (currentRow) {
+    newRange.setStart(currentRow, currentRow.childNodes.length);
+  }
   newRange.collapse(true);
   selection.removeAllRanges();
   selection.addRange(newRange);
@@ -56,29 +55,44 @@ function isBlockElement(node: Node): boolean {
     BLOCK_TAGS.has((node as HTMLElement).tagName.toLowerCase());
 }
 
-function processHTML(html: string): HTMLElement[] {
+function processHTML(html: string): ProcessResult {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
-  const rows: HTMLElement[] = [];
-  let currentInlineNodes: Node[] = [];
+  const result: ProcessResult = {
+    inlineContent: null,
+    blockElements: []
+  };
+
+  // 分离 inline 内容和块级元素
+  const fragment = document.createDocumentFragment();
+  let hasBlock = false;
 
   Array.from(doc.body.childNodes).forEach(node => {
     if (isBlockElement(node)) {
-      // 处理积累的 inline 内容
-      flushInlineNodes(currentInlineNodes, rows);
-
-      // 处理块级元素及其嵌套结构
-      processBlockElement(node as HTMLElement, rows);
+      // 遇到第一个块级元素时冻结前面的 inline 内容
+      if (!hasBlock) {
+        result.inlineContent = fragment.cloneNode(true) as DocumentFragment;
+        hasBlock = true;
+      }
+      processBlockElement(node as HTMLElement, result.blockElements);
+    } else if (!hasBlock) {
+      // 在遇到块级元素前持续收集 inline 内容
+      fragment.appendChild(node.cloneNode(true));
     } else {
-      // 克隆节点并积累 inline 内容
-      currentInlineNodes.push(node.cloneNode(true));
+      // 块级元素之后的 inline 内容需要生成独立 row
+      const tempFragment = document.createDocumentFragment();
+      tempFragment.appendChild(node.cloneNode(true));
+      const row = createRowFromNodes(Array.from(tempFragment.childNodes));
+      if (row) result.blockElements.unshift(row);
     }
   });
 
-  // 处理剩余的 inline 内容
-  flushInlineNodes(currentInlineNodes, rows);
+  // 处理纯 inline 内容的情况
+  if (!hasBlock) {
+    result.inlineContent = fragment;
+  }
 
-  return rows;
+  return result;
 }
 
 function processBlockElement(element: HTMLElement, rows: HTMLElement[]) {
@@ -129,4 +143,48 @@ function createRowFromNodes(nodes: Node[]): HTMLElement | null {
   });
 
   return row.textContent ? row : null;
+}
+
+// 获取当前光标所在的 .row 元素
+function getCurrentRow(selection: Selection): HTMLElement | null {
+  const node = selection.anchorNode;
+  return node ? (node.nodeType === Node.TEXT_NODE ?
+    node.parentElement : node as HTMLElement).closest('.row') : null;
+}
+
+// 在现有 row 中插入 inline 内容
+function insertInlineContent(row: HTMLElement, range: Range, fragment: DocumentFragment): void {
+  // 创建临时包裹元素用于保留 HTML 结构
+  const tempDiv = document.createElement('div');
+  tempDiv.appendChild(fragment.cloneNode(true));
+
+  // 提取文本内容用于光标定位
+  const textContent = tempDiv.textContent || '';
+  const hasOnlyText = tempDiv.children.length === 0;
+
+  // 执行插入操作
+  if (hasOnlyText) {
+    range.insertNode(document.createTextNode(textContent));
+  } else {
+    range.insertNode(fragment.cloneNode(true));
+  }
+
+  // 合并相邻文本节点
+  row.normalize();
+}
+
+// 插入块级元素到指定位置
+function insertBlockElementsAfter(afterElement: HTMLElement | null, elements: HTMLElement[]): void {
+  const container = document.querySelector('.direct-editor');
+  if (!container) return;
+
+  let currentInsertionPoint = afterElement;
+  elements.forEach(el => {
+    if (currentInsertionPoint) {
+      currentInsertionPoint.insertAdjacentElement('afterend', el);
+      currentInsertionPoint = el;
+    } else {
+      container.insertBefore(el, container.firstChild);
+    }
+  });
 }
