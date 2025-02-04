@@ -77,11 +77,11 @@ function processHTML(html: string): ProcessResult {
       processBlockElement(node as HTMLElement, result.blockElements);
     } else if (!hasBlock) {
       // 在遇到块级元素前持续收集 inline 内容
-      fragment.appendChild(node.cloneNode(true));
+      fragment.appendChild(sanitizeNode(node));
     } else {
       // 块级元素之后的 inline 内容需要生成独立 row
       const tempFragment = document.createDocumentFragment();
-      tempFragment.appendChild(node.cloneNode(true));
+      tempFragment.appendChild(sanitizeNode(node));
       const row = createRowFromNodes(Array.from(tempFragment.childNodes));
       if (row) result.blockElements.unshift(row);
     }
@@ -131,7 +131,7 @@ function createRowFromNodes(nodes: Node[]): HTMLElement | null {
 
   // 处理每个节点并保留结构
   nodes.forEach(node => {
-    const clonedNode = node.cloneNode(true);
+    const clonedNode = sanitizeNode(node);
     if (clonedNode.nodeType === Node.TEXT_NODE) {
       const text = clonedNode.textContent || '';
       if (text) {
@@ -187,4 +187,56 @@ function insertBlockElementsAfter(afterElement: HTMLElement | null, elements: HT
       container.insertBefore(el, container.firstChild);
     }
   });
+}
+
+
+// 允许的样式属性及对应值
+const ALLOWED_STYLES: Record<string, RegExp> = {
+  'font-weight': /^bold$/,
+  'font-style': /^italic$/,
+  'text-decoration': /^(underline|line-through)$/,
+};
+
+// only preset style collections are allowed to be retained
+function sanitizeNode(node: Node): Node {
+  if (node.nodeType !== Node.ELEMENT_NODE) {
+    return node.cloneNode(true);
+  }
+
+  const element = node.cloneNode(false) as HTMLElement;
+  const original = node as HTMLElement;
+
+  // 处理样式
+  const style = original.getAttribute('style');
+  if (style) {
+    const sanitized = sanitizeStyles(style);
+    if (sanitized) {
+      element.setAttribute('style', sanitized);
+    } else {
+      element.removeAttribute('style')
+    }
+  }
+  
+  // 递归处理子节点
+  Array.from(original.childNodes).forEach(child => {
+    element.appendChild(sanitizeNode(child));
+  });
+
+  return element;
+}
+
+// sanitizeStyles 使用正则表达式严格过滤样式
+function sanitizeStyles(rawStyle: string): string {
+  const styles = rawStyle.split(';').reduce((acc, rule) => {
+    const [prop, value] = rule.split(':').map(s => s.trim().toLowerCase());
+    if (!prop || !value) return acc;
+
+    // 处理其他允许属性
+    if (ALLOWED_STYLES[prop]?.test(value)) {
+      acc.push(`${prop}: ${value}`);
+    }
+    return acc;
+  }, [] as string[]);
+
+  return styles.join('; ');
 }
