@@ -152,7 +152,10 @@ export class Editor {
       }, 2)
     });
 
-    d.addEventListener("paste", handlePaste);
+    d.addEventListener("paste", function (e: ClipboardEvent) {
+      handlePaste(e)
+      _this.normalize()
+    });
   }
 
   normalize() {
@@ -289,7 +292,45 @@ export class Editor {
         (n as HTMLElement).className = 'row'
       }
     })
+    
+    // 获取所有span元素并按逆序处理，确保从最内层开始处理
+    const spans = this.theDom.getElementsByTagName('span');
+    const spansArray = Array.from(spans).reverse();
 
+    spansArray.forEach(span => {
+      this.processSpan(span);
+    });
+  }
+  
+  // normalize nested spans to plain
+  private processSpan(span: HTMLSpanElement) {
+    const parent = span.parentElement;
+    if (!parent) return;
+    const fragment = document.createDocumentFragment();
+    if (span.childNodes.length == 1 && span.firstChild.nodeType == Node.TEXT_NODE) {
+      return;
+    }
+
+    Array.from(span.childNodes).forEach(child => {
+      if (child.nodeType === Node.TEXT_NODE) {
+        const textContent = child.textContent?.trim();
+        if (textContent) {
+          const newSpan = document.createElement('span');
+          newSpan.textContent = textContent;
+          fragment.appendChild(newSpan);
+        }
+      } else if (child.nodeType === Node.ELEMENT_NODE) {
+        if (child instanceof HTMLSpanElement) {
+          // 子span已经被处理过，直接添加
+          fragment.appendChild(child);
+        } else {
+          // 非span元素保留原结构
+          fragment.appendChild(child);
+        }
+      }
+    });
+
+    parent.replaceChild(fragment, span);
   }
 
   observe() {

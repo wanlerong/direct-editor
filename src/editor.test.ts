@@ -124,3 +124,14 @@ test('normalize adds br to empty li elements', () => {
   editor.normalize();
   expect(editorDom.innerHTML).toBe('<div class="row"><ul><li><br></li><li>text</li></ul></div>');
 });
+
+test('normalize nested spans to plain', () => {
+  let div = document.createElement("div");
+  let editor = new Editor(div, null, null);
+  let editorDom = (div.firstChild as HTMLElement);
+  editorDom.innerHTML = '<div class="row"><span>1<span>aaa<span>bbb</span></span>11</span></div>' +
+    '<div class="row"><span>2<span>ccc<span>ddd</span></span>22</span></div>';
+  editor.normalize();
+  expect(editorDom.innerHTML).toBe('<div class="row"><span>1</span><span>aaa</span><span>bbb</span><span>11</span></div>' + 
+  '<div class="row"><span>2</span><span>ccc</span><span>ddd</span><span>22</span></div>');
+});
