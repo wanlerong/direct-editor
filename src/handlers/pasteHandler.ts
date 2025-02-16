@@ -8,12 +8,22 @@ export function handlePaste(e: ClipboardEvent): void {
   const clipboardData = e.clipboardData || (window as any).clipboardData;
   if (!clipboardData) return;
 
-  const html = clipboardData.getData('text/html');
-  console.log(html)
-  if (!html) return;
+  let result: ProcessResult = { inlineContent: null, blockElements: [] };
 
-  const result = processHTML(html);
-  insertContentAtCursor(result);
+  const html = clipboardData.getData('text/html');
+  if (html) {
+    console.log(html)
+    result = processHTML(html);
+  } else {
+    const text = clipboardData.getData('text/plain');
+    if (text) {
+      console.log(text)
+      result = processPlainText(text);
+    }
+  }
+  if (result.inlineContent || result.blockElements.length > 0) {
+    insertContentAtCursor(result);
+  }
 }
 
 function insertContentAtCursor(result: ProcessResult): void {
@@ -239,4 +249,34 @@ function sanitizeStyles(rawStyle: string): string {
   }, [] as string[]);
 
   return styles.join('; ');
+}
+
+function processPlainText(text: string): ProcessResult {
+  const result: ProcessResult = {
+    inlineContent: null,
+    blockElements: []
+  };
+  
+  // 按换行符分割并过滤空内容
+  const paragraphs = text.split(/\r?\n/)
+    .map(p => p.trim())
+    .filter(p => p.length > 0);
+
+  if (paragraphs.length === 0) return result;
+
+  // 创建行内内容片段
+  const firstPara = paragraphs[0];
+  result.inlineContent = document.createDocumentFragment();
+  result.inlineContent.appendChild(document.createTextNode(firstPara));
+
+  // 剩余段落创建块级元素
+  result.blockElements = paragraphs.slice(1)
+    .map(p => {
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.textContent = p;
+      return row;
+    });
+
+  return result;
 }
