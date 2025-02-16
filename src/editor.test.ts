@@ -135,3 +135,30 @@ test('normalize nested spans to plain', () => {
   expect(editorDom.innerHTML).toBe('<div class="row"><span>1</span><span>aaa</span><span>bbb</span><span>11</span></div>' + 
   '<div class="row"><span>2</span><span>ccc</span><span>ddd</span><span>22</span></div>');
 });
+
+test('normalize unwrap all unsupported tag', () => {
+  let div = document.createElement("div");
+  let editor = new Editor(div, null, null);
+  let editorDom = (div.firstChild as HTMLElement);
+  editorDom.innerHTML = '<div class="row">1</div>' +
+    '<div class="row"><font><font>丧的体验</font></font></div>' +
+    '<div class="row"><font><font><span>使用g个</span></font></font></div>'
+  editor.normalize();
+  
+  expect(editorDom.innerHTML).toBe('<div class="row">1</div>' +
+    '<div class="row">丧的体验</div>' +
+    '<div class="row"><span>使用g个</span></div>');
+});
+
+test('normalize unwrap all unsupported tag 2', () => {
+  let div = document.createElement("div");
+  let editor = new Editor(div, null, null);
+  let editorDom = (div.firstChild as HTMLElement);
+  editorDom.innerHTML = '<div class="row">1</div>' +
+    '<div class="row"><span><code>使用g个</code></span></div>'
+  editor.normalize();
+
+  expect(editorDom.innerHTML).toBe('<div class="row">1</div>' +
+    '<div class="row"><span>使用g个</span></div>');
+});
+

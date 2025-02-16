@@ -291,6 +291,7 @@ export class Editor {
       if ((n as HTMLElement).className !== 'row') {
         (n as HTMLElement).className = 'row'
       }
+      this.processNode(n);
     })
     
     // 获取所有span元素并按逆序处理，确保从最内层开始处理
@@ -300,6 +301,44 @@ export class Editor {
     spansArray.forEach(span => {
       this.processSpan(span);
     });
+  }
+  
+  // unwrap 所有不支持的 html 标签
+  private processNode(node: Node) {
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const element = node as HTMLElement;
+      
+      // 后序遍历：先递归处理子节点
+      for (let i = element.childNodes.length - 1; i >= 0; i--) {
+        this.processNode(element.childNodes[i]);
+      }
+
+      if (!this.isAllowed(element)) {
+        this.unwrap(element);
+      }
+    }
+  }
+  
+  private isAllowed(element: HTMLElement): boolean {
+    const allowedTags = new Set([
+      'span', 'a', 'br',
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'ul', 'ol', 'li', 'div'
+    ]);
+    return allowedTags.has(element.tagName.toLowerCase());
+  }
+
+  // 将元素的子节点提升到父级
+  private unwrap(element: HTMLElement) {
+    const parent = element.parentNode;
+    if (!parent) return;
+
+    const fragment = document.createDocumentFragment();
+    while (element.firstChild) {
+      fragment.appendChild(element.firstChild);
+    }
+
+    parent.replaceChild(fragment, element);
   }
   
   // normalize nested spans to plain
