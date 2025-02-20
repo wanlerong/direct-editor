@@ -9,6 +9,7 @@ import {
 } from "../domUtils";
 import {indentLi, isNestedLi} from "../components/ul";
 import {RangeIterator} from "../rangeIterator";
+import {listBlockConfig} from "../block/block";
 
 export function handleBackspace(e: KeyboardEvent) {
   if (e.key != 'Backspace') {
@@ -53,7 +54,7 @@ export function handleBackspace(e: KeyboardEvent) {
               currentLi.remove()
               setRange(currentUl.parentNode, cnt, currentUl.parentNode, cnt)
             } else {
-              let div = document.createElement("div")
+              let div = listBlockConfig.createElement()
               div.append(...currentLi.childNodes)
               currentLi.remove();
               insertBefore(currentUl.parentNode, div)

@@ -1,31 +1,40 @@
-interface BlockConfig {
+import {HTMLStructureRule, basicSchema, htitleSchema, listSchema} from "../schema/schema";
+import {BlockType} from "./blockType";
+
+export interface BlockConfig {
   type: BlockType;
   schema: HTMLStructureRule;
-  allowedChildren: BlockType[];
+  createElement: () => HTMLElement;
 }
 
-enum BlockType {
-  Basic = "basic",
-  HTitle = "htitle",
-  List = "list",
-}
-
-const basicBlockConfig: BlockConfig = {
+export const basicBlockConfig: BlockConfig = {
   type: BlockType.Basic,
-  allowedChildren: [],
   schema: basicSchema,
+  createElement: () => {
+    const el = document.createElement('div');
+    el.dataset.btype = BlockType.Basic;
+    return el;
+  }
 }
 
-const htitleBlockConfig: BlockConfig = {
+export const htitleBlockConfig: BlockConfig = {
   type: BlockType.HTitle,
-  allowedChildren: [],
   schema: htitleSchema,
+  createElement: () => {
+    const el = document.createElement('div');
+    el.dataset.btype = BlockType.HTitle;
+    return el;
+  }
 }
 
-const listBlockConfig: BlockConfig = {
+export const listBlockConfig: BlockConfig = {
   type: BlockType.List,
-  allowedChildren: [],
   schema: listSchema,
+  createElement: () => {
+    const el = document.createElement('div');
+    el.dataset.btype = BlockType.List;
+    return el;
+  }
 }
 
 

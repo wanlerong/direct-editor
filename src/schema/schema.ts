@@ -1,5 +1,7 @@
+import {BlockType} from "../block/blockType";
+
 // schema for normalize
-type HTMLStructureRule = {
+export type HTMLStructureRule = {
   allowedTags: string[];
   allowText: boolean;
   allowedBlocks?: BlockType[]; // 允许包含的块类型
@@ -9,25 +11,32 @@ type HTMLStructureRule = {
   };
 }
 
-const spanSchema: HTMLStructureRule = {
+export const rootSchema: HTMLStructureRule = {
+  allowedTags: ["div"],
+  allowText: false,
+  attributes: ["class", "contenteditable"],
+  allowedBlocks: [BlockType.Basic, BlockType.HTitle, BlockType.List],
+}
+
+export const spanSchema: HTMLStructureRule = {
   allowedTags: [],
   allowText: true,
   attributes: ["style", "id"]
 }
 
-const basicSchema: HTMLStructureRule = {
+export const basicSchema: HTMLStructureRule = {
   allowedTags: ["span", "br", "a"],
   allowText: true,
-  attributes: ["id"],
+  attributes: ["id", "data-btype"],
   children: {
     "span": spanSchema
   }
 }
 
-const htitleSchema: HTMLStructureRule = {
+export const htitleSchema: HTMLStructureRule = {
   allowedTags: ["h1", "h2", "h3", "h4", "h5", "h6"],
   allowText: false,
-  attributes: ["id"],
+  attributes: ["id", "data-btype"],
   children: {
     "h1": basicSchema,
     "h2": basicSchema,
@@ -38,7 +47,7 @@ const htitleSchema: HTMLStructureRule = {
   }
 }
 
-const liSchema: HTMLStructureRule={
+export const liSchema: HTMLStructureRule={
   allowedTags: [...basicSchema.allowedTags, "ul", "ol"],
   allowText: true,
   attributes: ["id"],
@@ -52,9 +61,9 @@ const liSchema: HTMLStructureRule={
       return ulSchema;
     },
   }
-} 
+}
 
-const ulSchema: HTMLStructureRule={
+export const ulSchema: HTMLStructureRule={
   allowedTags: ["li"],
   allowText: false,
   attributes: ["id"],
@@ -63,15 +72,13 @@ const ulSchema: HTMLStructureRule={
   }
 }
 
-const listSchema: HTMLStructureRule = {
+export const listSchema: HTMLStructureRule = {
   allowedTags: ["ul", "ol"],
   allowText: false,
-  attributes: ["id"],
+  attributes: ["id", "data-btype"],
   children: {
     "ul": ulSchema,
     "ol": ulSchema,
   }
 }
-
-
 

@@ -28,7 +28,7 @@ test('handleTab_02', () => {
   let editor = new Editor(div, null, null);
   let editorDom = (div.firstChild as HTMLElement);
 
-  editorDom.innerHTML = '<div><ul>' +
+  editorDom.innerHTML = '<div data-btype="list"><ul>' +
     '<li>111</li><li>222</li><li>333</li><li>444</li>' +
     '</ul></div>'
   document.body.appendChild(div);
@@ -43,7 +43,7 @@ test('handleTab_02', () => {
   handleTab(keyboardEvent)
   editor.normalize()
 
-  expect(editorDom.innerHTML).toBe('<div class="row"><ul>' +
+  expect(editorDom.innerHTML).toBe('<div data-btype="list"><ul>' +
     '<li>111<ul><li>222</li><li>333</li></ul></li><li>444</li>' +
     '</ul></div>');
 });
@@ -53,7 +53,7 @@ test('handleTab_03', () => {
   let editor = new Editor(div, null, null);
   let editorDom = (div.firstChild as HTMLElement);
 
-  editorDom.innerHTML = '<div><ul>' +
+  editorDom.innerHTML = '<div data-btype="list"><ul>' +
       '<li>111' +
         '<ul>' +
           '<li>222' +
@@ -79,7 +79,7 @@ test('handleTab_03', () => {
   handleTab(keyboardEvent)
   editor.normalize()
   
-  expect(editorDom.innerHTML).toBe('<div class="row">' +
+  expect(editorDom.innerHTML).toBe('<div data-btype="list">' +
     '<ul>' +
       '<li>111' +
         '<ul>' +
@@ -171,7 +171,7 @@ test('handleBackspace_03', () => {
   let editor = new Editor(div, null, null);
   let editorDom = (div.firstChild as HTMLElement);
   
-  editorDom.innerHTML = '<div>' +
+  editorDom.innerHTML = '<div data-btype="list">' +
     '<ul>' +
       '<li>1</li>' +
       '<li><br>' +
@@ -191,7 +191,7 @@ test('handleBackspace_03', () => {
   handleBackspace(keyboardEvent)
   editor.normalize()
   
-  expect(editorDom.innerHTML).toBe('<div class="row">' +
+  expect(editorDom.innerHTML).toBe('<div data-btype="list">' +
     '<ul>' +
       '<li>1' +
         '<ul>' +
@@ -208,7 +208,7 @@ test('handleBackspace_04', () => {
   let editor = new Editor(div, null, null);
   let editorDom = (div.firstChild as HTMLElement);
 
-  editorDom.innerHTML = '<div>' +
+  editorDom.innerHTML = '<div data-btype="list">' +
     '<ul>' +
       '<li><br>' +
         '<ul>' +
@@ -227,7 +227,7 @@ test('handleBackspace_04', () => {
   handleBackspace(keyboardEvent)
   editor.normalize()
 
-  expect(editorDom.innerHTML).toBe( '<div class="row"><br></div><div class="row">' +
+  expect(editorDom.innerHTML).toBe( '<div data-btype="basic"><br></div><div data-btype="list">' +
     '<ul>' +
     '<li>3</li>' +
     '<li>4</li>' +
@@ -240,7 +240,7 @@ test('handleBackspace_05', () => {
   let editor = new Editor(div, null, null);
   let editorDom = (div.firstChild as HTMLElement);
 
-  editorDom.innerHTML = '<div>' +
+  editorDom.innerHTML = '<div data-btype="list">' +
     '<ul>' +
       '<li>1</li>' +
       '<li>2345' +
@@ -260,7 +260,7 @@ test('handleBackspace_05', () => {
   handleBackspace(keyboardEvent)
   editor.normalize()
 
-  expect(editorDom.innerHTML).toBe('<div class="row">' +
+  expect(editorDom.innerHTML).toBe('<div data-btype="list">' +
     '<ul>' +
       '<li>12345' +
         '<ul>' +
@@ -277,7 +277,7 @@ test('handleBackspace_06', () => {
   let editor = new Editor(div, null, null);
   let editorDom = (div.firstChild as HTMLElement);
 
-  editorDom.innerHTML = '<div>' +
+  editorDom.innerHTML = '<div data-btype="list">' +
       '<ul>' +
         '<li>1234' +
           '<ul>' +
@@ -296,8 +296,8 @@ test('handleBackspace_06', () => {
   handleBackspace(keyboardEvent)
   editor.normalize()
 
-  expect(editorDom.innerHTML).toBe('<div class="row">1234</div>'+
-    '<div class="row">' +
+  expect(editorDom.innerHTML).toBe('<div data-btype="basic">1234</div>'+
+    '<div data-btype="list">' +
       '<ul>' +
       '<li>3</li>' +
       '<li>4</li>' +
