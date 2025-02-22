@@ -1,3 +1,18 @@
+// 块类型映射配置
+import {basicBlockConfig} from "../block/block";
+import {BlockType} from "../block/blockType";
+
+const BLOCK_TYPE_MAP: Record<string, string> = {
+  'ul': 'list',
+  'ol': 'list',
+  'h1': 'htitle',
+  'h2': 'htitle',
+  'h3': 'htitle',
+  'h4': 'htitle',
+  'h5': 'htitle',
+  'h6': 'htitle'
+};
+
 interface ProcessResult {
   inlineContent: DocumentFragment | null;
   blockElements: HTMLElement[];
@@ -21,6 +36,7 @@ export function handlePaste(e: ClipboardEvent): void {
       result = processPlainText(text);
     }
   }
+
   if (result.inlineContent || result.blockElements.length > 0) {
     insertContentAtCursor(result);
   }
@@ -79,25 +95,21 @@ function processHTML(html: string): ProcessResult {
 
   Array.from(doc.body.childNodes).forEach(node => {
     if (isBlockElement(node)) {
-      // 遇到第一个块级元素时冻结前面的 inline 内容
       if (!hasBlock) {
         result.inlineContent = fragment.cloneNode(true) as DocumentFragment;
         hasBlock = true;
       }
       processBlockElement(node as HTMLElement, result.blockElements);
     } else if (!hasBlock) {
-      // 在遇到块级元素前持续收集 inline 内容
-      fragment.appendChild(sanitizeNode(node));
+      fragment.appendChild(node.cloneNode(true));
     } else {
-      // 块级元素之后的 inline 内容需要生成独立 row
       const tempFragment = document.createDocumentFragment();
-      tempFragment.appendChild(sanitizeNode(node));
-      const row = createRowFromNodes(Array.from(tempFragment.childNodes));
+      tempFragment.appendChild(node.cloneNode(true));
+      const row = createBlockElement('basic', tempFragment);
       if (row) result.blockElements.unshift(row);
     }
   });
 
-  // 处理纯 inline 内容的情况
   if (!hasBlock) {
     result.inlineContent = fragment;
   }
@@ -107,59 +119,56 @@ function processHTML(html: string): ProcessResult {
 
 function processBlockElement(element: HTMLElement, rows: HTMLElement[]) {
   let currentInlineNodes: Node[] = [];
+  const tagName = element.tagName.toLowerCase();
 
+  const blockType = BLOCK_TYPE_MAP[tagName] || 'basic';
+  if (blockType == BlockType.HTitle || blockType == BlockType.List) {
+    flushInlineNodes([element], blockType, rows)
+    return
+  }
+
+  // 处理子节点
   Array.from(element.childNodes).forEach(node => {
     if (isBlockElement(node)) {
-      // 遇到块级元素时先处理已积累的 inline 内容
-      flushInlineNodes(currentInlineNodes, rows);
-
-      // 递归处理嵌套块级元素
+      flushInlineNodes(currentInlineNodes, blockType, rows);
       processBlockElement(node as HTMLElement, rows);
     } else {
-      // 收集 inline 内容（自动深度克隆）
       currentInlineNodes.push(node.cloneNode(true));
     }
   });
 
-  // 处理元素末尾的 inline 内容
-  flushInlineNodes(currentInlineNodes, rows);
+  // 处理末尾inline内容
+  flushInlineNodes(currentInlineNodes, blockType, rows);
 }
 
-function flushInlineNodes(nodes: Node[], rows: HTMLElement[]) {
+function createBlockElement(btype: string, content?: DocumentFragment): HTMLElement {
+  const block = document.createElement('div');
+  block.dataset.btype = btype;
+
+  if (content) {
+    block.appendChild(content);
+  }
+  return block;
+}
+
+function flushInlineNodes(nodes: Node[], blockType: string, rows: HTMLElement[]) {
   if (nodes.length === 0) return;
 
-  const row = createRowFromNodes(nodes);
+  let df = new DocumentFragment()
+  nodes.forEach(n => df.appendChild(n))
+
+  const row = createBlockElement(blockType, df);
   if (row) {
     rows.push(row);
     nodes.length = 0; // 清空数组
   }
 }
 
-function createRowFromNodes(nodes: Node[]): HTMLElement | null {
-  const row = document.createElement('div');
-  row.className = 'row';
-
-  // 处理每个节点并保留结构
-  nodes.forEach(node => {
-    const clonedNode = sanitizeNode(node);
-    if (clonedNode.nodeType === Node.TEXT_NODE) {
-      const text = clonedNode.textContent || '';
-      if (text) {
-        row.appendChild(document.createTextNode(text));
-      }
-    } else {
-      row.appendChild(clonedNode);
-    }
-  });
-
-  return row.textContent ? row : null;
-}
-
-// 获取当前光标所在的 .row 元素
+// 获取当前光标所在的行
 function getCurrentRow(selection: Selection): HTMLElement | null {
   const node = selection.anchorNode;
   return node ? (node.nodeType === Node.TEXT_NODE ?
-    node.parentElement : node as HTMLElement).closest('.row') : null;
+    node.parentElement : node as HTMLElement).closest("[data-btype]") : null;
 }
 
 // 在现有 row 中插入 inline 内容
@@ -199,64 +208,12 @@ function insertBlockElementsAfter(afterElement: HTMLElement | null, elements: HT
   });
 }
 
-
-// 允许的样式属性及对应值
-const ALLOWED_STYLES: Record<string, RegExp> = {
-  'font-weight': /^bold$/,
-  'font-style': /^italic$/,
-  'text-decoration': /^(underline|line-through)$/,
-};
-
-// only preset style collections are allowed to be retained
-function sanitizeNode(node: Node): Node {
-  if (node.nodeType !== Node.ELEMENT_NODE) {
-    return node.cloneNode(true);
-  }
-
-  const element = node.cloneNode(false) as HTMLElement;
-  const original = node as HTMLElement;
-
-  // 处理样式
-  const style = original.getAttribute('style');
-  if (style) {
-    const sanitized = sanitizeStyles(style);
-    if (sanitized) {
-      element.setAttribute('style', sanitized);
-    } else {
-      element.removeAttribute('style')
-    }
-  }
-  
-  // 递归处理子节点
-  Array.from(original.childNodes).forEach(child => {
-    element.appendChild(sanitizeNode(child));
-  });
-
-  return element;
-}
-
-// sanitizeStyles 使用正则表达式严格过滤样式
-function sanitizeStyles(rawStyle: string): string {
-  const styles = rawStyle.split(';').reduce((acc, rule) => {
-    const [prop, value] = rule.split(':').map(s => s.trim().toLowerCase());
-    if (!prop || !value) return acc;
-
-    // 处理其他允许属性
-    if (ALLOWED_STYLES[prop]?.test(value)) {
-      acc.push(`${prop}: ${value}`);
-    }
-    return acc;
-  }, [] as string[]);
-
-  return styles.join('; ');
-}
-
 function processPlainText(text: string): ProcessResult {
   const result: ProcessResult = {
     inlineContent: null,
     blockElements: []
   };
-  
+
   // 按换行符分割并过滤空内容
   const paragraphs = text.split(/\r?\n/)
     .map(p => p.trim())
@@ -272,8 +229,7 @@ function processPlainText(text: string): ProcessResult {
   // 剩余段落创建块级元素
   result.blockElements = paragraphs.slice(1)
     .map(p => {
-      const row = document.createElement('div');
-      row.className = 'row';
+      const row = basicBlockConfig.createElement()
       row.textContent = p;
       return row;
     });

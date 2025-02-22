@@ -174,6 +174,7 @@ export default class BlockNormalizer {
   private postProcess(container: HTMLElement) {
     this.mergeAdjacentLists(container);
     this.handleEmptyElements(container);
+    sanitizeNode(container)
   }
 
   private mergeAdjacentLists(container: HTMLElement) {
@@ -279,4 +280,53 @@ export default class BlockNormalizer {
       }
     });
   }
+}
+
+// 允许的样式属性及对应值
+const ALLOWED_STYLES: Record<string, RegExp> = {
+  'font-weight': /^bold$/,
+  'font-style': /^italic$/,
+  'text-decoration': /^(underline|line-through)$/,
+};
+
+// only preset style collections are allowed to be retained
+function sanitizeNode(node: Node) {
+  if (node.nodeType !== Node.ELEMENT_NODE) {
+    return node
+  }
+  let element = node as HTMLElement
+
+  // 处理样式
+  const style = element.getAttribute('style');
+  if (style) {
+    const sanitized = sanitizeStyles(style);
+    if (sanitized) {
+      element.setAttribute('style', sanitized);
+    } else {
+      element.removeAttribute('style')
+    }
+  }
+  
+  // 递归处理子节点
+  Array.from(element.childNodes).forEach(child => {
+    sanitizeNode(child)
+  });
+  
+  return element;
+}
+
+// sanitizeStyles 使用正则表达式严格过滤样式
+function sanitizeStyles(rawStyle: string): string {
+  const styles = rawStyle.split(';').reduce((acc, rule) => {
+    const [prop, value] = rule.split(':').map(s => s.trim().toLowerCase());
+    if (!prop || !value) return acc;
+
+    // 处理其他允许属性
+    if (ALLOWED_STYLES[prop]?.test(value)) {
+      acc.push(`${prop}: ${value}`);
+    }
+    return acc;
+  }, [] as string[]);
+
+  return styles.join('; ');
 }

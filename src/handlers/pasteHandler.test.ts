@@ -1,5 +1,6 @@
 import {setRange} from "../range";
 import {handlePaste} from "./pasteHandler";
+import BlockNormalizer from "../block/blockNormalizer";
 
 class ClipboardEventMock extends Event {
   clipboardData: DataTransfer;
@@ -15,7 +16,7 @@ global.ClipboardEvent = ClipboardEventMock as any;
 test('handlePaste', () => {
   let div = document.createElement("div")
   div.className = 'direct-editor'
-  div.innerHTML = '<div class="row">1</div>'
+  div.innerHTML = '<div data-btype="basic">1</div>'
   document.body.appendChild(div);
 
   // Create clipboard data mock
@@ -33,17 +34,17 @@ test('handlePaste', () => {
   setRange(div.firstChild.firstChild, 1, div.firstChild.firstChild, 1)
   handlePaste(event);
 
-  expect(div.innerHTML).toBe('<div class="row">1</div>' +
-    '<div class="row">111</div>' +
-    '<div class="row">222</div>' +
-    '<div class="row">333</div>' 
+  expect(div.innerHTML).toBe('<div data-btype="basic">1</div>' +
+    '<div data-btype="basic">111</div>' +
+    '<div data-btype="basic">222</div>' +
+    '<div data-btype="basic">333</div>' 
     );
 });
 
 test('handlePaste2', () => {
   let div = document.createElement("div")
   div.className = 'direct-editor'
-  div.innerHTML = '<div class="row">1</div>'
+  div.innerHTML = '<div data-btype="basic">1</div>'
   document.body.appendChild(div);
 
   // Create clipboard data mock
@@ -61,16 +62,16 @@ test('handlePaste2', () => {
   setRange(div.firstChild.firstChild, 1, div.firstChild.firstChild, 1)
   handlePaste(event);
 
-  expect(div.innerHTML).toBe('<div class="row">1111<span>aaa</span></div>' +
-    '<div class="row">222</div>' +
-    '<div class="row">333</div>'
+  expect(div.innerHTML).toBe('<div data-btype="basic">1111<span>aaa</span></div>' +
+    '<div data-btype="basic">222</div>' +
+    '<div data-btype="basic">333</div>'
   );
 });
 
 test('handlePaste3', () => {
   let div = document.createElement("div")
   div.className = 'direct-editor'
-  div.innerHTML = '<div class="row">1</div>'
+  div.innerHTML = '<div data-btype="basic">1</div>'
   document.body.appendChild(div);
 
   // Create clipboard data mock
@@ -88,18 +89,18 @@ test('handlePaste3', () => {
   setRange(div.firstChild.firstChild, 1, div.firstChild.firstChild, 1)
   handlePaste(event);
 
-  expect(div.innerHTML).toBe('<div class="row">1</div>' +
-    '<div class="row">111</div>' +
-    '<div class="row">222</div>' +
-    '<div class="row">333</div>' +
-    '<div class="row">444</div>'
+  expect(div.innerHTML).toBe('<div data-btype="basic">1</div>' +
+    '<div data-btype="basic">111</div>' +
+    '<div data-btype="basic">222</div>' +
+    '<div data-btype="basic">333</div>' +
+    '<div data-btype="basic">444</div>'
   );
 });
 
 test('handlePaste4', () => {
   let div = document.createElement("div")
   div.className = 'direct-editor'
-  div.innerHTML = '<div class="row">1</div>'
+  div.innerHTML = '<div data-btype="basic">1</div>'
   document.body.appendChild(div);
 
   // Create clipboard data mock
@@ -117,16 +118,19 @@ test('handlePaste4', () => {
   setRange(div.firstChild.firstChild, 1, div.firstChild.firstChild, 1)
   handlePaste(event);
   
-  expect(div.innerHTML).toBe('<div class="row">1111<span style="font-weight: bold">aaa</span></div>' +
-    '<div class="row">222</div>' +
-    '<div class="row">333</div>'
+  let bn = new BlockNormalizer();
+  bn.normalize(div)
+  
+  expect(div.innerHTML).toBe('<div data-btype="basic">1111<span style="font-weight: bold">aaa</span></div>' +
+    '<div data-btype="basic">222</div>' +
+    '<div data-btype="basic">333</div>'
   );
 });
 
 test('handlePaste5', () => {
   let div = document.createElement("div")
   div.className = 'direct-editor'
-  div.innerHTML = '<div class="row">1</div>'
+  div.innerHTML = '<div data-btype="basic">1</div>'
   document.body.appendChild(div);
 
   // Create clipboard data mock
@@ -144,16 +148,19 @@ test('handlePaste5', () => {
   setRange(div.firstChild.firstChild, 1, div.firstChild.firstChild, 1)
   handlePaste(event);
 
-  expect(div.innerHTML).toBe('<div class="row">1111<span>aaa</span></div>' +
-    '<div class="row">222</div>' +
-    '<div class="row">333</div>'
+  let bn = new BlockNormalizer();
+  bn.normalize(div)
+  
+  expect(div.innerHTML).toBe('<div data-btype="basic">1111<span>aaa</span></div>' +
+    '<div data-btype="basic">222</div>' +
+    '<div data-btype="basic">333</div>'
   );
 });
 
 test('handlePaste6', () => {
   let div = document.createElement("div")
   div.className = 'direct-editor'
-  div.innerHTML = '<div class="row">111</div>'
+  div.innerHTML = '<div data-btype="basic">111</div>'
   document.body.appendChild(div);
 
   // Create clipboard data mock
@@ -170,13 +177,16 @@ test('handlePaste6', () => {
   setRange(div.firstChild.firstChild, 1, div.firstChild.firstChild, 1)
   handlePaste(event);
 
-  expect(div.innerHTML).toBe('<div class="row">1<span>aaa</span>11</div>');
+  let bn = new BlockNormalizer();
+  bn.normalize(div)
+
+  expect(div.innerHTML).toBe('<div data-btype="basic">1<span>aaa</span>11</div>');
 });
 
 test('handlePaste7', () => {
   let div = document.createElement("div")
   div.className = 'direct-editor'
-  div.innerHTML = '<div class="row">111</div>'
+  div.innerHTML = '<div data-btype="basic">111</div>'
   document.body.appendChild(div);
 
   // Create clipboard data mock
@@ -195,13 +205,13 @@ test('handlePaste7', () => {
   setRange(div.firstChild.firstChild, 1, div.firstChild.firstChild, 1)
   handlePaste(event);
 
-  expect(div.innerHTML).toBe('<div class="row">1text11</div>');
+  expect(div.innerHTML).toBe('<div data-btype="basic">1text11</div>');
 });
 
 test('handlePaste8', () => {
   let div = document.createElement("div")
   div.className = 'direct-editor'
-  div.innerHTML = '<div class="row">111</div>'
+  div.innerHTML = '<div data-btype="basic">111</div>'
   document.body.appendChild(div);
 
   // Create clipboard data mock
@@ -220,6 +230,61 @@ test('handlePaste8', () => {
   setRange(div.firstChild.firstChild, 1, div.firstChild.firstChild, 1)
   handlePaste(event);
 
-  expect(div.innerHTML).toBe('<div class="row">1text11</div>' +
-    '<div class="row">222</div>');
+  expect(div.innerHTML).toBe('<div data-btype="basic">1text11</div>' +
+    '<div data-btype="basic">222</div>');
+});
+
+test('handlePaste9', () => {
+  let div = document.createElement("div")
+  div.className = 'direct-editor'
+  div.innerHTML = '<div data-btype="basic">1</div>'
+  document.body.appendChild(div);
+
+  // Create clipboard data mock
+  let clipboardData: DataTransfer = {
+    getData:  jest.fn().mockImplementation((type: string) => {
+      if (type === 'text/html') {
+        return '<div>111<h1>123</h1></div>';
+      }
+      return '';
+    })
+  } as unknown as DataTransfer;
+
+  let event: ClipboardEvent = new ClipboardEvent('paste', { clipboardData });
+  
+  setRange(div.firstChild.firstChild, 1, div.firstChild.firstChild, 1)
+  handlePaste(event);
+
+  expect(div.innerHTML).toBe('<div data-btype="basic">1</div>' +
+    '<div data-btype="basic">111</div>' +
+    '<div data-btype="htitle"><h1>123</h1></div>'
+  );
+});
+
+test('handlePaste10', () => {
+  let div = document.createElement("div")
+  div.className = 'direct-editor'
+  div.innerHTML = '<div data-btype="basic">1</div>'
+  document.body.appendChild(div);
+
+  // Create clipboard data mock
+  let clipboardData: DataTransfer = {
+    getData:  jest.fn().mockImplementation((type: string) => {
+      if (type === 'text/html') {
+        return '111<h1>123</h1><div>333<ul><li>text</li></ul></div>';
+      }
+      return '';
+    })
+  } as unknown as DataTransfer;
+
+  let event: ClipboardEvent = new ClipboardEvent('paste', { clipboardData });
+
+  setRange(div.firstChild.firstChild, 1, div.firstChild.firstChild, 1)
+  handlePaste(event);
+
+  expect(div.innerHTML).toBe('<div data-btype="basic">1111</div>' +
+    '<div data-btype="htitle"><h1>123</h1></div>' +
+    '<div data-btype="basic">333</div>' +
+    '<div data-btype="list"><ul><li>text</li></ul></div>'
+  );
 });
