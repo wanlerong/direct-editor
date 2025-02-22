@@ -15,7 +15,7 @@ function createDoc(callback) {
   doc.fetch(function (err) {
     if (err) throw err;
     if (doc.type === null) {
-      let initJsonMl = ["DIV", {"class": "direct-editor", "contenteditable": "true"}, ["DIV", {"class": "row"}, "a"], ["DIV", {"class": "row"}, "a"], ["DIV", {"class": "row"}, "a"]]
+      let initJsonMl = ["DIV", {"class": "direct-editor", "contenteditable": "true"}, ["DIV", {"data-btype": "basic"}, "a"], ["DIV", {"data-btype": "basic"}, "a"], ["DIV", {"data-btype": "basic"}, "a"]]
       doc.create(initJsonMl, callback);
       return;
     }

@@ -69,7 +69,7 @@ export default class BlockNormalizer {
   }
 
   private processBlockElement(
-    element: HTMLElement,
+    element: HTMLElement, // is a block, <div data-btype="xxx">
     blockType: BlockType,
     parentSchema: HTMLStructureRule | null,
   ) {
@@ -141,9 +141,6 @@ export default class BlockNormalizer {
   private processTextNode(node: Node, parentSchema: HTMLStructureRule | null) {
     if (!parentSchema?.allowText) {
       node.parentNode?.removeChild(node);
-    } else {
-      // 合并相邻文本节点
-      node.nodeValue = node.nodeValue?.trim() || '';
     }
   }
 

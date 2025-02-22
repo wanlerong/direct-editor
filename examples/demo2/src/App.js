@@ -171,7 +171,7 @@ function App() {
     <div className="App">
       <button onClick={handleClick}>加粗</button>
       <button onClick={handleClick2}>list</button>
-      <div ref={ref}><div className="row">a</div><div className="row">a</div><div className="row">a</div></div>
+      <div ref={ref}><div data-btype="basic">a</div><div data-btype="basic">a</div><div data-btype="basic">a</div></div>
     </div>
   );
 }

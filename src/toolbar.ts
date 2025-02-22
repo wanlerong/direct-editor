@@ -12,6 +12,7 @@ import {
 import {BlockType, HTitleLevel} from "./const/const";
 import {replaceListType} from "./components/ul";
 import {Action, ActiveStatus} from "./const/activeStatus";
+import {basicBlockConfig, listBlockConfig} from "./block/block";
 
 export class Toolbar {
   private editor: Editor
@@ -101,6 +102,7 @@ export class Toolbar {
     if (level == HTitleLevel.LEVEL_NONE) {
       targetDivs.forEach((td: HTMLElement) => {
         td.innerHTML = td.innerText
+        td.dataset.btype = "basic";
       })
     } else {
       targetDivs.forEach((td: HTMLElement) => {
@@ -108,6 +110,7 @@ export class Toolbar {
         hTag.innerText = td.innerText;
         td.innerHTML = ''
         td.appendChild(hTag)
+        td.dataset.btype = "htitle";
       })
     }
 
@@ -248,6 +251,7 @@ export class Toolbar {
         }
       })
       targetDivs2[0].replaceChildren(ul)
+      targetDivs2[0].dataset.btype="list"
     })
 
     diffLists.forEach((node) => {
@@ -289,14 +293,14 @@ export class Toolbar {
       if (idx < idx1) {
         return
       } else if (idx >= idx1 && idx <= idx2) {
-        const div = document.createElement("div");
+        const div = basicBlockConfig.createElement();
         div.replaceChildren(...li.childNodes)
         insertAfter(n1, div)
         n1 = div
         toRemove.push((li as HTMLElement))
       } else {
         if (newDiv == null) {
-          newDiv = document.createElement("div");
+          newDiv = listBlockConfig.createElement();
           newList = document.createElement(listType);
           newDiv.appendChild(newList)
         }
