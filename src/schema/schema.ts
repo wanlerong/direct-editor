@@ -24,12 +24,18 @@ export const spanSchema: HTMLStructureRule = {
   attributes: ["style", "id"]
 }
 
+export const brSchema: HTMLStructureRule = {
+  allowedTags: [],
+  allowText: false,
+  attributes: ["id"]
+}
 export const basicSchema: HTMLStructureRule = {
   allowedTags: ["span", "br", "a"],
   allowText: true,
   attributes: ["id", "data-btype"],
   children: {
-    "span": spanSchema
+    "span": spanSchema,
+    "br": brSchema,
   }
 }
 
@@ -53,6 +59,7 @@ export const liSchema: HTMLStructureRule={
   attributes: ["id"],
   children: {
     "span": spanSchema,
+    "br": brSchema,
     // 使用 getter 延迟获取 ulSchema
     get "ul"() {
       return ulSchema;

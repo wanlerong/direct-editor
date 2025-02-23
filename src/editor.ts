@@ -35,21 +35,23 @@ export class Editor {
 
   private mutationCallback = (mutations: MutationRecord[], observer: MutationObserver) => {
     this.mutationsBuffer.push(...mutations);
-    
     if (this.debounceTimeout) {
       clearTimeout(this.debounceTimeout);
     }
     // Set a buffer for mutations and process them every 200ms.
     // 1. Improves overall performance.
-    // 2. Since normalization usually follows immediately, undoing a batch will return the state to the normalized one, 
-    // avoiding undoing to a non-normalized state, which would be immediately normalized back and make the undo ineffective.
     this.debounceTimeout = setTimeout(() => {
-      this.processMutations();
+      // dom 变更触发 normalize，避免从控制台直接修改 html 导致 non-normalized state
+      // 2. avoiding undoing to a non-normalized state, which would be immediately normalized back and make the undo ineffective.
+      // avoiding send a non-normalized state to other real time Collaborative-editing client
+      this.normalize()
+      // 强制同步处理 MutationObserver 的队列, 立刻获取到 normalize 产生的 Mutations.
+      const syncMutations = observer.takeRecords();
+      this.processMutations([...this.mutationsBuffer, ...syncMutations]);
     }, 200);
   };
 
-  processMutations = () => {
-    const mutationsToProcess = [...this.mutationsBuffer];
+  processMutations = (mutationsToProcess: MutationRecord[]) => {
     this.mutationsBuffer = [];
     if (mutationsToProcess.length === 0) {
       return;
@@ -135,10 +137,6 @@ export class Editor {
           _this.undoManager.undo();
         }
       }
-      
-      setTimeout(() => {
-        _this.normalize()
-      }, 1)
     })
 
     // selection change
