@@ -123,8 +123,8 @@ test('getIntersectionBlockType', () => {
 
 test('getIntersectionBlockType_none', () => {
   let div = document.createElement("div")
-  div.innerHTML = '<div><h1>3456</h1></div>' +
-    '<div><h2>3456</h2></div>'
+  div.innerHTML = '<div data-btype="htitle"><h1>3456</h1></div>' +
+    '<div data-btype="htitle"><h2>3456</h2></div>'
   document.body.appendChild(div);
   setRange(div.firstChild.firstChild.firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
   let got = getIntersectionBlockInfo()
@@ -133,8 +133,8 @@ test('getIntersectionBlockType_none', () => {
 
 test('getIntersectionBlockType_none_2', () => {
   let div = document.createElement("div")
-  div.innerHTML = '<div>3456</div>' +
-    '<div><h2>3456</h2></div>'
+  div.innerHTML = '<div data-btype="basic">3456</div>' +
+    '<div data-btype="htitle"><h2>3456</h2></div>'
   document.body.appendChild(div);
   setRange(div.firstChild.firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
   let got = getIntersectionBlockInfo()
