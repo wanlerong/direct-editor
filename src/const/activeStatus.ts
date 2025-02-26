@@ -1,11 +1,11 @@
-import {BlockType} from "./const";
+import {BlockInfo} from "../block/blockType";
 
 export type ActiveStatus = {
   bold: boolean;
   italic: boolean;
   underline: boolean;
   strikethrough: boolean;
-  blockType: BlockType;
+  blockInfo: BlockInfo;
   disableActions: Action[]; // 当前禁用的 actions
 };
 

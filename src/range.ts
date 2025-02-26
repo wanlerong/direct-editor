@@ -6,7 +6,7 @@ import {
   isTextNode,
 } from "./domUtils";
 import {RangeIterator} from "./rangeIterator";
-import {BlockType, NodeToBlockType} from "./const/const";
+import {BlockType, BlockInfo, BlockSubType, BlockInfoNone} from "./block/blockType";
 
 export type RangeSnapshot = {
   startContainerPath: string;
@@ -126,39 +126,86 @@ function intersectStyles(stylesA: Record<string, string>, stylesB: Record<string
   return intersectedStyles;
 }
 
-export function getIntersectionBlockType(): BlockType {
-  let range = getSelectionRange()
-  let targetBlocks = []
-  let blockTypeNodeNames = ["H1", "H2", "H3", "H4", "H5", "H6", "UL", "OL"]
+export function getIntersectionBlockInfo(): BlockInfo {
+  const range = getSelectionRange();
+  const targetBlocks: BlockInfo[] = [];
+  const seenElements = new WeakSet();
 
   iterateSubtree(new RangeIterator(range), (node) => {
-    if (isCharacterDataNode(node) || node.nodeName == "BR") {
-      while (node) {
-        if (blockTypeNodeNames.includes(node.nodeName)) {
-          if (!targetBlocks.includes(node)) {
-            targetBlocks.push(node)
+    if (isCharacterDataNode(node) || node.nodeName === "BR") {
+      let current = node;
+      let blockElement = null;
+      
+      while (current) {
+        if (current.nodeType === Node.ELEMENT_NODE) {
+          const el = current as HTMLElement;
+          if (el.hasAttribute('data-btype')) {
+            blockElement = el;
+            break;
           }
-          break
         }
-        node = node.parentNode
-        if (node == null) {
-          targetBlocks.push(null)
-        }
+        current = current.parentNode;
+      }
+
+      if (blockElement && !seenElements.has(blockElement)) {
+        seenElements.add(blockElement);
+        const blockInfo = parseBlockElement(blockElement);
+        targetBlocks.push(blockInfo);
       }
     }
-    return false
-  })
+    return false;
+  });
+
+  return determineCommonBlockInfo(targetBlocks);
+}
+
+function parseBlockElement(element: HTMLElement): BlockInfo {
+  const blockTypeAttr = element.getAttribute('data-btype');
+
+  switch (blockTypeAttr) {
+    case 'basic':
+      return { blockType: BlockType.Basic, subType: 'none' };
+
+    case 'htitle': {
+      const heading = element.querySelector('h1, h2, h3, h4, h5, h6');
+      if (!heading) {
+          return BlockInfoNone;
+      }
+      const subType = heading.tagName.toLowerCase() as BlockSubType;
+      return {
+        blockType: BlockType.HTitle,
+        subType: ['h1','h2','h3','h4','h5','h6'].includes(subType)
+          ? subType
+          : 'none'
+      };
+    }
+
+    case 'list': {
+      const listElement = element.querySelector('ul, ol');
+      const listType = listElement?.tagName.toLowerCase();
+      return {
+        blockType: BlockType.List,
+        subType: listType === 'ul' ? 'ul' : 'ol'
+      };
+    }
+
+    default:
+      return BlockInfoNone;
+  }
+}
+
+function determineCommonBlockInfo(blocks: BlockInfo[]): BlockInfo {
+  if (blocks.length === 0) {
+    return { blockType: BlockType.None, subType: 'none' };
+  }
   
-  return targetBlocks.reduce((commonType, block, index) => {
-    if (block === null) {
-      return BlockType.BLOCK_TYPE_NONE;
-    }
-    const nodeBlockType = NodeToBlockType(block);
-    if (index === 0) {
-      return nodeBlockType;
-    }
-    return commonType == nodeBlockType ? commonType : BlockType.BLOCK_TYPE_NONE  
-  }, BlockType.BLOCK_TYPE_NONE);
+  const firstBlock = blocks[0];
+  const isSameType = blocks.every(b =>
+    b.blockType === firstBlock.blockType &&
+    b.subType === firstBlock.subType
+  );
+
+  return isSameType ? firstBlock : { blockType: BlockType.None, subType: 'none' };
 }
 
 export function iterateSubtree(rangeIterator: RangeIterator, func: (node: Node) => boolean) {

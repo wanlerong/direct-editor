@@ -2,17 +2,18 @@ import {Editor} from "./editor"
 import {RangeIterator} from "./rangeIterator";
 import {getClosestAncestorByNodeName, insertAfter, isCharacterDataNode, isElementNode, isTextNode} from "./domUtils";
 import {
-  getIntersectionBlockType,
+  getIntersectionBlockInfo,
   getIntersectionStyle,
   getSelectionRange,
   iterateSubtree,
   setRange,
   splitRange
 } from "./range";
-import {BlockType, HTitleLevel} from "./const/const";
+import {HTitleLevel} from "./const/const";
 import {replaceListType} from "./components/ul";
 import {Action, ActiveStatus} from "./const/activeStatus";
 import {basicBlockConfig, listBlockConfig} from "./block/block";
+import {BlockInfoNone} from "./block/blockType";
 
 export class Toolbar {
   private editor: Editor
@@ -25,7 +26,7 @@ export class Toolbar {
       italic: false,
       underline: false,
       strikethrough: false,
-      blockType: BlockType.BLOCK_TYPE_NONE,
+      blockInfo: BlockInfoNone,
       disableActions: []
     }
   }
@@ -136,7 +137,7 @@ export class Toolbar {
     this.activeStatus.italic = is['fontStyle'] == 'italic'
     this.activeStatus.strikethrough = is['textDecoration'] == 'line-through'
     this.activeStatus.underline = is['textDecoration'] == 'underline'
-    this.activeStatus.blockType = getIntersectionBlockType()
+    this.activeStatus.blockInfo = getIntersectionBlockInfo()
     this.activeStatus.disableActions = this.calculateDisableActions()
     this.editor.asChange(this.activeStatus)
   }

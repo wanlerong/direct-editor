@@ -1,4 +1,4 @@
-import {Editor,Const,ActiveStatusConst} from "direct-editor"
+import {Editor,Const,ActiveStatusConst,BlockConst} from "direct-editor"
 
 let btn1 = document.getElementById("btn1")
 let btn2 = document.getElementById("btn2")
@@ -17,21 +17,21 @@ let e = new Editor(document.getElementById("container"), (ops) => {
   btn3.className = as.underline ? 'active' : ''
   btn4.className = as.strikethrough ? 'active' : ''
   
-  btn5.className = as.blockType === Const.BlockType.BLOCK_TYPE_H1 ? 'active' : ''
-  btn6.className = as.blockType === Const.BlockType.BLOCK_TYPE_H2 ? 'active' : ''
-  btn7.className = as.blockType === Const.BlockType.BLOCK_TYPE_H3 ? 'active' : ''
+  btn5.className = as.blockInfo.blockType === BlockConst.BlockType.HTitle && as.blockInfo.subType === "h1" ? 'active' : ''
+  btn6.className = as.blockInfo.blockType === BlockConst.BlockType.HTitle && as.blockInfo.subType === "h2" ? 'active' : ''
+  btn7.className = as.blockInfo.blockType === BlockConst.BlockType.HTitle && as.blockInfo.subType === "h3" ? 'active' : ''
   if (as.disableActions.includes(ActiveStatusConst.Action.HTITLE)) {
     btn5.className = 'disable'
     btn6.className = 'disable'
     btn7.className = 'disable'
   }
   
-  btn8.className = as.blockType === Const.BlockType.BLOCK_TYPE_UL ? 'active' : ''
+  btn8.className = as.blockInfo.blockType === BlockConst.BlockType.List && as.blockInfo.subType === "ul" ? 'active' : ''
   if (as.disableActions.includes(ActiveStatusConst.Action.UN_ORDERED_LIST)) {
     btn8.className = 'disable'
   }
   
-  btn9.className = as.blockType === Const.BlockType.BLOCK_TYPE_OL ? 'active' : ''
+  btn9.className = as.blockInfo.blockType === BlockConst.BlockType.List && as.blockInfo.subType === "ol" ? 'active' : ''
   if (as.disableActions.includes(ActiveStatusConst.Action.ORDERED_LIST)) {
     btn9.className = 'disable'
   }

@@ -1,13 +1,13 @@
 import {
-  getIntersectionBlockType,
+  getIntersectionBlockInfo,
   getIntersectionStyle,
   getSelectionRange,
   iterateSubtree, setRange,
   splitRange,
   splitTextNode
 } from "./range";
-import {BlockType} from "./const/const";
 import {RangeIterator} from "./rangeIterator";
+import {BlockInfoNone, BlockType} from "./block/blockType";
 
 test('splitTextNode', () => {
   let div = document.createElement("div")
@@ -113,12 +113,12 @@ test('getIntersectionStyle_multi_common_style', () => {
 
 test('getIntersectionBlockType', () => {
   let div = document.createElement("div")
-  div.innerHTML = '<div><h1>3456</h1></div>' +
-    '<div><h1>3456</h1></div>'
+  div.innerHTML = '<div data-btype="htitle"><h1>3456</h1></div>' +
+    '<div data-btype="htitle"><h1>3456</h1></div>'
   document.body.appendChild(div);
   setRange(div.firstChild.firstChild.firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
-  let got = getIntersectionBlockType()
-  expect(got).toEqual(BlockType.BLOCK_TYPE_H1);
+  let got = getIntersectionBlockInfo()
+  expect(got).toEqual({blockType:BlockType.HTitle, subType:"h1"});
 });
 
 test('getIntersectionBlockType_none', () => {
@@ -127,8 +127,8 @@ test('getIntersectionBlockType_none', () => {
     '<div><h2>3456</h2></div>'
   document.body.appendChild(div);
   setRange(div.firstChild.firstChild.firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
-  let got = getIntersectionBlockType()
-  expect(got).toEqual(BlockType.BLOCK_TYPE_NONE);
+  let got = getIntersectionBlockInfo()
+  expect(got).toEqual(BlockInfoNone);
 });
 
 test('getIntersectionBlockType_none_2', () => {
@@ -137,8 +137,8 @@ test('getIntersectionBlockType_none_2', () => {
     '<div><h2>3456</h2></div>'
   document.body.appendChild(div);
   setRange(div.firstChild.firstChild, 1, div.childNodes[1].firstChild.firstChild, 3)
-  let got = getIntersectionBlockType()
-  expect(got).toEqual(BlockType.BLOCK_TYPE_NONE);
+  let got = getIntersectionBlockInfo()
+  expect(got).toEqual(BlockInfoNone);
 });
 
 test('iterateSubtree', () => {

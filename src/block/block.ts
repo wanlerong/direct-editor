@@ -36,5 +36,3 @@ export const listBlockConfig: BlockConfig = {
     return el;
   }
 }
-
-
