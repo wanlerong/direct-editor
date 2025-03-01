@@ -1,4 +1,4 @@
-import {RangeSnapshot} from "../range";
+import {RangeSnapshot} from "../range.js";
 
 // https://github.com/ottypes/json0
 type key = number | string

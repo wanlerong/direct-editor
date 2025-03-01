@@ -1,6 +1,6 @@
-import {basicBlockConfig, BlockConfig, htitleBlockConfig, listBlockConfig} from "./block";
-import {BlockType} from "./blockType";
-import {HTMLStructureRule, rootSchema} from "../schema/schema";
+import {basicBlockConfig, BlockConfig, htitleBlockConfig, listBlockConfig} from "./block.js";
+import {BlockType} from "./blockType.js";
+import {HTMLStructureRule, rootSchema} from "../schema/schema.js";
 
 export default class BlockNormalizer {
   private readonly blockRegistry = new Map<BlockType, BlockConfig>();

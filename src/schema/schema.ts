@@ -1,4 +1,4 @@
-import {BlockType} from "../block/blockType";
+import {BlockType} from "../block/blockType.js";
 
 // schema for normalize
 export type HTMLStructureRule = {

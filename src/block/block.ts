@@ -1,5 +1,5 @@
-import {HTMLStructureRule, basicSchema, htitleSchema, listSchema} from "../schema/schema";
-import {BlockType} from "./blockType";
+import {HTMLStructureRule, basicSchema, htitleSchema, listSchema} from "../schema/schema.js";
+import {BlockType} from "./blockType.js";
 
 export interface BlockConfig {
   type: BlockType;

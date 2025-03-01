@@ -1,4 +1,4 @@
-import {getSelectionRange, iterateSubtree, setRange} from "../range";
+import {getSelectionRange, iterateSubtree, setRange} from "../range.js";
 import {
   getClosestAncestorByNodeName, getClosestAncestorByNodeNames,
   getLastTextNode,
@@ -6,10 +6,10 @@ import {
   insertAfter,
   insertBefore,
   isTextNode
-} from "../domUtils";
-import {indentLi, isNestedLi} from "../components/ul";
-import {RangeIterator} from "../rangeIterator";
-import {listBlockConfig} from "../block/block";
+} from "../domUtils.js";
+import {indentLi, isNestedLi} from "../components/ul.js";
+import {RangeIterator} from "../rangeIterator.js";
+import {listBlockConfig} from "../block/block.js";
 
 export function handleBackspace(e: KeyboardEvent) {
   if (e.key != 'Backspace') {

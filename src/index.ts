@@ -1,4 +1,4 @@
-export {Editor} from './editor'
-export * as Const from './const/const'
-export * as ActiveStatusConst from './const/activeStatus'
-export * as BlockConst from './block/blockType'
+export {Editor} from './editor.js'
+export * as Const from './const/const.js'
+export * as ActiveStatusConst from './const/activeStatus.js'
+export * as BlockConst from './block/blockType.js'

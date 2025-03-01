@@ -4,9 +4,9 @@ import {
   insertAfter,
   isCharacterDataNode,
   isTextNode,
-} from "./domUtils";
-import {RangeIterator} from "./rangeIterator";
-import {BlockType, BlockInfo, BlockSubType, BlockInfoNone} from "./block/blockType";
+} from "./domUtils.js";
+import {RangeIterator} from "./rangeIterator.js";
+import {BlockType, BlockInfo, BlockSubType, BlockInfoNone} from "./block/blockType.js";
 
 export type RangeSnapshot = {
   startContainerPath: string;

@@ -1,4 +1,4 @@
-import {isCharacterDataNode, getClosestAncestorIn, getNodeLength} from "./domUtils";
+import {isCharacterDataNode, getClosestAncestorIn, getNodeLength} from "./domUtils.js";
 
 // range 遍历器
 // 参考自 https://github.com/timdown/rangy

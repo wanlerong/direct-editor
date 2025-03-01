@@ -1,6 +1,6 @@
-import {Editor} from "./editor";
-import {DeltaItem} from "./lib/delta";
-import {DeltaSource} from "./const/const";
+import {Editor} from "./editor.js";
+import {DeltaItem} from "./lib/delta.js";
+import {DeltaSource} from "./const/const.js";
 
 export class UndoManager {
 

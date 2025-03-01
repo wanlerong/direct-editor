@@ -1,20 +1,20 @@
-import JsonMLHtml from "./lib/jsonml-html";
-import {Toolbar} from "./toolbar";
-import {getSelectionRange, setRange} from "./range";
-import {getClosestAncestorByNodeName} from "./domUtils";
-import {handleBackspace, handleTab} from "./handlers/keydownHandler";
-import {indentLi, isNestedLi} from "./components/ul";
-import {ActiveStatus} from "./const/activeStatus";
-import {UndoManager} from "./undoManager";
-import {Delta, Op} from "./lib/delta";
-import {MutationHandler} from "./lib/mutation";
-import {DeltaSource} from "./const/const";
-import {domToVirtualNode, VirtualNode} from "./lib/virtualNode";
-import {handlePaste} from "./handlers/pasteHandler";
-import BlockNormalizer from "./block/blockNormalizer";
+import JsonMLHtml from "./lib/jsonml-html.js";
+import {Toolbar} from "./toolbar.js";
+import {getSelectionRange, setRange} from "./range.js";
+import {getClosestAncestorByNodeName} from "./domUtils.js";
+import {handleBackspace, handleTab} from "./handlers/keydownHandler.js";
+import {indentLi, isNestedLi} from "./components/ul.js";
+import {ActiveStatus} from "./const/activeStatus.js";
+import {UndoManager} from "./undoManager.js";
+import {Delta, Op} from "./lib/delta.js";
+import {MutationHandler} from "./lib/mutation.js";
+import {DeltaSource} from "./const/const.js";
+import {domToVirtualNode, VirtualNode} from "./lib/virtualNode.js";
+import {handlePaste} from "./handlers/pasteHandler.js";
+import BlockNormalizer from "./block/blockNormalizer.js";
 
 export class Editor {
-
+  
   public deltaSeq: number;
   public toolbar: Toolbar;
   public undoManager: UndoManager;

@@ -1,9 +1,9 @@
-import {Op} from "./delta";
-import {getJson0Path} from "../path";
-import JsonML from "./jsonml-dom";
-import {getSelectionRange} from "../range";
-import {Editor} from "../editor";
-import {findVirtualNodeByDom, virtualNodeToJsonML} from "./virtualNode";
+import {Op} from "./delta.js";
+import {getJson0Path} from "../path.js";
+import JsonML from "./jsonml-dom.js";
+import {getSelectionRange} from "../range.js";
+import {Editor} from "../editor.js";
+import {findVirtualNodeByDom, virtualNodeToJsonML} from "./virtualNode.js";
 
 export class MutationHandler {
   private editor: Editor

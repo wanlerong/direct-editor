@@ -1,4 +1,4 @@
-import {BlockInfo} from "../block/blockType";
+import {BlockInfo} from "../block/blockType.js";
 
 export type ActiveStatus = {
   bold: boolean;

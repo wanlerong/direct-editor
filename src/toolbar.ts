@@ -1,6 +1,6 @@
-import {Editor} from "./editor"
-import {RangeIterator} from "./rangeIterator";
-import {getClosestAncestorByNodeName, insertAfter, isCharacterDataNode, isElementNode, isTextNode} from "./domUtils";
+import {Editor} from "./editor.js"
+import {RangeIterator} from "./rangeIterator.js";
+import {getClosestAncestorByNodeName, insertAfter, isCharacterDataNode, isElementNode, isTextNode} from "./domUtils.js";
 import {
   getIntersectionBlockInfo,
   getIntersectionStyle,
@@ -8,12 +8,12 @@ import {
   iterateSubtree,
   setRange,
   splitRange
-} from "./range";
-import {HTitleLevel} from "./const/const";
-import {replaceListType} from "./components/ul";
-import {Action, ActiveStatus} from "./const/activeStatus";
-import {basicBlockConfig, listBlockConfig} from "./block/block";
-import {BlockInfoNone} from "./block/blockType";
+} from "./range.js";
+import {HTitleLevel} from "./const/const.js";
+import {replaceListType} from "./components/ul.js";
+import {Action, ActiveStatus} from "./const/activeStatus.js";
+import {basicBlockConfig, listBlockConfig} from "./block/block.js";
+import {BlockInfoNone} from "./block/blockType.js";
 
 export class Toolbar {
   private editor: Editor

@@ -1,6 +1,6 @@
 // 块类型映射配置
-import {basicBlockConfig} from "../block/block";
-import {BlockType} from "../block/blockType";
+import {basicBlockConfig} from "../block/block.js";
+import {BlockType} from "../block/blockType.js";
 
 const BLOCK_TYPE_MAP: Record<string, string> = {
   'ul': 'list',
