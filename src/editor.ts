@@ -259,4 +259,40 @@ export class Editor {
   applyOps(ops: Op[]) {
     this.applyDelta(new Delta(ops), DeltaSource.OUT)
   }
+
+  insertLink(url: string, text: string): void {
+    const validatedURL = this._validateURL(url);
+    const range = getSelectionRange();
+
+    if (!range) return;
+
+    const link = document.createElement('A');
+    link.setAttribute("href", validatedURL);
+    link.textContent = text;
+
+    if (range.collapsed) {
+      range.insertNode(link);
+    } else {
+      range.deleteContents();
+      range.insertNode(link);
+    }
+
+    const newRange = document.createRange();
+    newRange.setStartAfter(link);
+    newRange.collapse(true);
+    setRange(newRange.startContainer, 0, newRange.endContainer, 0);
+
+    this.normalize();
+  }
+  
+  private _validateURL(url: string): string {
+    try {
+      new URL(url);
+      return url;
+    } catch {
+      // 自动补全协议
+      return url.startsWith('//') ? `https:${url}` : `https://${url}`;
+    }
+  }
+  
 }

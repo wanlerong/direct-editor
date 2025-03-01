@@ -10,6 +10,8 @@ let btn7 = document.getElementById("btn7")
 let btn8 = document.getElementById("btn8")
 let btn9 = document.getElementById("btn9")
 
+let btnLink = document.getElementById("btnLink")
+
 let e = new Editor(document.getElementById("container"), (ops) => {
 }, (as)=>{
   btn1.className = as.bold ? 'active' : ''
@@ -84,4 +86,10 @@ btn9.addEventListener('click', (event) => {
   } else {
     e.toolbar.toggleList("ol")
   }
+});
+
+btnLink.addEventListener('click', () => {
+  const url = document.getElementById('linkUrlInput').value;
+  const text = document.getElementById('linkTextInput').value;
+  e.insertLink(url, text);
 });

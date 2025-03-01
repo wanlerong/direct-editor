@@ -29,6 +29,16 @@ export const brSchema: HTMLStructureRule = {
   allowText: false,
   attributes: ["id"]
 }
+
+export const aSchema: HTMLStructureRule = {
+  allowedTags: ["span"],
+  allowText: true,
+  attributes: ["style", "id", "href"],
+  children:{
+    "span": spanSchema,
+  }
+}
+
 export const basicSchema: HTMLStructureRule = {
   allowedTags: ["span", "br", "a"],
   allowText: true,
@@ -36,6 +46,7 @@ export const basicSchema: HTMLStructureRule = {
   children: {
     "span": spanSchema,
     "br": brSchema,
+    "a": aSchema,
   }
 }
 
