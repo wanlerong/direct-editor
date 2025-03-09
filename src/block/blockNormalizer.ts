@@ -37,7 +37,7 @@ export default class BlockNormalizer {
     this.postProcess(container);
     console.log("after postProcess", container.innerHTML)
   }
-
+  
   private processContainer(
     container: HTMLElement,
     schema: HTMLStructureRule | null
@@ -74,7 +74,7 @@ export default class BlockNormalizer {
     parentSchema: HTMLStructureRule | null,
   ) {
     const config = this.blockRegistry.get(blockType);
-    if (!config || !parentSchema.allowedBlocks.includes(blockType)) {
+    if (!config || !parentSchema.childAllowedBlocks.includes(blockType)) {
       this.unwrapElement(element);
       return;
     }
@@ -99,7 +99,7 @@ export default class BlockNormalizer {
           const childTag = childElement.tagName.toLowerCase();
 
           // 检查子标签是否允许
-          if (!schema.allowedTags.includes(childTag)) {
+          if (!schema.childAllowedTags.includes(childTag)) {
             this.unwrapElement(childElement);
             return;
           }
@@ -126,7 +126,7 @@ export default class BlockNormalizer {
 
     // 校验是否允许当前标签
     const tagName = element.tagName.toLowerCase();
-    if (!parentSchema.allowedTags.includes(tagName)) {
+    if (!parentSchema.childAllowedTags.includes(tagName)) {
       this.unwrapElement(element);
       return;
     }
@@ -139,7 +139,7 @@ export default class BlockNormalizer {
   }
 
   private processTextNode(node: Node, parentSchema: HTMLStructureRule | null) {
-    if (!parentSchema?.allowText) {
+    if (!parentSchema?.childAllowText) {
       node.parentNode?.removeChild(node);
     }
   }
@@ -280,6 +280,56 @@ export default class BlockNormalizer {
       }
     });
   }
+  
+  validateElement(element: HTMLElement, schema: HTMLStructureRule | null): boolean {
+    if (!schema) {
+      return true; // No schema, always valid
+    }
+
+    if (element.attributes) {
+      for (const attr of Array.from(element.attributes)) {
+        if (!schema.attributes?.includes(attr.name)) {
+          return false;
+        }
+      }
+    }
+
+    for (const node of Array.from(element.childNodes)) {
+      if (!this.validateChildNode(node, schema)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private validateChildNode(node: Node, parentSchema: HTMLStructureRule): boolean {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return parentSchema.childAllowText === true;
+    }
+
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const element = node as HTMLElement;
+      const tagName = element.tagName.toLowerCase();
+
+      if (!parentSchema.childAllowedTags.includes(tagName)) {
+        return false;
+      }
+
+      // Validate children using child schema
+      const childSchema = parentSchema.children?.[tagName];
+      if (childSchema) {
+        for (const childNode of Array.from(element.childNodes)) {
+          if (!this.validateElement(childNode as HTMLElement, childSchema)) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+
+    return true;
+  }
+  
 }
 
 // 允许的样式属性及对应值

@@ -2,9 +2,9 @@ import {BlockType} from "../block/blockType.js";
 
 // schema for normalize
 export type HTMLStructureRule = {
-  allowedTags: string[];
-  allowText: boolean;
-  allowedBlocks?: BlockType[]; // 允许包含的块类型
+  childAllowedTags: string[];
+  childAllowText: boolean;
+  childAllowedBlocks?: BlockType[]; // 允许包含的块类型
   attributes?: string[];
   children?: {
     [tagName: string]: HTMLStructureRule;
@@ -12,27 +12,27 @@ export type HTMLStructureRule = {
 }
 
 export const rootSchema: HTMLStructureRule = {
-  allowedTags: ["div"],
-  allowText: false,
+  childAllowedTags: ["div"],
+  childAllowText: false,
   attributes: ["class", "contenteditable"],
-  allowedBlocks: [BlockType.Basic, BlockType.HTitle, BlockType.List],
+  childAllowedBlocks: [BlockType.Basic, BlockType.HTitle, BlockType.List],
 }
 
 export const spanSchema: HTMLStructureRule = {
-  allowedTags: [],
-  allowText: true,
+  childAllowedTags: [],
+  childAllowText: true,
   attributes: ["style", "id"]
 }
 
 export const brSchema: HTMLStructureRule = {
-  allowedTags: [],
-  allowText: false,
+  childAllowedTags: [],
+  childAllowText: false,
   attributes: ["id"]
 }
 
 export const aSchema: HTMLStructureRule = {
-  allowedTags: ["span"],
-  allowText: true,
+  childAllowedTags: ["span"],
+  childAllowText: true,
   attributes: ["style", "id", "href"],
   children:{
     "span": spanSchema,
@@ -40,8 +40,8 @@ export const aSchema: HTMLStructureRule = {
 }
 
 export const basicSchema: HTMLStructureRule = {
-  allowedTags: ["span", "br", "a"],
-  allowText: true,
+  childAllowedTags: ["span", "br", "a"],
+  childAllowText: true,
   attributes: ["id", "data-btype"],
   children: {
     "span": spanSchema,
@@ -51,8 +51,8 @@ export const basicSchema: HTMLStructureRule = {
 }
 
 export const htitleSchema: HTMLStructureRule = {
-  allowedTags: ["h1", "h2", "h3", "h4", "h5", "h6"],
-  allowText: false,
+  childAllowedTags: ["h1", "h2", "h3", "h4", "h5", "h6"],
+  childAllowText: false,
   attributes: ["id", "data-btype"],
   children: {
     "h1": basicSchema,
@@ -65,8 +65,8 @@ export const htitleSchema: HTMLStructureRule = {
 }
 
 export const liSchema: HTMLStructureRule={
-  allowedTags: [...basicSchema.allowedTags, "ul", "ol"],
-  allowText: true,
+  childAllowedTags: [...basicSchema.childAllowedTags, "ul", "ol"],
+  childAllowText: true,
   attributes: ["id"],
   children: {
     "span": spanSchema,
@@ -82,8 +82,8 @@ export const liSchema: HTMLStructureRule={
 }
 
 export const ulSchema: HTMLStructureRule={
-  allowedTags: ["li"],
-  allowText: false,
+  childAllowedTags: ["li"],
+  childAllowText: false,
   attributes: ["id"],
   children: {
     "li": liSchema,
@@ -91,8 +91,8 @@ export const ulSchema: HTMLStructureRule={
 }
 
 export const listSchema: HTMLStructureRule = {
-  allowedTags: ["ul", "ol"],
-  allowText: false,
+  childAllowedTags: ["ul", "ol"],
+  childAllowText: false,
   attributes: ["id", "data-btype"],
   children: {
     "ul": ulSchema,
