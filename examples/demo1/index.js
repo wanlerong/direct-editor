@@ -11,6 +11,11 @@ let btn8 = document.getElementById("btn8")
 let btn9 = document.getElementById("btn9")
 
 let btnLink = document.getElementById("btnLink")
+let linkUrlInput = document.getElementById('linkUrlInput');
+let linkTextInput = document.getElementById('linkTextInput');
+let confirmLink = document.getElementById("confirmLink");
+
+let canInsert,canEdit
 
 let e = new Editor(document.getElementById("container"), (ops) => {
 }, (as)=>{
@@ -37,7 +42,20 @@ let e = new Editor(document.getElementById("container"), (ops) => {
   if (as.disableActions.includes(ActiveStatusConst.Action.ORDERED_LIST)) {
     btn9.className = 'disable'
   }
+  
+  if (!as.link.canInsert && !as.link.canEdit) {
+    btnLink.className = 'disable'
+  } else {
+    btnLink.className = ''
+  }
+  
+  linkUrlInput.value=as.link.suggestedUrl
+  linkTextInput.value=as.link.suggestedText
+
+  canInsert = as.link.canInsert
+  canEdit = as.link.canEdit
 })
+
 btn1.addEventListener('click', (event) => {
   e.toolbar.bold(!btn1.classList.contains("active"))
 })
@@ -89,7 +107,20 @@ btn9.addEventListener('click', (event) => {
 });
 
 btnLink.addEventListener('click', () => {
-  const url = document.getElementById('linkUrlInput').value;
-  const text = document.getElementById('linkTextInput').value;
-  e.insertLink(url, text);
+  console.log("aaa")
+  linkUrlInput.style.display = "block"
+  linkTextInput.style.display = "block"
+  confirmLink.style.display = "block"
+  e.cacheSelection()
+});
+
+confirmLink.addEventListener('click', () => {
+  if (canEdit) {
+    e.editLink(linkUrlInput.value, linkTextInput.value);
+  } else if (canInsert) {
+    e.insertLink(linkUrlInput.value, linkTextInput.value);
+  }
+  linkUrlInput.style.display = "none"
+  linkTextInput.style.display = "none"
+  confirmLink.style.display = "none"
 });

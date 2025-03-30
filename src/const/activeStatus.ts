@@ -1,4 +1,5 @@
 import {BlockInfo} from "../block/blockType.js";
+import {LinkOperationState} from "../toolbar";
 
 export type ActiveStatus = {
   bold: boolean;
@@ -7,6 +8,7 @@ export type ActiveStatus = {
   strikethrough: boolean;
   blockInfo: BlockInfo;
   disableActions: Action[]; // 当前禁用的 actions
+  link: LinkOperationState;
 };
 
 export enum Action {

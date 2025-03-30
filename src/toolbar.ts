@@ -14,6 +14,14 @@ import {replaceListType} from "./components/ul.js";
 import {Action, ActiveStatus} from "./const/activeStatus.js";
 import {basicBlockConfig, listBlockConfig} from "./block/block.js";
 import {BlockInfoNone} from "./block/blockType.js";
+import {aSchema} from "./schema/schema";
+
+export interface LinkOperationState {
+  canInsert: boolean;
+  canEdit: boolean;
+  suggestedText: string;
+  suggestedUrl: string;
+}
 
 export class Toolbar {
   private editor: Editor
@@ -27,7 +35,13 @@ export class Toolbar {
       underline: false,
       strikethrough: false,
       blockInfo: BlockInfoNone,
-      disableActions: []
+      disableActions: [],
+      link: {
+        canInsert: false,
+        canEdit: false,
+        suggestedText: "",
+        suggestedUrl: "",
+      }
     }
   }
 
@@ -139,6 +153,7 @@ export class Toolbar {
     this.activeStatus.underline = is['textDecoration'] == 'underline'
     this.activeStatus.blockInfo = getIntersectionBlockInfo()
     this.activeStatus.disableActions = this.calculateDisableActions()
+    this.activeStatus.link = this.getLinkOperationState()
     this.editor.asChange(this.activeStatus)
   }
 
@@ -252,7 +267,7 @@ export class Toolbar {
         }
       })
       targetDivs2[0].replaceChildren(ul)
-      targetDivs2[0].dataset.btype="list"
+      targetDivs2[0].dataset.btype = "list"
     })
 
     diffLists.forEach((node) => {
@@ -317,5 +332,65 @@ export class Toolbar {
     setRange(startContainerChild ? startContainerChild.parentNode : startContainer, startOffset,
       endContainerChild ? endContainerChild.parentNode : endContainer, endOffset)
     this.checkActiveStatus()
+  }
+
+  getLinkOperationState(): LinkOperationState {
+    const range = getSelectionRange();
+    const state: LinkOperationState = {
+      canInsert: false,
+      canEdit: false,
+      suggestedText: '',
+      suggestedUrl: ''
+    };
+
+    if (!range) return state;
+
+    // 获取选区文本内容
+    state.suggestedText = range.toString();
+
+    // 验证插入条件
+    state.canInsert = this._validateInsertCondition(range);
+
+    // 验证编辑条件
+    const link = this._getSingleContainingLink(range);
+    if (link) {
+      state.canEdit = true;
+      state.suggestedUrl = link.href;
+      state.suggestedText = link.textContent || '';
+    }
+    
+    console.log(state)
+
+    return state;
+  }
+
+  private _validateInsertCondition(range: Range): boolean {
+    if (range.collapsed) return true;
+
+    let ele = document.createElement("a")
+    let fragment = range.cloneContents()
+    ele.replaceChildren(...fragment.childNodes)
+
+    return this.editor.blockNormalizer.validateElement(ele, aSchema);
+  }
+
+  private _getSingleContainingLink(range: Range): HTMLLinkElement {
+    const startLink = getClosestAncestorByNodeName(range.startContainer, 'A');
+    const endLink = getClosestAncestorByNodeName(range.endContainer, 'A');
+    if (!startLink) {
+      return null
+    }
+    if (startLink !== endLink) {
+      return null;
+    } 
+
+    // 验证选区边界
+    const linkRange = document.createRange();
+    linkRange.selectNodeContents(startLink);
+
+    return range.compareBoundaryPoints(Range.START_TO_START, linkRange) >= 0 &&
+    range.compareBoundaryPoints(Range.END_TO_END, linkRange) <= 0
+      ? startLink as HTMLLinkElement
+      : null;
   }
 }
