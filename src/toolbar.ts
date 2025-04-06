@@ -393,4 +393,82 @@ export class Toolbar {
       ? startLink as HTMLLinkElement
       : null;
   }
+
+  insertLink(url: string, text: string): void {
+    const validatedURL = this._validateURL(url);
+    if (!this.editor.restoreSelection()) {
+      console.warn('无法恢复选区，插入链接失败');
+      return;
+    }
+
+    const range = getSelectionRange();
+    if (!range) return;
+
+    const link = document.createElement('a');
+    link.setAttribute("href", validatedURL);
+    link.textContent = text;
+
+    if (range.collapsed) {
+      // 直接插入并设置光标
+      range.insertNode(link);
+      this._setCursorAfter(link);
+    } else {
+      // 替换选区内容
+      range.deleteContents();
+      range.insertNode(link);
+      this._setCursorAfter(link);
+    }
+
+    this.editor.normalize();
+  }
+  
+  editLink(newUrl: string, newText: string): void {
+    if (!this.editor.restoreSelection()) {
+      console.warn('无法恢复选区, edit 链接失败');
+      return;
+    }
+
+    const range = getSelectionRange();
+    if (!range) return;
+
+    // 获取当前选区内的链接
+    const link = this._getContainingLink(range);
+    if (!link) return;
+
+    link.href = this._validateURL(newUrl);
+    link.textContent = newText;
+
+    this.editor.normalize();
+  }
+  
+  private _validateURL(url: string): string {
+    try {
+      new URL(url);
+      return url;
+    } catch {
+      // 自动补全协议
+      return url.startsWith('//') ? `https:${url}` : `https://${url}`;
+    }
+  }
+
+  private _setCursorAfter(node: Node): void {
+    const range = document.createRange();
+    const parent = node.parentNode!;
+
+    // 定位到插入节点之后
+    range.setStart(parent, Array.from(parent.childNodes).indexOf(node as ChildNode) + 1);
+    range.collapse(true);
+    setRange(range.startContainer, range.startOffset, range.endContainer, range.endOffset);
+  }
+
+  private _getContainingLink(range: Range): HTMLAnchorElement | null {
+    // 获取选区起点所在的链接
+    const startLink = getClosestAncestorByNodeName(range.startContainer, 'A');
+    // 获取选区终点所在的链接
+    const endLink = getClosestAncestorByNodeName(range.endContainer, 'A');
+
+    // 确保选区完全在同一个链接内
+    return startLink === endLink ? startLink as HTMLAnchorElement : null;
+  }
+  
 }

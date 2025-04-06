@@ -33,16 +33,16 @@ export default class BlockNormalizer {
     })
 
     this.processContainer(container, rootSchema);
-    console.log("before postProcess", container.innerHTML)
+    // console.log("before postProcess", container.innerHTML)
     this.postProcess(container);
-    console.log("after postProcess", container.innerHTML)
+    // console.log("after postProcess", container.innerHTML)
   }
   
   private processContainer(
     container: HTMLElement,
     schema: HTMLStructureRule | null
   ) {
-    console.log("processContainer", container.tagName, container.innerHTML, schema)
+    // console.log("processContainer", container.tagName, container.innerHTML, schema)
     // 逆序处理防止索引错位
     Array.from(container.childNodes)
       .reverse()
@@ -56,14 +56,14 @@ export default class BlockNormalizer {
     if (node.nodeType === Node.ELEMENT_NODE) {
       const element = node as HTMLElement;
       const blockType = this.getBlockType(element);
-      console.log("processNode", blockType, element.tagName, element.innerHTML)
+      // console.log("processNode", blockType, element.tagName, element.innerHTML)
       if (blockType) {
         this.processBlockElement(element, blockType, parentSchema);
       } else {
         this.processRegularElement(element, parentSchema);
       }
     } else if (node.nodeType === Node.TEXT_NODE) {
-      console.log("processNode text", (node as Text).data)
+      // console.log("processNode text", (node as Text).data)
       this.processTextNode(node, parentSchema);
     }
   }
@@ -87,7 +87,7 @@ export default class BlockNormalizer {
   }
 
   private applySchema(element: HTMLElement, schema: HTMLStructureRule) {
-    console.log("applySchema", element.tagName, element.innerHTML, schema)
+    // console.log("applySchema", element.tagName, element.innerHTML, schema)
     // 清理非法属性
     this.cleanAttributes(element, schema);
 

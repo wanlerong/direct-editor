@@ -71,6 +71,7 @@ export const liSchema: HTMLStructureRule={
   children: {
     "span": spanSchema,
     "br": brSchema,
+    "a": aSchema,
     // 使用 getter 延迟获取 ulSchema
     get "ul"() {
       return ulSchema;

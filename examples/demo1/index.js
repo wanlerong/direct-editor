@@ -116,9 +116,9 @@ btnLink.addEventListener('click', () => {
 
 confirmLink.addEventListener('click', () => {
   if (canEdit) {
-    e.editLink(linkUrlInput.value, linkTextInput.value);
+    e.toolbar.editLink(linkUrlInput.value, linkTextInput.value);
   } else if (canInsert) {
-    e.insertLink(linkUrlInput.value, linkTextInput.value);
+    e.toolbar.insertLink(linkUrlInput.value, linkTextInput.value);
   }
   linkUrlInput.style.display = "none"
   linkTextInput.style.display = "none"
