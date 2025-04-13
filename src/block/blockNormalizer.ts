@@ -1,7 +1,7 @@
 import {basicBlockConfig, BlockConfig, createBlockElement, htitleBlockConfig, listBlockConfig} from "./block.js";
 import {BlockType} from "./blockType.js";
 import {HTMLStructureRule, rootSchema} from "../schema/schema.js";
-import {getSelectionRange, setRange} from "../range";
+import {setRange} from "../range";
 
 export default class BlockNormalizer {
   private readonly blockRegistry = new Map<BlockType, BlockConfig>();
@@ -84,12 +84,6 @@ export default class BlockNormalizer {
       return;
     }
 
-    let range = getSelectionRange()
-    if (range) {
-      console.log(range.startContainer.nodeName,range.startContainer,range.startOffset,
-        range.endContainer.nodeName,range.endContainer,range.endOffset)
-    }
-    
     // 应用 schema 规则
     this.applySchema(element, config.schema);
 
