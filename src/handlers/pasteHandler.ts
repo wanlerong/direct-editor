@@ -1,5 +1,5 @@
 // 块类型映射配置
-import {basicBlockConfig} from "../block/block.js";
+import {basicBlockConfig, createBlockElement} from "../block/block.js";
 import {BlockType} from "../block/blockType.js";
 
 const BLOCK_TYPE_MAP: Record<string, string> = {
@@ -139,16 +139,6 @@ function processBlockElement(element: HTMLElement, rows: HTMLElement[]) {
 
   // 处理末尾inline内容
   flushInlineNodes(currentInlineNodes, blockType, rows);
-}
-
-function createBlockElement(btype: string, content?: DocumentFragment): HTMLElement {
-  const block = document.createElement('div');
-  block.dataset.btype = btype;
-
-  if (content) {
-    block.appendChild(content);
-  }
-  return block;
 }
 
 function flushInlineNodes(nodes: Node[], blockType: string, rows: HTMLElement[]) {

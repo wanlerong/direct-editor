@@ -1,6 +1,7 @@
-import {basicBlockConfig, BlockConfig, htitleBlockConfig, listBlockConfig} from "./block.js";
+import {basicBlockConfig, BlockConfig, createBlockElement, htitleBlockConfig, listBlockConfig} from "./block.js";
 import {BlockType} from "./blockType.js";
 import {HTMLStructureRule, rootSchema} from "../schema/schema.js";
+import {getSelectionRange, setRange} from "../range";
 
 export default class BlockNormalizer {
   private readonly blockRegistry = new Map<BlockType, BlockConfig>();
@@ -28,6 +29,10 @@ export default class BlockNormalizer {
             }
           });
           (n as HTMLElement).insertAdjacentElement('beforebegin', ele)
+        }
+        
+        if (n.childNodes.length > 1 && this.getBlockType(n as HTMLElement) == BlockType.HTitle) {
+          this.splitHTitleBlock(n as HTMLElement)
         }
       }
     })
@@ -79,11 +84,72 @@ export default class BlockNormalizer {
       return;
     }
 
+    let range = getSelectionRange()
+    if (range) {
+      console.log(range.startContainer.nodeName,range.startContainer,range.startOffset,
+        range.endContainer.nodeName,range.endContainer,range.endOffset)
+    }
+    
     // 应用 schema 规则
     this.applySchema(element, config.schema);
 
     // 递归处理子元素
     this.processContainer(element, config.schema);
+  }
+  
+  private splitHTitleBlock(container: HTMLElement) {
+    if (container.childNodes.length <= 1) {
+      return
+    }
+    
+    const fragments: {
+      type: BlockType;
+      nodes: Node[];
+    }[] = [];
+
+    let currentFragment: Node[] = [];
+    let currentType: BlockType | null = null;
+
+    Array.from(container.childNodes).forEach(node => {
+      if (this.isHeadingElement(node)) {
+        if (currentFragment.length > 0) {
+          fragments.push({ type: currentType!, nodes: currentFragment });
+          currentFragment = [];
+        }
+        currentType = BlockType.HTitle;
+        currentFragment.push(node);
+      } else {
+        if (currentType !== BlockType.Basic) {
+          if (currentFragment.length > 0) {
+            fragments.push({ type: currentType!, nodes: currentFragment });
+          }
+          currentType = BlockType.Basic;
+          currentFragment = [];
+        }
+        currentFragment.push(node);
+      }
+    });
+
+    if (currentFragment.length > 0) {
+      fragments.push({ type: currentType!, nodes: currentFragment });
+    }
+    
+    // 重新组织 DOM 结构
+    if (fragments.length > 1) {
+      const newElements = fragments.map(({ type, nodes }) => {
+        const newBlock = createBlockElement(type);
+        nodes.forEach(n => newBlock.appendChild(n))
+        return newBlock;
+      });
+      
+      container.replaceWith(...newElements);
+      setRange(newElements[1],0,newElements[1], 0)
+    }
+  }
+
+  private isHeadingElement(node: Node): boolean {
+    return node.nodeType === Node.ELEMENT_NODE &&
+      /^H[1-6]$/.test((node as HTMLElement).tagName);
   }
 
   private applySchema(element: HTMLElement, schema: HTMLStructureRule) {

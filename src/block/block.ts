@@ -36,3 +36,13 @@ export const listBlockConfig: BlockConfig = {
     return el;
   }
 }
+
+export function createBlockElement(btype: string, content?: DocumentFragment): HTMLElement {
+  const block = document.createElement('div');
+  block.dataset.btype = btype;
+
+  if (content) {
+    block.appendChild(content);
+  }
+  return block;
+}
