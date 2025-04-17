@@ -257,7 +257,7 @@ test('handlePaste9', () => {
 
   expect(div.innerHTML).toBe('<div data-btype="basic">1</div>' +
     '<div data-btype="basic">111</div>' +
-    '<div data-btype="htitle"><h1>123</h1></div>'
+    '<div data-btype="line"><h1>123</h1></div>'
   );
 });
 
@@ -283,7 +283,7 @@ test('handlePaste10', () => {
   handlePaste(event);
 
   expect(div.innerHTML).toBe('<div data-btype="basic">1111</div>' +
-    '<div data-btype="htitle"><h1>123</h1></div>' +
+    '<div data-btype="line"><h1>123</h1></div>' +
     '<div data-btype="basic">333</div>' +
     '<div data-btype="list"><ul><li>text</li></ul></div>'
   );

@@ -166,27 +166,27 @@ test('normalize split htitle', () => {
   let div = document.createElement("div");
   let editor = new Editor(div, null, null);
   let editorDom = (div.firstChild as HTMLElement);
-  editorDom.innerHTML = '<div data-btype="htitle">' +
+  editorDom.innerHTML = '<div data-btype="line">' +
     '<h1>11</h1>' +
     '<h1>22</h1>' +
     '</div>';
   editor.normalize();
 
-  expect(editorDom.innerHTML).toBe('<div data-btype="htitle"><h1>11</h1></div>' +
-    '<div data-btype="htitle"><h1>22</h1></div>');
+  expect(editorDom.innerHTML).toBe('<div data-btype="line"><h1>11</h1></div>' +
+    '<div data-btype="line"><h1>22</h1></div>');
 });
 
 test('normalize split htitle2', () => {
   let div = document.createElement("div");
   let editor = new Editor(div, null, null);
   let editorDom = (div.firstChild as HTMLElement);
-  editorDom.innerHTML = '<div data-btype="htitle">' +
+  editorDom.innerHTML = '<div data-btype="line">' +
     '<h1>11</h1>' +
     '<div>22</div>' +
     '</div>';
   editor.normalize();
 
-  expect(editorDom.innerHTML).toBe('<div data-btype="htitle"><h1>11</h1></div>' +
+  expect(editorDom.innerHTML).toBe('<div data-btype="line"><h1>11</h1></div>' +
     '<div data-btype="basic">22</div>');
 });
 
@@ -194,13 +194,13 @@ test('normalize split htitle3', () => {
   let div = document.createElement("div");
   let editor = new Editor(div, null, null);
   let editorDom = (div.firstChild as HTMLElement);
-  editorDom.innerHTML = '<div data-btype="htitle">' +
+  editorDom.innerHTML = '<div data-btype="line">' +
     '<h1>11</h1>' +
     '<br>' +
     '</div>';
   editor.normalize();
 
-  expect(editorDom.innerHTML).toBe('<div data-btype="htitle"><h1>11</h1></div>' +
+  expect(editorDom.innerHTML).toBe('<div data-btype="line"><h1>11</h1></div>' +
     '<div data-btype="basic"><br></div>');
 });
 

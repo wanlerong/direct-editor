@@ -9,7 +9,7 @@ import {
   setRange,
   splitRange
 } from "./range.js";
-import {HTitleLevel} from "./const/const.js";
+import {LineLevel} from "./const/const.js";
 import {replaceListType} from "./components/ul.js";
 import {Action, ActiveStatus} from "./const/activeStatus.js";
 import {basicBlockConfig, listBlockConfig} from "./block/block.js";
@@ -92,9 +92,9 @@ export class Toolbar {
     })
   }
 
-  // set the selection range to h1/h2/h3... title
-  title(level: HTitleLevel) {
-    if (this.activeStatus.disableActions.includes(Action.HTITLE)) {
+  // set the selection range to h1/h2/h3... title or blockquote
+  line(level: LineLevel) {
+    if (this.activeStatus.disableActions.includes(Action.Line)) {
       return;
     }
     let range = getSelectionRange()
@@ -114,10 +114,18 @@ export class Toolbar {
     if (targetDivs.length == 0) {
       return
     }
-    if (level == HTitleLevel.LEVEL_NONE) {
+    if (level == LineLevel.LEVEL_NONE) {
       targetDivs.forEach((td: HTMLElement) => {
         td.innerHTML = td.innerText
         td.dataset.btype = "basic";
+      })
+    } else if (level == LineLevel.BLOCKQUOTE) {
+      targetDivs.forEach((td: HTMLElement) => {
+        let blockquote: HTMLElement = document.createElement('blockquote')
+        blockquote.innerText = td.innerText;
+        td.innerHTML = ''
+        td.appendChild(blockquote)
+        td.dataset.btype = "line";
       })
     } else {
       targetDivs.forEach((td: HTMLElement) => {
@@ -125,7 +133,7 @@ export class Toolbar {
         hTag.innerText = td.innerText;
         td.innerHTML = ''
         td.appendChild(hTag)
-        td.dataset.btype = "htitle";
+        td.dataset.btype = "line";
       })
     }
 
@@ -162,7 +170,7 @@ export class Toolbar {
     let actions: Action[] = [];
     const {hasListOverlap, hasTitleOverlap} = this.checkOverlap(range);
     if (hasListOverlap) {
-      actions.push(Action.HTITLE);
+      actions.push(Action.Line);
     }
     if (hasTitleOverlap) {
       actions.push(Action.ORDERED_LIST);

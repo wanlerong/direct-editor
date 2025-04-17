@@ -1,4 +1,4 @@
-import {HTMLStructureRule, basicSchema, htitleSchema, listSchema} from "../schema/schema.js";
+import {HTMLStructureRule, basicSchema, lineSchema, listSchema} from "../schema/schema.js";
 import {BlockType} from "./blockType.js";
 
 export interface BlockConfig {
@@ -17,12 +17,12 @@ export const basicBlockConfig: BlockConfig = {
   }
 }
 
-export const htitleBlockConfig: BlockConfig = {
-  type: BlockType.HTitle,
-  schema: htitleSchema,
+export const lineBlockConfig: BlockConfig = {
+  type: BlockType.Line,
+  schema: lineSchema,
   createElement: () => {
     const el = document.createElement('div');
-    el.dataset.btype = BlockType.HTitle;
+    el.dataset.btype = BlockType.Line;
     return el;
   }
 }

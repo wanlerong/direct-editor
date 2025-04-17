@@ -5,12 +5,13 @@ import {BlockType} from "../block/blockType.js";
 const BLOCK_TYPE_MAP: Record<string, string> = {
   'ul': 'list',
   'ol': 'list',
-  'h1': 'htitle',
-  'h2': 'htitle',
-  'h3': 'htitle',
-  'h4': 'htitle',
-  'h5': 'htitle',
-  'h6': 'htitle'
+  'h1': 'line',
+  'h2': 'line',
+  'h3': 'line',
+  'h4': 'line',
+  'h5': 'line',
+  'h6': 'line',
+  'blockquote': 'line',
 };
 
 interface ProcessResult {
@@ -122,7 +123,7 @@ function processBlockElement(element: HTMLElement, rows: HTMLElement[]) {
   const tagName = element.tagName.toLowerCase();
 
   const blockType = BLOCK_TYPE_MAP[tagName] || 'basic';
-  if (blockType == BlockType.HTitle || blockType == BlockType.List) {
+  if (blockType == BlockType.Line || blockType == BlockType.List) {
     flushInlineNodes([element], blockType, rows)
     return
   }

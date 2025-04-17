@@ -166,15 +166,15 @@ function parseBlockElement(element: HTMLElement): BlockInfo {
     case 'basic':
       return { blockType: BlockType.Basic, subType: 'none' };
 
-    case 'htitle': {
-      const heading = element.querySelector('h1, h2, h3, h4, h5, h6');
+    case 'line': {
+      const heading = element.querySelector('h1, h2, h3, h4, h5, h6, blockquote');
       if (!heading) {
           return BlockInfoNone;
       }
       const subType = heading.tagName.toLowerCase() as BlockSubType;
       return {
-        blockType: BlockType.HTitle,
-        subType: ['h1','h2','h3','h4','h5','h6'].includes(subType)
+        blockType: BlockType.Line,
+        subType: ['h1','h2','h3','h4','h5','h6','blockquote'].includes(subType)
           ? subType
           : 'none'
       };

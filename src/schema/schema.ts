@@ -15,7 +15,7 @@ export const rootSchema: HTMLStructureRule = {
   childAllowedTags: ["div"],
   childAllowText: false,
   attributes: ["class", "contenteditable"],
-  childAllowedBlocks: [BlockType.Basic, BlockType.HTitle, BlockType.List],
+  childAllowedBlocks: [BlockType.Basic, BlockType.Line, BlockType.List],
 }
 
 export const spanSchema: HTMLStructureRule = {
@@ -50,8 +50,8 @@ export const basicSchema: HTMLStructureRule = {
   }
 }
 
-export const htitleSchema: HTMLStructureRule = {
-  childAllowedTags: ["h1", "h2", "h3", "h4", "h5", "h6"],
+export const lineSchema: HTMLStructureRule = {
+  childAllowedTags: ["h1", "h2", "h3", "h4", "h5", "h6", "blockquote"],
   childAllowText: false,
   attributes: ["id", "data-btype"],
   children: {
@@ -61,6 +61,7 @@ export const htitleSchema: HTMLStructureRule = {
     "h4": basicSchema,
     "h5": basicSchema,
     "h6": basicSchema,
+    "blockquote": basicSchema,
   }
 }
 

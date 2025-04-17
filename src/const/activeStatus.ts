@@ -12,7 +12,7 @@ export type ActiveStatus = {
 };
 
 export enum Action {
-  HTITLE,
+  Line,
   ORDERED_LIST,
   UN_ORDERED_LIST,
 }

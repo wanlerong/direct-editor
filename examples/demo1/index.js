@@ -7,6 +7,7 @@ let btn4 = document.getElementById("btn4")
 let btn5 = document.getElementById("btn5")
 let btn6 = document.getElementById("btn6")
 let btn7 = document.getElementById("btn7")
+let btn71 = document.getElementById("btn71")
 let btn8 = document.getElementById("btn8")
 let btn9 = document.getElementById("btn9")
 
@@ -24,13 +25,15 @@ let e = new Editor(document.getElementById("container"), (ops) => {
   btn3.className = as.underline ? 'active' : ''
   btn4.className = as.strikethrough ? 'active' : ''
   
-  btn5.className = as.blockInfo.blockType === BlockConst.BlockType.HTitle && as.blockInfo.subType === "h1" ? 'active' : ''
-  btn6.className = as.blockInfo.blockType === BlockConst.BlockType.HTitle && as.blockInfo.subType === "h2" ? 'active' : ''
-  btn7.className = as.blockInfo.blockType === BlockConst.BlockType.HTitle && as.blockInfo.subType === "h3" ? 'active' : ''
-  if (as.disableActions.includes(ActiveStatusConst.Action.HTITLE)) {
+  btn5.className = as.blockInfo.blockType === BlockConst.BlockType.Line && as.blockInfo.subType === "h1" ? 'active' : ''
+  btn6.className = as.blockInfo.blockType === BlockConst.BlockType.Line && as.blockInfo.subType === "h2" ? 'active' : ''
+  btn7.className = as.blockInfo.blockType === BlockConst.BlockType.Line && as.blockInfo.subType === "h3" ? 'active' : ''
+  btn71.className = as.blockInfo.blockType === BlockConst.BlockType.Line && as.blockInfo.subType === "blockquote" ? 'active' : ''
+  if (as.disableActions.includes(ActiveStatusConst.Action.Line)) {
     btn5.className = 'disable'
     btn6.className = 'disable'
     btn7.className = 'disable'
+    btn71.className = 'disable'
   }
   
   btn8.className = as.blockInfo.blockType === BlockConst.BlockType.List && as.blockInfo.subType === "ul" ? 'active' : ''
@@ -72,19 +75,24 @@ btn4.addEventListener('click', (event) => {
 })
 
 btn5.addEventListener('click', (event) => {
-  e.toolbar.title(btn5.classList.contains("active") ? Const.HTitleLevel.LEVEL_NONE : Const.HTitleLevel.H1)
+  e.toolbar.line(btn5.classList.contains("active") ? Const.LineLevel.LEVEL_NONE : Const.LineLevel.H1)
 })
 
 btn6.addEventListener('click', (event) => {
-  e.toolbar.title(btn6.classList.contains("active") ? Const.HTitleLevel.LEVEL_NONE : Const.HTitleLevel.H2)
+  e.toolbar.line(btn6.classList.contains("active") ? Const.LineLevel.LEVEL_NONE : Const.LineLevel.H2)
 })
 
 btn7.addEventListener('click', (event) => {
-  e.toolbar.title(btn7.classList.contains("active") ? Const.HTitleLevel.LEVEL_NONE : Const.HTitleLevel.H3)
+  e.toolbar.line(btn7.classList.contains("active") ? Const.LineLevel.LEVEL_NONE : Const.LineLevel.H3)
 });
 
+btn71.addEventListener('click', (event) => {
+  e.toolbar.line(btn71.classList.contains("active") ? Const.LineLevel.LEVEL_NONE : Const.LineLevel.BLOCKQUOTE)
+});
+
+
 // Preventing buttons from getting focus
-[btn5,btn6,btn7].forEach(btn => {
+[btn5,btn6,btn7,btn71].forEach(btn => {
   btn.addEventListener('mousedown', (event) => {
     event.preventDefault()
   })

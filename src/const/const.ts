@@ -1,4 +1,4 @@
-export enum HTitleLevel {
+export enum LineLevel {
   LEVEL_NONE = "None",
   H1 = "H1",
   H2 = "H2",
@@ -6,6 +6,7 @@ export enum HTitleLevel {
   H4 = "H4",
   H5 = "H5",
   H6 = "H6",
+  BLOCKQUOTE = "BLOCKQUOTE"
 }
 
 export enum DeltaSource {

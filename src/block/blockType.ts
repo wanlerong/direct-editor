@@ -1,13 +1,14 @@
 export enum BlockType {
   None = "none",
   Basic = "basic",
-  HTitle = "htitle",
+  Line = "line",
   List = "list",
 }
 
 // 二级类型定义
 export type BlockSubType =
-  | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'  // 对应 HTitle
+  | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'  // 对应 Line
+  | 'blockquote'  // 新增引用块类型
   | 'ul' | 'ol'       // 对应 List
   | 'none';           // 默认类型
 

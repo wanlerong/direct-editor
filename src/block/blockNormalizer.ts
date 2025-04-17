@@ -1,4 +1,4 @@
-import {basicBlockConfig, BlockConfig, createBlockElement, htitleBlockConfig, listBlockConfig} from "./block.js";
+import {basicBlockConfig, BlockConfig, createBlockElement, lineBlockConfig, listBlockConfig} from "./block.js";
 import {BlockType} from "./blockType.js";
 import {HTMLStructureRule, rootSchema} from "../schema/schema.js";
 import {setRange} from "../range";
@@ -8,7 +8,7 @@ export default class BlockNormalizer {
 
   constructor() {
     this.blockRegistry.set(BlockType.Basic, basicBlockConfig);
-    this.blockRegistry.set(BlockType.HTitle, htitleBlockConfig);
+    this.blockRegistry.set(BlockType.Line, lineBlockConfig);
     this.blockRegistry.set(BlockType.List, listBlockConfig);
   }
 
@@ -31,8 +31,8 @@ export default class BlockNormalizer {
           (n as HTMLElement).insertAdjacentElement('beforebegin', ele)
         }
         
-        if (n.childNodes.length > 1 && this.getBlockType(n as HTMLElement) == BlockType.HTitle) {
-          this.splitHTitleBlock(n as HTMLElement)
+        if (n.childNodes.length > 1 && this.getBlockType(n as HTMLElement) == BlockType.Line) {
+          this.splitLineBlock(n as HTMLElement)
         }
       }
     })
@@ -91,7 +91,7 @@ export default class BlockNormalizer {
     this.processContainer(element, config.schema);
   }
   
-  private splitHTitleBlock(container: HTMLElement) {
+  private splitLineBlock(container: HTMLElement) {
     if (container.childNodes.length <= 1) {
       return
     }
@@ -105,12 +105,12 @@ export default class BlockNormalizer {
     let currentType: BlockType | null = null;
 
     Array.from(container.childNodes).forEach(node => {
-      if (this.isHeadingElement(node)) {
+      if (this.isHeadingElement(node) || (node as HTMLElement).tagName.toLowerCase() == 'blockquote') {
         if (currentFragment.length > 0) {
           fragments.push({ type: currentType!, nodes: currentFragment });
           currentFragment = [];
         }
-        currentType = BlockType.HTitle;
+        currentType = BlockType.Line;
         currentFragment.push(node);
       } else {
         if (currentType !== BlockType.Basic) {
