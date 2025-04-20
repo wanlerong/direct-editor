@@ -15,7 +15,7 @@ export const rootSchema: HTMLStructureRule = {
   childAllowedTags: ["div"],
   childAllowText: false,
   attributes: ["class", "contenteditable"],
-  childAllowedBlocks: [BlockType.Basic, BlockType.Line, BlockType.List],
+  childAllowedBlocks: [BlockType.Basic, BlockType.Line, BlockType.List,BlockType.Image],
 }
 
 export const spanSchema: HTMLStructureRule = {
@@ -99,6 +99,19 @@ export const listSchema: HTMLStructureRule = {
   children: {
     "ul": ulSchema,
     "ol": ulSchema,
+  }
+}
+
+export const imgSchema: HTMLStructureRule = {
+  childAllowedTags: ["img"],
+  childAllowText: false,
+  attributes: ["id", "data-btype"],
+  children: {
+    "img": {
+      childAllowedTags: [],
+      childAllowText: false,
+      attributes: ["src", "style", "id"]
+    }
   }
 }
 

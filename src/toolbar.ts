@@ -12,7 +12,7 @@ import {
 import {LineLevel} from "./const/const.js";
 import {replaceListType} from "./components/ul.js";
 import {Action, ActiveStatus} from "./const/activeStatus.js";
-import {basicBlockConfig, listBlockConfig} from "./block/block.js";
+import {basicBlockConfig, listBlockConfig, imgBlockConfig} from "./block/block.js";
 import {BlockInfoNone} from "./block/blockType.js";
 import {aSchema} from "./schema/schema";
 
@@ -479,4 +479,48 @@ export class Toolbar {
     return startLink === endLink ? startLink as HTMLAnchorElement : null;
   }
   
+  insertImg(src: string) {
+    if (!this.editor.restoreSelection()) {
+      console.warn('无法恢复选区');
+      return;
+    }
+    
+    let range = getSelectionRange()
+    if (!range) return
+
+    // 获取选区所在的块
+    let block: HTMLElement | null = null
+    let node = range.endContainer
+    while (node) {
+      if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).hasAttribute('data-btype')) {
+        block = node as HTMLElement
+        break
+      }
+      node = node.parentNode
+    }
+    
+    // 创建图片块
+    const imgBlock = imgBlockConfig.createElement()
+    if (src) {
+      const img = document.createElement('img');
+      img.setAttribute('src', src);
+      imgBlock.appendChild(img);
+    }
+
+    // 插入图片块
+    if (block) {
+      block.insertAdjacentElement('afterend', imgBlock)
+    } else {
+      // 如果没有找到块，则插入到编辑器末尾
+      this.editor.theDom.appendChild(imgBlock)
+    }
+    
+    // 更新选区到新插入的图片块
+    const newRange = document.createRange()
+    newRange.selectNodeContents(imgBlock.firstChild!)
+    newRange.collapse(false)
+    setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset)
+
+    this.editor.normalize()
+  }
 }

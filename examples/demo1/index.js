@@ -15,8 +15,11 @@ let btnLink = document.getElementById("btnLink")
 let linkUrlInput = document.getElementById('linkUrlInput');
 let linkTextInput = document.getElementById('linkTextInput');
 let confirmLink = document.getElementById("confirmLink");
-
 let canInsert,canEdit
+
+let btnImg = document.getElementById("btnImg")
+let imgInput = document.getElementById('imgInput');
+let confirmImg = document.getElementById("confirmImg");
 
 let e = new Editor(document.getElementById("container"), (ops) => {
 }, (as)=>{
@@ -131,4 +134,16 @@ confirmLink.addEventListener('click', () => {
   linkUrlInput.style.display = "none"
   linkTextInput.style.display = "none"
   confirmLink.style.display = "none"
+});
+
+btnImg.addEventListener('click', () => {
+  imgInput.style.display = "block"
+  confirmImg.style.display = "block"
+  e.cacheSelection()
+});
+
+confirmImg.addEventListener('click', () => {
+  e.toolbar.insertImg(imgInput.value);
+  imgInput.style.display = "none"
+  confirmImg.style.display = "none"
 });

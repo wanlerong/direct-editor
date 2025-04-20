@@ -91,4 +91,104 @@ describe('insertLink', () => {
     });
   });
 
+  test('insertImg in basic block', () => {
+    const div = document.createElement("div")
+    const editor = new Editor(div, () => {}, () => {})
+    document.body.appendChild(div)
+    const editorDom = editor.theDom
+    expect(editorDom).not.toBeNull()
+    if (!editorDom) return
+    
+    editorDom.innerHTML = '<div data-btype="basic">123</div><div data-btype="basic">456</div>'
+    const firstChild = editorDom.firstChild
+    expect(firstChild).not.toBeNull()
+    if (!(firstChild instanceof HTMLElement)) return
+    
+    const textNode = firstChild.firstChild
+    expect(textNode).not.toBeNull()
+    if (!(textNode instanceof Text)) return
+    
+    setRange(textNode, 1, textNode, 1)
+    editor.cacheSelection();
+    editor.toolbar.insertImg('test.jpg')
+    
+    expect(editorDom.innerHTML).toBe('<div data-btype="basic">123</div><div data-btype="img"><img src="test.jpg"></div><div data-btype="basic">456</div>')
+  })
+
+
+  test('insertImg in basic block2', () => {
+    const div = document.createElement("div")
+    const editor = new Editor(div, () => {}, () => {})
+    document.body.appendChild(div)
+    const editorDom = editor.theDom
+    expect(editorDom).not.toBeNull()
+    if (!editorDom) return
+
+    editorDom.innerHTML = '<div data-btype="basic">123</div><div data-btype="basic">456</div>'
+    const firstChild = editorDom.firstChild
+    expect(firstChild).not.toBeNull()
+    if (!(firstChild instanceof HTMLElement)) return
+
+    const textNode = firstChild.firstChild
+    expect(textNode).not.toBeNull()
+    if (!(textNode instanceof Text)) return
+
+    setRange(textNode, 1, editorDom.childNodes[1].firstChild, 2)
+    editor.cacheSelection();
+    editor.toolbar.insertImg('test.jpg')
+
+    expect(editorDom.innerHTML).toBe('<div data-btype="basic">123</div><div data-btype="basic">456</div><div data-btype="img"><img src="test.jpg"></div>')
+  })
+  
+  test('insertImg in list block', () => {
+    const div = document.createElement("div")
+    const editor = new Editor(div, () => {}, () => {})
+    document.body.appendChild(div)
+    const editorDom = editor.theDom
+    expect(editorDom).not.toBeNull()
+    if (!editorDom) return
+    
+    editorDom.innerHTML = '<div data-btype="list"><ul><li>123</li></ul></div>'
+    const firstChild = editorDom.firstChild
+    expect(firstChild).not.toBeNull()
+    if (!(firstChild instanceof HTMLElement)) return
+    
+    const ul = firstChild.firstChild
+    expect(ul).not.toBeNull()
+    if (!(ul instanceof HTMLElement)) return
+    
+    const li = ul.firstChild
+    expect(li).not.toBeNull()
+    if (!(li instanceof HTMLElement)) return
+    
+    const textNode = li.firstChild
+    expect(textNode).not.toBeNull()
+    if (!(textNode instanceof Text)) return
+    
+    setRange(textNode, 1, textNode, 1)
+    editor.cacheSelection();
+    editor.toolbar.insertImg('test.jpg')
+    
+    expect(editorDom.innerHTML).toBe('<div data-btype="list"><ul><li>123</li></ul></div><div data-btype="img"><img src="test.jpg"></div>')
+  })
+
+  test('insertImg in empty editor', () => {
+    const div = document.createElement("div")
+    const editor = new Editor(div, () => {}, () => {})
+    document.body.appendChild(div)
+    const editorDom = editor.theDom
+    expect(editorDom).not.toBeNull()
+    if (!editorDom) return
+    
+    editorDom.innerHTML = '<div data-btype="basic"><br></div>'
+    const firstChild = editorDom.firstChild
+    expect(firstChild).not.toBeNull()
+    if (!(firstChild instanceof HTMLElement)) return
+    
+    setRange(firstChild, 0, firstChild, 0)
+    editor.cacheSelection();
+    editor.toolbar.insertImg('test.jpg')
+    
+    expect(editorDom.innerHTML).toBe('<div data-btype="basic"><br></div><div data-btype="img"><img src="test.jpg"></div>')
+  })
 });

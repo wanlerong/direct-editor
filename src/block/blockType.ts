@@ -3,6 +3,7 @@ export enum BlockType {
   Basic = "basic",
   Line = "line",
   List = "list",
+  Image = "img",
 }
 
 // 二级类型定义

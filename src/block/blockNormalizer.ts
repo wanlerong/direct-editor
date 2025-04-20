@@ -1,4 +1,11 @@
-import {basicBlockConfig, BlockConfig, createBlockElement, lineBlockConfig, listBlockConfig} from "./block.js";
+import {
+  basicBlockConfig,
+  BlockConfig,
+  createBlockElement,
+  imgBlockConfig,
+  lineBlockConfig,
+  listBlockConfig
+} from "./block.js";
 import {BlockType} from "./blockType.js";
 import {HTMLStructureRule, rootSchema} from "../schema/schema.js";
 import {setRange} from "../range";
@@ -10,6 +17,7 @@ export default class BlockNormalizer {
     this.blockRegistry.set(BlockType.Basic, basicBlockConfig);
     this.blockRegistry.set(BlockType.Line, lineBlockConfig);
     this.blockRegistry.set(BlockType.List, listBlockConfig);
+    this.blockRegistry.set(BlockType.Image, imgBlockConfig);
   }
 
   normalize(container: HTMLElement) {
