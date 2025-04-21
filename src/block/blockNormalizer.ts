@@ -9,6 +9,7 @@ import {
 import {BlockType} from "./blockType.js";
 import {HTMLStructureRule, rootSchema} from "../schema/schema.js";
 import {setRange} from "../range";
+import {isElementNode, isTextNode} from "../domUtils";
 
 export default class BlockNormalizer {
   private readonly blockRegistry = new Map<BlockType, BlockConfig>();
@@ -39,7 +40,7 @@ export default class BlockNormalizer {
           (n as HTMLElement).insertAdjacentElement('beforebegin', ele)
         }
         
-        if (n.childNodes.length > 1 && this.getBlockType(n as HTMLElement) == BlockType.Line) {
+        if (n.childNodes.length > 1 && (this.getBlockType(n as HTMLElement) == BlockType.Line || this.getBlockType(n as HTMLElement) == BlockType.Image)) {
           this.splitLineBlock(n as HTMLElement)
         }
       }
@@ -113,12 +114,21 @@ export default class BlockNormalizer {
     let currentType: BlockType | null = null;
 
     Array.from(container.childNodes).forEach(node => {
-      if (this.isHeadingElement(node) || (node as HTMLElement).tagName.toLowerCase() == 'blockquote') {
+      if (this.isHeadingElement(node) ||
+        (isElementNode(node) && (node as HTMLElement).tagName.toLowerCase() == 'blockquote')
+      ) {
         if (currentFragment.length > 0) {
           fragments.push({ type: currentType!, nodes: currentFragment });
           currentFragment = [];
         }
         currentType = BlockType.Line;
+        currentFragment.push(node);
+      } else if (node.nodeName.toLowerCase() === 'img') {
+        if (currentFragment.length > 0) {
+          fragments.push({ type: currentType!, nodes: currentFragment });
+          currentFragment = [];
+        }
+        currentType = BlockType.Image;
         currentFragment.push(node);
       } else {
         if (currentType !== BlockType.Basic) {

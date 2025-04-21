@@ -204,4 +204,32 @@ test('normalize split htitle3', () => {
     '<div data-btype="basic"><br></div>');
 });
 
+test('normalize split img block', () => {
+  let div = document.createElement("div");
+  let editor = new Editor(div, () => {}, () => {});
+  let editorDom = (div.firstChild as HTMLElement);
+  editorDom.innerHTML = '<div data-btype="img">text before<img src="test.jpg">text after</div>';
+  editor.normalize();
+
+  expect(editorDom.innerHTML).toBe('<div data-btype="basic">text before</div>' +
+    '<div data-btype="img"><img src="test.jpg"></div>' +
+    '<div data-btype="basic">text after</div>');
+});
+
+test('normalize split multiple img blocks', () => {
+  let div = document.createElement("div");
+  let editor = new Editor(div, () => {}, () => {});
+  let editorDom = (div.firstChild as HTMLElement);
+  editorDom.innerHTML = '<div data-btype="img">text1<img src="pic1.jpg">text2</div>' +
+    '<div data-btype="img">text3<img src="pic2.jpg">text4</div>';
+  editor.normalize();
+
+  expect(editorDom.innerHTML).toBe('<div data-btype="basic">text1</div>' +
+    '<div data-btype="img"><img src="pic1.jpg"></div>' +
+    '<div data-btype="basic">text2</div>' +
+    '<div data-btype="basic">text3</div>' +
+    '<div data-btype="img"><img src="pic2.jpg"></div>' +
+    '<div data-btype="basic">text4</div>');
+});
+
 
