@@ -7,7 +7,7 @@ import {
   listBlockConfig
 } from "./block.js";
 import {BlockType} from "./blockType.js";
-import {HTMLStructureRule, rootSchema} from "../schema/schema.js";
+import {HTMLStructureRule, imgSchema, rootSchema} from "../schema/schema.js";
 import {setRange} from "../range";
 import {isElementNode, isTextNode} from "../domUtils";
 
@@ -42,6 +42,19 @@ export default class BlockNormalizer {
         
         if (n.childNodes.length > 1 && (this.getBlockType(n as HTMLElement) == BlockType.Line || this.getBlockType(n as HTMLElement) == BlockType.Image)) {
           this.splitLineBlock(n as HTMLElement)
+        }
+        
+        // 验证img block是否满足schema要求，不满足则转为basic block
+        const blockType = this.getBlockType(n as HTMLElement);
+        if (blockType === BlockType.Image) {
+          // 检查是否只有一个子元素且为img标签
+          const isValid = n.childNodes.length === 1 && 
+                         n.firstChild.nodeType === Node.ELEMENT_NODE && 
+                         (n.firstChild as HTMLElement).tagName === 'IMG';
+          
+          if (!isValid) {
+            (n as HTMLElement).setAttribute('data-btype', 'basic')
+          }
         }
       }
     })

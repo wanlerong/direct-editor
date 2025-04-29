@@ -366,8 +366,6 @@ export class Toolbar {
       state.suggestedUrl = link.href;
       state.suggestedText = link.textContent || '';
     }
-    
-    console.log(state)
 
     return state;
   }
@@ -480,6 +478,9 @@ export class Toolbar {
   }
   
   insertImg(src: string) {
+    if (!src) {
+      return;
+    }
     if (!this.editor.restoreSelection()) {
       console.warn('无法恢复选区');
       return;
@@ -501,11 +502,9 @@ export class Toolbar {
     
     // 创建图片块
     const imgBlock = imgBlockConfig.createElement()
-    if (src) {
-      const img = document.createElement('img');
-      img.setAttribute('src', src);
-      imgBlock.appendChild(img);
-    }
+    const img = document.createElement('img');
+    img.setAttribute('src', src);
+    imgBlock.appendChild(img);
 
     // 插入图片块
     if (block) {

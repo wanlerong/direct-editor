@@ -232,4 +232,16 @@ test('normalize split multiple img blocks', () => {
     '<div data-btype="basic">text4</div>');
 });
 
+test('normalize unimg img blocks', () => {
+  let div = document.createElement("div");
+  let editor = new Editor(div, () => {}, () => {});
+  let editorDom = (div.firstChild as HTMLElement);
+  editorDom.innerHTML = '<div data-btype="img"><img src="pic1.jpg"></div>' +
+    '<div data-btype="img"><br></div>';
+  editor.normalize();
 
+  expect(editorDom.innerHTML).toBe(
+    '<div data-btype="img"><img src="pic1.jpg"></div>' +
+    '<div data-btype="basic"><br></div>'
+  );
+});
