@@ -15,7 +15,7 @@ export const rootSchema: HTMLStructureRule = {
   childAllowedTags: ["div"],
   childAllowText: false,
   attributes: ["class", "contenteditable"],
-  childAllowedBlocks: [BlockType.Basic, BlockType.Line, BlockType.List,BlockType.Image],
+  childAllowedBlocks: [BlockType.Basic, BlockType.Line, BlockType.List, BlockType.Image, BlockType.Todo],
 }
 
 export const spanSchema: HTMLStructureRule = {
@@ -112,6 +112,28 @@ export const imgSchema: HTMLStructureRule = {
       childAllowText: false,
       attributes: ["src", "style", "id"]
     }
+  }
+}
+
+export const todoItemSchema: HTMLStructureRule = {
+  childAllowedTags: ["input"],
+  childAllowText: true,
+  attributes: ["id"],
+  children: {
+    "input": {
+      childAllowedTags: [],
+      childAllowText: false,
+      attributes: ["type", "checked", "id"]
+    }
+  }
+}
+
+export const todoSchema: HTMLStructureRule = {
+  childAllowedTags: ["div"],
+  childAllowText: false,
+  attributes: ["id", "data-btype"],
+  children: {
+    "div": todoItemSchema
   }
 }
 

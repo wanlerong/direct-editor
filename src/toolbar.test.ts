@@ -192,3 +192,94 @@ describe('insertLink', () => {
     expect(editorDom.innerHTML).toBe('<div data-btype="basic"><br></div><div data-btype="img"><img src="test.jpg"></div>')
   })
 });
+
+test('toggleTodoList Case 1', () => {
+  const div = document.createElement("div")
+  const editor = new Editor(div, () => {}, () => {})
+  document.body.appendChild(div)
+  const editorDom = editor.theDom
+  
+  editorDom.innerHTML = '<div data-btype="basic">1234</div><div data-btype="basic">567</div>'
+  
+  const firstChild = editorDom.firstChild
+  const secondChild = editorDom.childNodes[1]
+  
+  const firstTextNode = firstChild.firstChild
+  const secondTextNode = secondChild.firstChild
+  // 选中 "34" 到 "56"
+  setRange(firstTextNode, 2, secondTextNode, 2)
+  
+  // 执行转换
+  editor.toolbar.toggleTodoList()
+  
+  // 验证结果 - 删除空白字符后比较
+  const expectedHTML = `
+    <div class="direct-editor" contenteditable="true">
+      <div data-btype="todo">
+        <div>
+          <input type="checkbox">1234
+        </div>
+        <div>
+          <input type="checkbox">567
+        </div>
+      </div>
+    </div>
+  `.replace(/\s+/g, '')
+  
+  const actualHTML = div.innerHTML.replace(/\s+/g, '')
+  expect(actualHTML).toBe(expectedHTML)  
+})
+
+test('toggleTodoList Case 2', () => {
+  const div = document.createElement("div")
+  const editor = new Editor(div, () => {}, () => {})
+  document.body.appendChild(div)
+  const editorDom = editor.theDom
+  
+  // 设置初始内容
+  editorDom.innerHTML = '<div data-btype="todo"><div><input type="checkbox">111</div></div>' +
+    '<div data-btype="basic">222</div>' +
+    '<div data-btype="basic">333</div>' +
+    '<div data-btype="todo"><div><input type="checkbox">444</div></div>';
+  
+  const firstTodoBlock = editorDom.firstChild
+  const firstTodoItem = firstTodoBlock.firstChild
+  
+  const lastTodoBlock = editorDom.childNodes[3]
+  const lastTodoItem = lastTodoBlock.firstChild
+  
+  const firstText = firstTodoItem.childNodes[1]
+  const lastText = lastTodoItem.childNodes[1]
+  
+  // 选中从第一个到最后一个块的内容
+  setRange(firstText, 1, lastText, 1)
+  
+  editor.toolbar.toggleTodoList()
+  
+  // 验证结果
+  const expectedHTML = `
+    <div class="direct-editor" contenteditable="true">
+      <div data-btype="todo">
+        <div>
+          <input type="checkbox">111
+        </div>
+      </div>
+      <div data-btype="todo">
+        <div>
+          <input type="checkbox">222
+        </div>
+        <div>
+          <input type="checkbox">333
+        </div>
+      </div>
+      <div data-btype="todo">
+        <div>
+          <input type="checkbox">444
+        </div>
+      </div>
+    </div>
+  `.replace(/\s+/g, '')
+  
+  const actualHTML = div.innerHTML.replace(/\s+/g, '')
+  expect(actualHTML).toBe(expectedHTML)
+})

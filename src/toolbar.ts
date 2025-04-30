@@ -12,8 +12,8 @@ import {
 import {LineLevel} from "./const/const.js";
 import {replaceListType} from "./components/ul.js";
 import {Action, ActiveStatus} from "./const/activeStatus.js";
-import {basicBlockConfig, listBlockConfig, imgBlockConfig} from "./block/block.js";
-import {BlockInfoNone} from "./block/blockType.js";
+import {basicBlockConfig, listBlockConfig, imgBlockConfig, todoBlockConfig} from "./block/block.js";
+import {BlockInfoNone, BlockType} from "./block/blockType.js";
 import {aSchema} from "./schema/schema";
 
 export interface LinkOperationState {
@@ -521,5 +521,79 @@ export class Toolbar {
     setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset)
 
     this.editor.normalize()
+  }
+  
+  toggleTodoList() {
+    let range = getSelectionRange();
+    if (!range) return;
+    
+    const {startContainer, startOffset, endContainer, endOffset} = range.cloneRange();
+    
+    // 提取连续的basic块组
+    let basicGroups: HTMLElement[][] = [];
+    let currentGroup: HTMLElement[] = [];
+
+    iterateSubtree(new RangeIterator(range), (node) => {
+      while (node) {
+        if (node.nodeName === "DIV" && (node as HTMLElement).dataset.btype) {
+          let block = (node as HTMLElement)
+
+          if (block.dataset.btype === BlockType.Basic) {
+            if (!currentGroup.includes(block)) {
+              currentGroup.push(block);
+            }
+          } else {
+            if (currentGroup.length > 0) {
+              basicGroups.push([...currentGroup]);
+              currentGroup = [];
+            }
+          }
+          return true
+        }
+        node = node.parentNode;
+      }
+      return false;
+    });
+
+   
+    if (currentGroup.length > 0) {
+      basicGroups.push(currentGroup);
+    }
+    
+    if (basicGroups.length === 0) {
+      return;
+    }
+    
+    basicGroups.forEach(group => {
+      if (group.length === 0) return;
+      
+      const todoBlock = todoBlockConfig.createElement();
+      
+      // 转换组内的每个basic块为todo项
+      group.forEach(block => {
+        const todoItem = document.createElement('div');
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        todoItem.replaceChildren(checkbox, ...block.childNodes)
+        todoBlock.appendChild(todoItem);
+      });
+      
+      // 替换第一个块，移除其他块
+      const firstBlock = group[0];
+      firstBlock.parentNode.replaceChild(todoBlock, firstBlock);
+      for (let i = 1; i < group.length; i++) {
+        group[i].remove();
+      }
+    });
+    
+    this.editor.normalize();
+    
+    try {
+      setRange(startContainer, startOffset, endContainer, endOffset);
+    } catch (e) {
+      console.warn('恢复选区失败', e);
+    }
+    this.checkActiveStatus();
   }
 }

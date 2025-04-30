@@ -10,6 +10,7 @@ let btn7 = document.getElementById("btn7")
 let btn71 = document.getElementById("btn71")
 let btn8 = document.getElementById("btn8")
 let btn9 = document.getElementById("btn9")
+let btn10 = document.getElementById("btn10")
 
 let btnLink = document.getElementById("btnLink")
 let linkUrlInput = document.getElementById('linkUrlInput');
@@ -115,6 +116,10 @@ btn9.addEventListener('click', (event) => {
   } else {
     e.toolbar.toggleList("ol")
   }
+});
+
+btn10.addEventListener('click', (event) => {
+  e.toolbar.toggleTodoList()
 });
 
 btnLink.addEventListener('click', () => {
