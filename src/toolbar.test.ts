@@ -7,7 +7,7 @@ describe('insertLink', () => {
 
   beforeEach(() => {
     container = document.createElement('div');
-    editor = new Editor(container, null, null);
+    editor = new Editor(container, () => {}, () => {});
     document.body.appendChild(container)
   });
 
@@ -263,16 +263,12 @@ test('toggleTodoList Case 2', () => {
         <div>
           <input type="checkbox">111
         </div>
-      </div>
-      <div data-btype="todo">
         <div>
           <input type="checkbox">222
         </div>
         <div>
           <input type="checkbox">333
         </div>
-      </div>
-      <div data-btype="todo">
         <div>
           <input type="checkbox">444
         </div>

@@ -2,13 +2,13 @@ import {Editor} from "./editor";
 
 test('construct empty editor', () => {
   let div = document.createElement("div")
-  new Editor(div, null, null)
+  new Editor(div, () => {}, () => {})
   expect((div.firstChild as HTMLElement).innerHTML).toBe('<div data-btype="basic"><br></div>');
 });
 
 test('normalize empty editor', () => {
   let div = document.createElement("div")
-  let editor = new Editor(div, null, null);
+  let editor = new Editor(div, () => {}, () => {});
   let editorDom = (div.firstChild as HTMLElement);
   editorDom.innerHTML = ''
   editor.normalize()
@@ -17,7 +17,7 @@ test('normalize empty editor', () => {
 
 test('normalize merge ul', () => {
   let div = document.createElement("div")
-  let editor = new Editor(div, null, null);
+  let editor = new Editor(div, () => {}, () => {});
   let editorDom = (div.firstChild as HTMLElement);
   editorDom.innerHTML = '<div data-btype="list"><ul><li>111</li></ul></div>' +
     '<div data-btype="list"><ul><li>222</li></ul></div>'
@@ -28,7 +28,7 @@ test('normalize merge ul', () => {
 
 test('normalize remove empty ul', () => {
   let div = document.createElement("div")
-  let editor = new Editor(div, null, null);
+  let editor = new Editor(div, () => {}, () => {});
   let editorDom = (div.firstChild as HTMLElement);
   editorDom.innerHTML = '<div data-btype="list"><ul></ul></div>' +
     '<div data-btype="basic">111</div>'
@@ -38,7 +38,7 @@ test('normalize remove empty ul', () => {
 
 test('normalize remove stray text nodes', () => {
   let div = document.createElement("div");
-  let editor = new Editor(div, null, null);
+  let editor = new Editor(div, () => {}, () => {});
   let editorDom = (div.firstChild as HTMLElement);
   editorDom.innerHTML = '<div data-btype="basic">111</div> stray text';
   editor.normalize();
@@ -47,7 +47,7 @@ test('normalize remove stray text nodes', () => {
 
 test('normalize handles multiple nested ul elements', () => {
   let div = document.createElement("div");
-  let editor = new Editor(div, null, null);
+  let editor = new Editor(div, () => {}, () => {});
   let editorDom = (div.firstChild as HTMLElement);
   editorDom.innerHTML =
     '<div data-btype="list"><ul>' +
@@ -70,7 +70,7 @@ test('normalize handles multiple nested ul elements', () => {
 
 test('normalize merge multiple ul lists with nested structure', () => {
   let div = document.createElement("div");
-  let editor = new Editor(div, null, null);
+  let editor = new Editor(div, () => {}, () => {});
   let editorDom = (div.firstChild as HTMLElement);
   editorDom.innerHTML =
     '<div data-btype="list"><ul><li>111</li></ul></div>' +
@@ -91,7 +91,7 @@ test('normalize merge multiple ul lists with nested structure', () => {
 
 test('normalize remove empty span elements', () => {
   let div = document.createElement("div");
-  let editor = new Editor(div, null, null);
+  let editor = new Editor(div, () => {}, () => {});
   let editorDom = (div.firstChild as HTMLElement);
   editorDom.innerHTML = '<div data-btype="basic"><span></span><span>text</span><span></span></div>';
   editor.normalize();
@@ -100,7 +100,7 @@ test('normalize remove empty span elements', () => {
 
 test('normalize handles multiple empty divs', () => {
   let div = document.createElement("div");
-  let editor = new Editor(div, null, null);
+  let editor = new Editor(div, () => {}, () => {});
   let editorDom = (div.firstChild as HTMLElement);
   editorDom.innerHTML = '<div data-btype="basic"></div><div data-btype="basic"></div><div data-btype="basic">111</div>';
   editor.normalize();
@@ -109,7 +109,7 @@ test('normalize handles multiple empty divs', () => {
 
 test('normalize moves extra ul outside div with other elements', () => {
   let div = document.createElement("div");
-  let editor = new Editor(div, null, null);
+  let editor = new Editor(div, () => {}, () => {});
   let editorDom = (div.firstChild as HTMLElement);
   editorDom.innerHTML = '<div data-btype="list">text<ul><li>111</li></ul></div>';
   editor.normalize();
@@ -118,7 +118,7 @@ test('normalize moves extra ul outside div with other elements', () => {
 
 test('normalize adds br to empty li elements', () => {
   let div = document.createElement("div");
-  let editor = new Editor(div, null, null);
+  let editor = new Editor(div, () => {}, () => {});
   let editorDom = (div.firstChild as HTMLElement);
   editorDom.innerHTML = '<div data-btype="list"><ul><li></li><li>text</li></ul></div>';
   editor.normalize();
@@ -127,7 +127,7 @@ test('normalize adds br to empty li elements', () => {
 
 test('normalize nested spans to plain', () => {
   let div = document.createElement("div");
-  let editor = new Editor(div, null, null);
+  let editor = new Editor(div, () => {}, () => {});
   let editorDom = (div.firstChild as HTMLElement);
   editorDom.innerHTML = '<div data-btype="basic"><span>1<span>aaa<span>bbb</span></span>11</span></div>' +
     '<div data-btype="basic"><span>2<span>ccc<span>ddd</span></span>22</span></div>';
@@ -138,7 +138,7 @@ test('normalize nested spans to plain', () => {
 
 test('normalize unwrap all unsupported tag', () => {
   let div = document.createElement("div");
-  let editor = new Editor(div, null, null);
+  let editor = new Editor(div, () => {}, () => {});
   let editorDom = (div.firstChild as HTMLElement);
   editorDom.innerHTML = '<div data-btype="basic">1</div>' +
     '<div data-btype="basic"><font><font>丧的体验</font></font></div>' +
@@ -152,7 +152,7 @@ test('normalize unwrap all unsupported tag', () => {
 
 test('normalize unwrap all unsupported tag 2', () => {
   let div = document.createElement("div");
-  let editor = new Editor(div, null, null);
+  let editor = new Editor(div, () => {}, () => {});
   let editorDom = (div.firstChild as HTMLElement);
   editorDom.innerHTML = '<div data-btype="basic">1</div>' +
     '<div data-btype="basic"><span><code>使用g个</code></span></div>'
@@ -164,7 +164,7 @@ test('normalize unwrap all unsupported tag 2', () => {
 
 test('normalize split htitle', () => {
   let div = document.createElement("div");
-  let editor = new Editor(div, null, null);
+  let editor = new Editor(div, () => {}, () => {});
   let editorDom = (div.firstChild as HTMLElement);
   editorDom.innerHTML = '<div data-btype="line">' +
     '<h1>11</h1>' +
@@ -178,7 +178,7 @@ test('normalize split htitle', () => {
 
 test('normalize split htitle2', () => {
   let div = document.createElement("div");
-  let editor = new Editor(div, null, null);
+  let editor = new Editor(div, () => {}, () => {});
   let editorDom = (div.firstChild as HTMLElement);
   editorDom.innerHTML = '<div data-btype="line">' +
     '<h1>11</h1>' +
@@ -192,7 +192,7 @@ test('normalize split htitle2', () => {
 
 test('normalize split htitle3', () => {
   let div = document.createElement("div");
-  let editor = new Editor(div, null, null);
+  let editor = new Editor(div, () => {}, () => {});
   let editorDom = (div.firstChild as HTMLElement);
   editorDom.innerHTML = '<div data-btype="line">' +
     '<h1>11</h1>' +
@@ -243,5 +243,27 @@ test('normalize unimg img blocks', () => {
   expect(editorDom.innerHTML).toBe(
     '<div data-btype="img"><img src="pic1.jpg"></div>' +
     '<div data-btype="basic"><br></div>'
+  );
+});
+
+test('normalize merge adjacent todo blocks', () => {
+  let div = document.createElement("div");
+  let editor = new Editor(div, () => {}, () => {});
+  let editorDom = (div.firstChild as HTMLElement);
+  editorDom.innerHTML = '<div data-btype="todo">' +
+    '<div><input type="checkbox">111</div>' +
+    '</div>' +
+    '<div data-btype="todo">' +
+    '<div><input type="checkbox">222</div>' +
+    '<div><input type="checkbox">333</div>' +
+    '</div>';
+  editor.normalize();
+
+  expect(editorDom.innerHTML).toBe(
+    '<div data-btype="todo">' +
+    '<div><input type="checkbox">111</div>' +
+    '<div><input type="checkbox">222</div>' +
+    '<div><input type="checkbox">333</div>' +
+    '</div>'
   );
 });

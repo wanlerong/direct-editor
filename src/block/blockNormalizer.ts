@@ -265,6 +265,7 @@ export default class BlockNormalizer {
   // 保留原有后处理逻辑
   private postProcess(container: HTMLElement) {
     this.mergeAdjacentLists(container);
+    this.mergeAdjacentTodos(container);
     this.handleEmptyElements(container);
     sanitizeNode(container)
   }
@@ -353,6 +354,30 @@ export default class BlockNormalizer {
         });
       }
     });
+  }
+
+  private mergeAdjacentTodos(container: HTMLElement) {
+    let i = 0;
+    while (i < container.childNodes.length) {
+      const currentDiv = container.childNodes[i] as HTMLElement;
+      if (currentDiv.dataset.btype === BlockType.Todo) {
+        i++;
+        // 查找后续的 Todo 块并合并
+        while (i < container.childNodes.length) {
+          const nextDiv = container.childNodes[i] as HTMLElement;
+          if (nextDiv.dataset.btype === BlockType.Todo) {
+            while (nextDiv.firstChild) {
+              currentDiv.appendChild(nextDiv.firstChild);
+            }
+            nextDiv.remove();
+          } else {
+            break;
+          }
+        }
+      } else {
+        i++;
+      }
+    }
   }
 
   private handleEmptyElements(container: HTMLElement) {
