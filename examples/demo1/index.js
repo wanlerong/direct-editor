@@ -50,6 +50,12 @@ let e = new Editor(document.getElementById("container"), (ops) => {
     btn9.className = 'disable'
   }
   
+  if (as.disableActions.includes(ActiveStatusConst.Action.TODO)) {
+    btn10.className = 'disable'
+  } else {
+    btn10.className = ''
+  }
+  
   if (!as.link.canInsert && !as.link.canEdit) {
     btnLink.className = 'disable'
   } else {

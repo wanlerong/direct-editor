@@ -1,5 +1,6 @@
 import { Editor } from './editor';
 import { getSelectionRange, setRange } from './range';
+import { Action } from './const/activeStatus';
 
 describe('insertLink', () => {
   let editor: Editor;
@@ -278,4 +279,32 @@ test('toggleTodoList Case 2', () => {
   
   const actualHTML = div.innerHTML.replace(/\s+/g, '')
   expect(actualHTML).toBe(expectedHTML)
+})
+
+test('checkActiveStatus 01', () => {
+  const div = document.createElement("div")
+  const editor = new Editor(div, () => {}, () => {})
+  document.body.appendChild(div)
+  const editorDom = editor.theDom
+  
+  editorDom.innerHTML = '<div data-btype="todo"><div><input type="checkbox">待办事项</div></div>';
+  
+  const todoBlock = editorDom.firstChild as HTMLElement
+  expect(todoBlock).not.toBeNull()
+  
+  const todoItem = todoBlock.firstChild as HTMLElement
+  expect(todoItem).not.toBeNull()
+  
+  const textNode = todoItem.childNodes[1]
+  expect(textNode).not.toBeNull()
+  
+  setRange(textNode, 0, textNode, 4)
+  
+  editor.toolbar.checkActiveStatus()
+  const activeStatus = editor.toolbar.getActiveStatus()
+  
+  expect(activeStatus.disableActions).toContain(Action.Line)
+  expect(activeStatus.disableActions).toContain(Action.ORDERED_LIST)
+  expect(activeStatus.disableActions).toContain(Action.UN_ORDERED_LIST)
+  expect(activeStatus.disableActions).not.toContain(Action.TODO)
 })

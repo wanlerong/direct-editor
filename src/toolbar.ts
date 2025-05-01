@@ -168,64 +168,88 @@ export class Toolbar {
   calculateDisableActions(): Action[] {
     let range = getSelectionRange();
     let actions: Action[] = [];
-    const {hasListOverlap, hasTitleOverlap} = this.checkOverlap(range);
+    const {hasListOverlap, hasTitleOverlap, hasTodoOverlap} = this.checkOverlap(range);
     if (hasListOverlap) {
       actions.push(Action.Line);
+      actions.push(Action.TODO);
     }
     if (hasTitleOverlap) {
       actions.push(Action.ORDERED_LIST);
       actions.push(Action.UN_ORDERED_LIST);
+      actions.push(Action.TODO);
     }
+    if (hasTodoOverlap) {
+      actions.push(Action.ORDERED_LIST);
+      actions.push(Action.UN_ORDERED_LIST);
+      actions.push(Action.Line);
+    }
+    
     return actions;
   }
 
   // ul/ol 和 h 互斥，计算当前选区是否存在重叠
-  checkOverlap(range: Range): { hasListOverlap: boolean, hasTitleOverlap: boolean } {
+  checkOverlap(range: Range): { hasListOverlap: boolean, hasTitleOverlap: boolean, hasTodoOverlap: boolean } {
     let hasListOverlap = false;
     let hasTitleOverlap = false;
+    let hasTodoOverlap = false;
 
-    // 判断节点是否在 ul、ol 或 h 标题中
-    const isNodeInListOrTitle = (node: Node): { inList: boolean, inTitle: boolean } => {
+    // 判断节点是否在 ul、ol、h 标题或 todo 块中
+    const isNodeInListOrTitleOrTodo = (node: Node): { inList: boolean, inTitle: boolean, inTodo: boolean } => {
+      let inTodo = false;
+      
       while (node) {
         if (node.nodeType === Node.ELEMENT_NODE) {
-          const tagName = (node as HTMLElement).tagName.toLowerCase();
+          const element = node as HTMLElement;
+          const tagName = element.tagName.toLowerCase();
+          
+          // 检查是否在 Todo 块中
+          if (element.dataset?.btype === BlockType.Todo) {
+            inTodo = true;
+          }
+          
           if (tagName === 'ul' || tagName === 'ol') {
-            return {inList: true, inTitle: false};
+            return {inList: true, inTitle: false, inTodo};
           } else if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tagName)) {
-            return {inList: false, inTitle: true};
+            return {inList: false, inTitle: true, inTodo};
           }
         }
         node = node.parentNode;
       }
-      return {inList: false, inTitle: false};
+      return {inList: false, inTitle: false, inTodo};
     };
 
-    let startResult = isNodeInListOrTitle(range.startContainer);
-    let endResult = isNodeInListOrTitle(range.endContainer);
+    let startResult = isNodeInListOrTitleOrTodo(range.startContainer);
+    let endResult = isNodeInListOrTitleOrTodo(range.endContainer);
 
     hasListOverlap = startResult.inList || endResult.inList;
     hasTitleOverlap = startResult.inTitle || endResult.inTitle;
+    hasTodoOverlap = startResult.inTodo || endResult.inTodo;
 
-    if (hasListOverlap && hasTitleOverlap) {
-      return {hasListOverlap, hasTitleOverlap};
+    if (hasListOverlap && hasTitleOverlap && hasTodoOverlap) {
+      return {hasListOverlap, hasTitleOverlap, hasTodoOverlap};
     }
 
     iterateSubtree(new RangeIterator(range), (node) => {
       if (isCharacterDataNode(node) || isElementNode(node)) {
-        let result = isNodeInListOrTitle(node);
+        let result = isNodeInListOrTitleOrTodo(node);
         if (result.inList) {
           hasListOverlap = true;
-          return true;
         }
         if (result.inTitle) {
           hasTitleOverlap = true;
+        }
+        if (result.inTodo) {
+          hasTodoOverlap = true;
+        }
+        
+        if (hasListOverlap && hasTitleOverlap && hasTodoOverlap){
           return true;
         }
       }
       return false;
     });
 
-    return {hasListOverlap, hasTitleOverlap};
+    return {hasListOverlap, hasTitleOverlap, hasTodoOverlap};
   }
 
   toggleList(listType: 'ul' | 'ol') {
@@ -524,6 +548,10 @@ export class Toolbar {
   }
   
   toggleTodoList() {
+    if (this.activeStatus.disableActions.includes(Action.TODO)) {
+      return;
+    }
+    
     let range = getSelectionRange();
     if (!range) return;
     

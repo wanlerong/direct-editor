@@ -15,4 +15,5 @@ export enum Action {
   Line,
   ORDERED_LIST,
   UN_ORDERED_LIST,
+  TODO,
 }
