@@ -304,3 +304,40 @@ test('handleBackspace_06', () => {
       '</ul>' +
     '</div>');
 })
+
+describe('todo list enter handling', () => {
+  test('todo list enter handling 01', () => {
+    const container = document.createElement('div');
+    const editor = new Editor(container, () => {
+    }, () => {
+    });
+    document.body.appendChild(container);
+
+    // 设置初始内容 - 一个todo列表项
+    editor.theDom.innerHTML = '<div data-btype="todo"><div><input type="checkbox">aaa</div></div>';
+
+    // 获取todo项和文本节点
+    const todoBlock = editor.theDom.firstChild as HTMLElement;
+    const todoItem = todoBlock.firstChild as HTMLElement;
+    const textNode = todoItem.lastChild as Node; // "aaa" 文本节点
+
+    // 设置光标在文本后面，比如"aaa|"
+    setRange(textNode, 3, textNode, 3);
+
+    const enterEvent = new KeyboardEvent('keydown', {
+      bubbles: true,
+      cancelable: true,
+      key: 'Enter'
+    });
+
+    editor.theDom.dispatchEvent(enterEvent);
+
+    expect(editor.theDom.innerHTML).toBe(
+      '<div data-btype="todo">' +
+      '<div><input type="checkbox">aaa</div>' +
+      '<div><input type="checkbox">' + '\u200B' + '</div>' +
+      '</div>'
+    );
+  });
+});
+

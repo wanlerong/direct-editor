@@ -1,7 +1,7 @@
 import {
   basicBlockConfig,
   BlockConfig,
-  createBlockElement,
+  createBlockElement, getBlockType,
   imgBlockConfig,
   lineBlockConfig,
   listBlockConfig, todoBlockConfig
@@ -31,7 +31,7 @@ export default class BlockNormalizer {
     Array.from(container.childNodes).forEach(n => {
       if (n.nodeType == Node.ELEMENT_NODE && n.nodeName == "DIV") {
         // if div contain ul, it should only have one child which is ul
-        if (n.childNodes.length > 1 && this.getBlockType(n as HTMLElement) == BlockType.List) {
+        if (n.childNodes.length > 1 && getBlockType(n as HTMLElement) == BlockType.List) {
           let ele = basicBlockConfig.createElement()
           n.childNodes.forEach(child => {
             if ((child as HTMLElement).tagName != 'UL' && (child as HTMLElement).tagName != 'OL') {
@@ -41,12 +41,12 @@ export default class BlockNormalizer {
           (n as HTMLElement).insertAdjacentElement('beforebegin', ele)
         }
         
-        if (n.childNodes.length > 1 && (this.getBlockType(n as HTMLElement) == BlockType.Line || this.getBlockType(n as HTMLElement) == BlockType.Image)) {
+        if (n.childNodes.length > 1 && (getBlockType(n as HTMLElement) == BlockType.Line || getBlockType(n as HTMLElement) == BlockType.Image)) {
           this.splitLineBlock(n as HTMLElement)
         }
         
         // 验证img block是否满足schema要求，不满足则转为basic block
-        const blockType = this.getBlockType(n as HTMLElement);
+        const blockType = getBlockType(n as HTMLElement);
         if (blockType === BlockType.Image) {
           // 检查是否只有一个子元素且为img标签
           const isValid = n.childNodes.length === 1 && 
@@ -83,7 +83,7 @@ export default class BlockNormalizer {
   ) {
     if (node.nodeType === Node.ELEMENT_NODE) {
       const element = node as HTMLElement;
-      const blockType = this.getBlockType(element);
+      const blockType = getBlockType(element);
       // console.log("processNode", blockType, element.tagName, element.innerHTML)
       if (blockType) {
         this.processBlockElement(element, blockType, parentSchema);
@@ -253,13 +253,6 @@ export default class BlockNormalizer {
       fragment.appendChild(element.firstChild);
     }
     parent.replaceChild(fragment, element);
-  }
-
-  private getBlockType(element: HTMLElement): BlockType | null {
-    const typeStr = element.dataset.btype;
-    return typeStr && Object.values(BlockType).includes(typeStr as BlockType)
-      ? (typeStr as BlockType)
-      : null;
   }
 
   // 保留原有后处理逻辑

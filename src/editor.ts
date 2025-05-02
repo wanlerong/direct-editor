@@ -2,7 +2,7 @@ import JsonMLHtml from "./lib/jsonml-html.js";
 import {Toolbar} from "./toolbar.js";
 import {getSelectionRange, setRange} from "./range.js";
 import {getClosestAncestorByNodeName} from "./domUtils.js";
-import {handleBackspace, handleTab} from "./handlers/keydownHandler.js";
+import {handleBackspace, handleEnter, handleTab} from "./handlers/keydownHandler.js";
 import {indentLi, isNestedLi} from "./components/ul.js";
 import {ActiveStatus} from "./const/activeStatus.js";
 import {UndoManager} from "./undoManager.js";
@@ -12,6 +12,8 @@ import {DeltaSource} from "./const/const.js";
 import {domToVirtualNode, VirtualNode} from "./lib/virtualNode.js";
 import {handlePaste} from "./handlers/pasteHandler.js";
 import BlockNormalizer from "./block/blockNormalizer.js";
+import {getBlockType} from "./block/block";
+import {BlockType} from "./block/blockType";
 
 export class Editor {
 
@@ -142,21 +144,7 @@ export class Editor {
     d.addEventListener("keydown", function (e: KeyboardEvent) {
       handleBackspace(e)
       handleTab(e)
-
-      if (e.key === 'Enter') {
-        let range = getSelectionRange()
-        const startLi = getClosestAncestorByNodeName(range.startContainer, 'LI') as HTMLElement;
-        if (startLi && range.collapsed && (startLi.innerText == '' || startLi.innerText == '\n')) {
-          e.preventDefault();
-          if (isNestedLi(startLi)) {
-            const {startContainer, startOffset, endContainer, endOffset} = range.cloneRange();
-            indentLi(startLi, false)
-            setRange(startContainer, startOffset, endContainer, endOffset)
-          } else {
-            _this.toolbar.unToggleList(startLi.parentElement.nodeName == "UL" ? 'ul' : 'ol')
-          }
-        }
-      }
+      handleEnter(e, _this.toolbar)
 
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
         e.preventDefault();

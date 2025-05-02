@@ -9,7 +9,9 @@ import {
 } from "../domUtils.js";
 import {indentLi, isNestedLi} from "../components/ul.js";
 import {RangeIterator} from "../rangeIterator.js";
-import {listBlockConfig} from "../block/block.js";
+import {getBlockType, listBlockConfig} from "../block/block.js";
+import {BlockType} from "../block/blockType";
+import {Toolbar} from "../toolbar";
 
 export function handleBackspace(e: KeyboardEvent) {
   if (e.key != 'Backspace') {
@@ -106,4 +108,63 @@ export function handleTab(e: KeyboardEvent) {
     }
     setRange(startContainer, startOffset, endContainer, endOffset)
   }
+}
+
+export function handleEnter(e: KeyboardEvent, toolbar: Toolbar) {
+  if (e.key !== 'Enter') {
+    return
+  }
+
+  let range = getSelectionRange()
+  const startLi = getClosestAncestorByNodeName(range.startContainer, 'LI') as HTMLElement;
+  if (startLi && range.collapsed && (startLi.innerText == '' || startLi.innerText == '\n')) {
+    e.preventDefault();
+    if (isNestedLi(startLi)) {
+      const {startContainer, startOffset, endContainer, endOffset} = range.cloneRange();
+      indentLi(startLi, false)
+      setRange(startContainer, startOffset, endContainer, endOffset)
+    } else {
+      toolbar.unToggleList(startLi.parentElement.nodeName == "UL" ? 'ul' : 'ol')
+    }
+  }
+  handleTodoEnterKey(e)
+}
+
+function handleTodoEnterKey(event: KeyboardEvent) {
+  if (event.key !== 'Enter') return;
+
+  let range = getSelectionRange()
+  let currentNode: Node | null = range.startContainer;
+
+  // 向上查找所在的待办项 div（即 data-btype="todo" 的直接子 div）
+  let currentTodoItemDiv: HTMLElement | null = null;
+  while (currentNode && currentNode !== document.body) {
+    if (
+      currentNode.nodeType === Node.ELEMENT_NODE &&
+      ( getBlockType(currentNode.parentElement) === BlockType.Todo)
+    ) {
+      currentTodoItemDiv = currentNode as HTMLElement;
+      break;
+    }
+    currentNode = currentNode.parentNode;
+  }
+
+  if (!currentTodoItemDiv) return;
+
+  event.preventDefault();
+
+  const newTodoItemDiv = document.createElement('div');
+  const newCheckbox = document.createElement('input');
+  newCheckbox.type = 'checkbox';
+  newTodoItemDiv.appendChild(newCheckbox);
+
+  // 添加零宽空格以让光标可以正确放置
+  const textNode = document.createTextNode('\u200B');
+  newTodoItemDiv.appendChild(textNode);
+  currentTodoItemDiv.insertAdjacentElement('afterend', newTodoItemDiv);
+
+  // 设置光标到新待办项的零宽空格后
+  const newRange = document.createRange();
+  newRange.collapse(true);
+  setRange(textNode, 1,textNode, 1)
 }

@@ -66,3 +66,14 @@ export function createBlockElement(btype: string, content?: DocumentFragment): H
   }
   return block;
 }
+
+export function getBlockType(element: HTMLElement): BlockType | null {
+  if (!element) {
+    return null
+  }
+  
+  const typeStr = element.dataset.btype;
+  return typeStr && Object.values(BlockType).includes(typeStr as BlockType)
+    ? (typeStr as BlockType)
+    : null;
+}
