@@ -1,15 +1,17 @@
 import {
   basicBlockConfig,
   BlockConfig,
-  createBlockElement, getBlockType,
+  createBlockElement,
+  getBlockType,
   imgBlockConfig,
   lineBlockConfig,
-  listBlockConfig, todoBlockConfig
+  listBlockConfig,
+  todoBlockConfig
 } from "./block.js";
 import {BlockType} from "./blockType.js";
-import {HTMLStructureRule, imgSchema, rootSchema} from "../schema/schema.js";
+import {HTMLStructureRule, listSchema, rootSchema} from "../schema/schema.js";
 import {setRange} from "../range";
-import {isElementNode, isTextNode} from "../domUtils";
+import {isElementNode} from "../domUtils";
 
 export default class BlockNormalizer {
   private readonly blockRegistry = new Map<BlockType, BlockConfig>();
@@ -54,6 +56,10 @@ export default class BlockNormalizer {
                          (n.firstChild as HTMLElement).tagName === 'IMG';
           
           if (!isValid) {
+            (n as HTMLElement).setAttribute('data-btype', 'basic')
+          }
+        } else if (blockType === BlockType.List) {
+          if (!this.validateElement(n as HTMLElement, listSchema)) {
             (n as HTMLElement).setAttribute('data-btype', 'basic')
           }
         }
@@ -429,7 +435,7 @@ export default class BlockNormalizer {
       const childSchema = parentSchema.children?.[tagName];
       if (childSchema) {
         for (const childNode of Array.from(element.childNodes)) {
-          if (!this.validateElement(childNode as HTMLElement, childSchema)) {
+          if (!this.validateChildNode(childNode as HTMLElement, childSchema)) {
             return false;
           }
         }

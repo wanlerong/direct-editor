@@ -1,5 +1,6 @@
 import BlockNormalizer from "./blockNormalizer";
 import {aSchema} from "../schema/schema";
+import {Editor} from "../editor";
 
 test('validate 01', () => {
   let blockNormalizer = new BlockNormalizer()
@@ -40,4 +41,20 @@ test('validate 05', () => {
   ele.innerHTML = "123<span>2223</span><span>334</span>"
   let res = blockNormalizer.validateElement(ele, aSchema)
   expect(res).toBe(true);
+});
+
+test('normalize un-list to basic', () => {
+  let div = document.createElement("div");
+  let editor = new Editor(div, () => {}, () => {});
+  let editorDom = (div.firstChild as HTMLElement);
+  editorDom.innerHTML = '<div data-btype="list">' +
+    '<br>' +
+    '</div>';
+  editor.normalize();
+  
+  expect(editorDom.innerHTML).toBe(
+    '<div data-btype="basic">' +
+    '<br>' +
+    '</div>'
+  );
 });
