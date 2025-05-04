@@ -267,3 +267,24 @@ test('normalize merge adjacent todo blocks', () => {
     '</div>'
   );
 });
+
+test('normalize ensures zero-width space after todo checkbox', () => {
+  let div = document.createElement("div");
+  let editor = new Editor(div, () => {}, () => {});
+  let editorDom = (div.firstChild as HTMLElement);
+  
+  editorDom.innerHTML = '<div data-btype="todo">'
+      + '<div><input type="checkbox">111</div>'
+      + '<div><input type="checkbox"></div>'
+      +'<div><input type="checkbox">'+ '\u200B' + '已有零宽空格</div>'
+    +'</div>';
+  editor.normalize();
+
+  expect(editorDom.innerHTML).toBe(
+    '<div data-btype="todo">' +
+    '<div><input type="checkbox">'+ '\u200B' + '111</div>' +
+    '<div><input type="checkbox">'+ '\u200B' + '</div>' +
+    '<div><input type="checkbox">'+ '\u200B' + '已有零宽空格</div>' +
+    '</div>'
+  );
+});

@@ -266,6 +266,7 @@ export default class BlockNormalizer {
     this.mergeAdjacentLists(container);
     this.mergeAdjacentTodos(container);
     this.handleEmptyElements(container);
+    this.ensureTodoZeroWidthSpace(container);
     sanitizeNode(container)
   }
 
@@ -446,6 +447,31 @@ export default class BlockNormalizer {
     return true;
   }
   
+  /**
+   * 确保所有todo 列表项的 checkbox 后有零宽空格字符
+   */
+  private ensureTodoZeroWidthSpace(container: HTMLElement) {
+    const todoBlocks = container.querySelectorAll(`div[data-btype="${BlockType.Todo}"]`);
+    todoBlocks.forEach(todoBlock => {
+      const todoItems = todoBlock.children;
+      Array.from(todoItems).forEach(item => {
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        if (checkbox) {
+          const nextNode = checkbox.nextSibling;
+          if (!nextNode || 
+              nextNode.nodeType !== Node.TEXT_NODE || 
+              !nextNode.textContent.startsWith('\u200B')) {
+            const zeroWidthSpace = document.createTextNode('\u200B');
+            if (nextNode && nextNode.nodeType === Node.TEXT_NODE) {
+              nextNode.textContent = '\u200B' + nextNode.textContent;
+            } else {
+              checkbox.parentNode.insertBefore(zeroWidthSpace, checkbox.nextSibling);
+            }
+          }
+        }
+      });
+    });
+  }
 }
 
 // 允许的样式属性及对应值

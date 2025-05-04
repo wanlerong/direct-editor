@@ -607,7 +607,6 @@ export class Toolbar {
         todoBlock.appendChild(todoItem);
       });
       
-      // 替换第一个块，移除其他块
       const firstBlock = group[0];
       firstBlock.parentNode.replaceChild(todoBlock, firstBlock);
       for (let i = 1; i < group.length; i++) {
