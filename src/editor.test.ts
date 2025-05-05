@@ -261,9 +261,9 @@ test('normalize merge adjacent todo blocks', () => {
 
   expect(editorDom.innerHTML).toBe(
     '<div data-btype="todo">' +
-    '<div><input type="checkbox">111</div>' +
-    '<div><input type="checkbox">222</div>' +
-    '<div><input type="checkbox">333</div>' +
+    '<div><input type="checkbox">' + '\u200B' + '111</div>' +
+    '<div><input type="checkbox">' + '\u200B' + '222</div>' +
+    '<div><input type="checkbox">' + '\u200B' + '333</div>' +
     '</div>'
   );
 });

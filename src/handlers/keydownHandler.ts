@@ -9,7 +9,7 @@ import {
 } from "../domUtils.js";
 import {indentLi, isNestedLi} from "../components/ul.js";
 import {RangeIterator} from "../rangeIterator.js";
-import {getBlockType, listBlockConfig} from "../block/block.js";
+import {basicBlockConfig, getBlockType, listBlockConfig, todoBlockConfig} from "../block/block.js";
 import {BlockType} from "../block/blockType";
 import {Toolbar} from "../toolbar";
 
@@ -70,6 +70,63 @@ export function handleBackspace(e: KeyboardEvent) {
       }
     }
   }
+  
+  handleTodoBackspace(e)
+}
+
+function handleTodoBackspace(event: KeyboardEvent) {
+  if (event.key !== 'Backspace') return;
+
+
+  const range = getSelectionRange()
+  const { startContainer, startOffset } = range;
+
+  // 验证是否在零宽空格后的位置
+  if (
+    startContainer.nodeType !== Node.TEXT_NODE ||
+    (startContainer as Text).textContent?.charCodeAt(0) !== 0x200B ||
+    startOffset !== 1
+  ) return;
+
+  // 获取当前待办项 DIV
+  const currentTodoItem = startContainer.parentElement?.closest('div[data-btype="todo"] > div');
+  if (!currentTodoItem) return;
+
+  event.preventDefault();
+
+  // 获取父容器和待办列表
+  const todoList = currentTodoItem.parentElement;
+  if (!todoList) return;
+
+  // 创建新基础块
+  
+  const basicBlock = basicBlockConfig.createElement();
+  
+  currentTodoItem.querySelector('input')?.remove();
+  startContainer.textContent = startContainer.textContent.slice(1);
+
+
+  basicBlock.replaceChildren(...currentTodoItem.childNodes);
+
+  const newTodoList = todoBlockConfig.createElement();
+  // 移动后续项到新列表
+  let nextSibling = currentTodoItem.nextElementSibling;
+  while (nextSibling) {
+    const temp = nextSibling.nextElementSibling;
+    newTodoList.appendChild(nextSibling);
+    nextSibling = temp;
+  }
+  
+  if (todoList.children.length > 1) {
+    todoList.after(basicBlock, newTodoList);
+  } else {
+    todoList.replaceWith(basicBlock, newTodoList);
+  }
+
+  if (newTodoList.children.length === 0) newTodoList.remove();
+  if (todoList.children.length === 0) todoList.remove();
+  currentTodoItem.remove()
+  setRange(basicBlock, 0, basicBlock, 0)
 }
 
 export function handleTab(e: KeyboardEvent) {

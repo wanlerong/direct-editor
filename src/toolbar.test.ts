@@ -213,15 +213,16 @@ test('toggleTodoList Case 1', () => {
   // 执行转换
   editor.toolbar.toggleTodoList()
   
+  let zeroSpace = '\u200B'
   // 验证结果 - 删除空白字符后比较
   const expectedHTML = `
     <div class="direct-editor" contenteditable="true">
       <div data-btype="todo">
         <div>
-          <input type="checkbox">1234
+          <input type="checkbox">${zeroSpace}1234
         </div>
         <div>
-          <input type="checkbox">567
+          <input type="checkbox">${zeroSpace}567
         </div>
       </div>
     </div>
@@ -257,21 +258,22 @@ test('toggleTodoList Case 2', () => {
   
   editor.toolbar.toggleTodoList()
   
+  let zeroSpace = '\u200B' 
   // 验证结果
   const expectedHTML = `
     <div class="direct-editor" contenteditable="true">
       <div data-btype="todo">
         <div>
-          <input type="checkbox">111
+          <input type="checkbox">${zeroSpace}111
         </div>
         <div>
-          <input type="checkbox">222
+          <input type="checkbox">${zeroSpace}222
         </div>
         <div>
-          <input type="checkbox">333
+          <input type="checkbox">${zeroSpace}333
         </div>
         <div>
-          <input type="checkbox">444
+          <input type="checkbox">${zeroSpace}444
         </div>
       </div>
     </div>
