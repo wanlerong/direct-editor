@@ -225,3 +225,39 @@ function handleTodoEnterKey(event: KeyboardEvent) {
   newRange.collapse(true);
   setRange(textNode, 1,textNode, 1)
 }
+
+export function handleArrowLeft(event: KeyboardEvent) {
+  handleTodoArrowLeft(event)
+}
+
+function handleTodoArrowLeft(event: KeyboardEvent) {
+  if (event.key !== 'ArrowLeft') return;
+
+  let range = getSelectionRange()
+  const {startContainer, startOffset} = range;
+
+  // 验证是否在待办项的零宽空格后第一个位置
+  if (
+    startContainer.nodeType !== Node.TEXT_NODE ||
+    (startContainer as Text).textContent?.charCodeAt(0) !== 0x200B ||
+    startOffset !== 1
+  ) return;
+
+  // 获取当前待办项容器
+  const currentTodoItem = startContainer.parentElement?.closest('div[data-btype="todo"] > div');
+  if (!currentTodoItem) return;
+  
+  event.preventDefault();
+  
+  // 获取前一个兄弟待办项
+  const prevTodoItem = currentTodoItem.previousElementSibling as HTMLElement;
+  if (!prevTodoItem) return;
+
+  // 找到前一个待办项的文本节点
+  const prevTextNode = getLastTextNode(prevTodoItem)
+  
+  if (prevTextNode) {
+    const newOffset = (prevTextNode as Text).length;
+    setRange(prevTextNode, newOffset, prevTextNode, newOffset)
+  }
+}

@@ -288,3 +288,78 @@ test('normalize ensures zero-width space after todo checkbox', () => {
     '</div>'
   );
 });
+
+test('normalize todo block with missing input', () => {
+  let div = document.createElement("div");
+  let editor = new Editor(div, () => {}, () => {});
+  let editorDom = (div.firstChild as HTMLElement);
+
+  editorDom.innerHTML = '<div data-btype="todo">'
+    + '<div><input type="checkbox">111</div>'
+    + '<div>22</div>'
+    +'<div><input type="checkbox">'+ '\u200B' + '已有零宽空格</div>'
+    +'</div>';
+  
+  editor.normalize();
+
+  expect(editorDom.innerHTML).toBe(
+    '<div data-btype="todo">' +
+    '<div><input type="checkbox">'+ '\u200B' + '111</div>' +
+    '</div>'+
+    '<div data-btype="basic">22</div>' +
+    '<div data-btype="todo">' +
+    '<div><input type="checkbox">'+ '\u200B' + '已有零宽空格</div>' +
+    '</div>'
+  );
+});
+
+test('normalize todo block with missing input 02', () => {
+  let div = document.createElement("div");
+  let editor = new Editor(div, () => {}, () => {});
+  let editorDom = (div.firstChild as HTMLElement);
+
+  editorDom.innerHTML = '<div data-btype="todo">'
+    + '<div>111</div>'
+    +'<div><input type="checkbox">'+ '\u200B' + '已有零宽空格</div>'
+    +'</div>';
+
+  editor.normalize();
+
+  expect(editorDom.innerHTML).toBe(
+    '<div data-btype="basic">111</div>' +
+    '<div data-btype="todo">' +
+    '<div><input type="checkbox">'+ '\u200B' + '已有零宽空格</div>' +
+    '</div>'
+  );
+});
+
+
+test('normalize todo block with missing input 03', () => {
+  let div = document.createElement("div");
+  let editor = new Editor(div, () => {}, () => {});
+  let editorDom = (div.firstChild as HTMLElement);
+
+  editorDom.innerHTML = '<div data-btype="todo">'
+    + '<div><input type="checkbox">111</div>'
+    + '<div>22</div>'
+    + '<div><input type="checkbox">111</div>'
+    + '<div>22</div>'
+    +'<div><input type="checkbox">'+ '\u200B' + '已有零宽空格</div>'
+    +'</div>';
+
+  editor.normalize();
+
+  expect(editorDom.innerHTML).toBe(
+    '<div data-btype="todo">' +
+    '<div><input type="checkbox">'+ '\u200B' + '111</div>' +
+    '</div>'+
+    '<div data-btype="basic">22</div>' +
+    '<div data-btype="todo">' +
+    '<div><input type="checkbox">'+ '\u200B' + '111</div>' +
+    '</div>'+
+    '<div data-btype="basic">22</div>' +
+    '<div data-btype="todo">' +
+    '<div><input type="checkbox">'+ '\u200B' + '已有零宽空格</div>' +
+    '</div>'
+  );
+});

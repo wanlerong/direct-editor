@@ -265,8 +265,8 @@ export default class BlockNormalizer {
   private postProcess(container: HTMLElement) {
     this.mergeAdjacentLists(container);
     this.mergeAdjacentTodos(container);
-    this.handleEmptyElements(container);
     this.ensureTodoZeroWidthSpace(container);
+    this.handleEmptyElements(container);
     sanitizeNode(container)
   }
 
@@ -451,7 +451,10 @@ export default class BlockNormalizer {
    * 确保所有todo 列表项的 checkbox 后有零宽空格字符
    */
   private ensureTodoZeroWidthSpace(container: HTMLElement) {
-    const todoBlocks = container.querySelectorAll(`div[data-btype="${BlockType.Todo}"]`);
+    let todoBlocks = container.querySelectorAll(`div[data-btype="${BlockType.Todo}"]`);
+    todoBlocks.forEach(todoBlock => this.normalizeTodoBlock(todoBlock as HTMLElement))
+    
+    todoBlocks = container.querySelectorAll(`div[data-btype="${BlockType.Todo}"]`);
     todoBlocks.forEach(todoBlock => {
       const todoItems = todoBlock.children;
       Array.from(todoItems).forEach(item => {
@@ -471,6 +474,51 @@ export default class BlockNormalizer {
         }
       });
     });
+  }
+
+  private normalizeTodoBlock(todoBlock: HTMLElement) {
+    const todoItems = Array.from(todoBlock.children).filter((item): item is HTMLElement => item instanceof HTMLElement);
+    let hasInvalidItems = false;
+    let invalidItems: HTMLElement[] = [];
+    
+    todoItems.forEach(item => {
+      if (!item.querySelector('input[type="checkbox"]')) {
+        hasInvalidItems = true;
+        invalidItems.push(item);
+      }
+    });
+    
+    if (!hasInvalidItems) return;
+    
+    // 如果有无效项，需要分割todo块
+    let currentTodoBlock = todoBlock;
+    let nextTodoBlock: HTMLElement | null = null;
+
+    for (let i = 0; i < todoItems.length; i++) {
+      const item = todoItems[i];
+      if (invalidItems.includes(item)) {
+        const basicBlock = basicBlockConfig.createElement();
+        basicBlock.replaceChildren(...item.childNodes);
+        nextTodoBlock = todoBlockConfig.createElement();
+        currentTodoBlock.after(basicBlock, nextTodoBlock);
+        item.remove()
+        if (currentTodoBlock.children.length == 0) {
+          currentTodoBlock.remove()
+        }
+        currentTodoBlock = nextTodoBlock;
+      } else {
+        if (currentTodoBlock !== todoBlock) {
+          currentTodoBlock.appendChild(item);
+        }
+      }
+    }
+    
+    if (nextTodoBlock && nextTodoBlock.children.length === 0) {
+      nextTodoBlock.remove();
+    }
+    if (todoBlock.children.length === 0) {
+      todoBlock.remove();
+    }
   }
 }
 

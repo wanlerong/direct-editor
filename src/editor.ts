@@ -2,7 +2,7 @@ import JsonMLHtml from "./lib/jsonml-html.js";
 import {Toolbar} from "./toolbar.js";
 import {getSelectionRange, setRange} from "./range.js";
 import {getClosestAncestorByNodeName} from "./domUtils.js";
-import {handleBackspace, handleEnter, handleTab} from "./handlers/keydownHandler.js";
+import {handleArrowLeft, handleBackspace, handleEnter, handleTab} from "./handlers/keydownHandler.js";
 import {indentLi, isNestedLi} from "./components/ul.js";
 import {ActiveStatus} from "./const/activeStatus.js";
 import {UndoManager} from "./undoManager.js";
@@ -145,6 +145,7 @@ export class Editor {
       handleBackspace(e)
       handleTab(e)
       handleEnter(e, _this.toolbar)
+      handleArrowLeft(e)
 
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
         e.preventDefault();
@@ -155,6 +156,11 @@ export class Editor {
         }
       }
     })
+    
+    // onselectionchange version
+    document.onselectionchange = () => {
+      console.log(getSelectionRange())
+    };
 
     // selection change
     d.addEventListener('mouseup', function (e: MouseEvent) {

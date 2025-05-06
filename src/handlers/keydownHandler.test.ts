@@ -1,5 +1,5 @@
 import {handleBackspace, handleTab} from "./keydownHandler";
-import {setRange} from "../range";
+import {getSelectionRange, setRange} from "../range";
 import {Editor} from "../editor";
 
 test('handleTab', () => {
@@ -417,3 +417,35 @@ test('todo list backspace handling 02', () => {
   );
 });
 
+
+test('todo list ArrowLeft handling', () => {
+  const container = document.createElement('div');
+  const editor = new Editor(container, () => {}, () => {});
+  document.body.appendChild(container);
+
+  // 设置初始内容 - 一个todo列表项
+  editor.theDom.innerHTML = '<div data-btype="todo">' +
+    '<div><input type="checkbox">' + '\u200B' + 'aaa</div>' +
+    '<div><input type="checkbox">' + '\u200B' + 'bbb</div>' +
+    '</div>';
+
+  // 获取todo项和文本节点
+  const todoBlock = editor.theDom.firstChild as HTMLElement;
+  const todoItem = todoBlock.childNodes[1] as HTMLElement;
+  const textNode = todoItem.lastChild as Node;
+
+  setRange(textNode, 1, textNode, 1);
+
+  const enterEvent = new KeyboardEvent('keydown', {
+    bubbles: true,
+    cancelable: true,
+    key: 'ArrowLeft'
+  });
+
+  editor.theDom.dispatchEvent(enterEvent);
+  
+  let range = getSelectionRange()
+  
+  expect(range.startContainer).toBe(todoBlock.firstChild.childNodes[1])
+  expect(range.startOffset).toBe((todoBlock.firstChild.childNodes[1] as Text).length)
+});
