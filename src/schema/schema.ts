@@ -116,15 +116,23 @@ export const imgSchema: HTMLStructureRule = {
 }
 
 export const todoItemSchema: HTMLStructureRule = {
-  childAllowedTags: ["input"],
-  childAllowText: true,
-  attributes: ["id"],
+  childAllowedTags: ["span","div"],
+  childAllowText: false,
+  attributes: ["id","class"],
   children: {
-    "input": {
-      childAllowedTags: [],
+    "span": {
+      childAllowedTags: ["input"],
       childAllowText: false,
-      attributes: ["type", "checked", "id"]
-    }
+      attributes: ["contenteditable","id"],
+      children: {
+        "input": {
+          childAllowedTags: [],
+          childAllowText: false,
+          attributes: ["type", "checked", "id"]
+        }
+      }
+    },
+    "div":basicSchema
   }
 }
 

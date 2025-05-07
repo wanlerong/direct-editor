@@ -600,10 +600,19 @@ export class Toolbar {
       // 转换组内的每个basic块为todo项
       group.forEach(block => {
         const todoItem = document.createElement('div');
-        
+        todoItem.className = 'todo-item'
+
+        let span = document.createElement('span');
+        span.setAttribute("contenteditable", "false")
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
-        todoItem.replaceChildren(checkbox, ...block.childNodes)
+        span.appendChild(checkbox)
+        todoItem.appendChild(span)
+       
+        const todoItemTxtDiv = document.createElement('div');
+        todoItemTxtDiv.replaceChildren(...block.childNodes)
+        todoItem.appendChild(todoItemTxtDiv)
+       
         todoBlock.appendChild(todoItem);
       });
       

@@ -11,8 +11,8 @@
       body {
         margin: 0;
         padding: 1rem;
-        background: black;
-        color: #fff;
+        /*background: black;*/
+        /*color: #fff;*/
       }
       .direct-editor {
         flex: 1;
@@ -33,6 +33,20 @@
         padding: 0.5em 10px;
         quotes: "\201C""\201D""\2018""\2019";
         color: #999999;
+      }
+      
+      .todo-item{
+        display: flex;
+        align-items: center;
+      }
+
+      .todo-item > span {
+        width: 1.5em;
+      }
+
+      .todo-item > div {
+        flex-grow: 1;
+        min-width: 0;
       }
     </style>
 </head>
