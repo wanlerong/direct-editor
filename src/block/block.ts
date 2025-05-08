@@ -77,3 +77,22 @@ export function getBlockType(element: HTMLElement): BlockType | null {
     ? (typeStr as BlockType)
     : null;
 }
+
+
+export function createTodoItem(...nodes : Node[]): HTMLElement {
+  const todoItem = document.createElement('div');
+  todoItem.className = 'todo-item'
+
+  let span = document.createElement('span');
+  span.setAttribute("contenteditable", "false")
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  span.appendChild(checkbox)
+  todoItem.appendChild(span)
+
+  const todoItemTxtDiv = document.createElement('div');
+  todoItemTxtDiv.replaceChildren(...nodes)
+  todoItem.appendChild(todoItemTxtDiv)
+  
+  return todoItem
+}

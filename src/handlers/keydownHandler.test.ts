@@ -314,14 +314,16 @@ describe('todo list enter handling', () => {
     document.body.appendChild(container);
 
     // 设置初始内容 - 一个todo列表项
-    editor.theDom.innerHTML = '<div data-btype="todo"><div><input type="checkbox">aaa</div></div>';
-
+    editor.theDom.innerHTML = '<div data-btype="todo">' +
+      '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>' +
+      '</div>';
+    
     // 获取todo项和文本节点
     const todoBlock = editor.theDom.firstChild as HTMLElement;
     const todoItem = todoBlock.firstChild as HTMLElement;
-    const textNode = todoItem.lastChild as Node; // "aaa" 文本节点
+    const textNode = todoItem.lastChild.firstChild as Node; // "111" 文本节点
 
-    // 设置光标在文本后面，比如"aaa|"
+    // 设置光标在文本后面，比如"111|"
     setRange(textNode, 3, textNode, 3);
 
     const enterEvent = new KeyboardEvent('keydown', {
@@ -334,8 +336,8 @@ describe('todo list enter handling', () => {
 
     expect(editor.theDom.innerHTML).toBe(
       '<div data-btype="todo">' +
-      '<div><input type="checkbox">aaa</div>' +
-      '<div><input type="checkbox">' + '\u200B' + '</div>' +
+      '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>' +
+      '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div><br></div></div>' +
       '</div>'
     );
   });
@@ -350,16 +352,16 @@ test('todo list backspace handling 01', () => {
 
   // 设置初始内容 - 一个todo列表项
   editor.theDom.innerHTML = '<div data-btype="todo">' +
-    '<div><input type="checkbox">' + '\u200B' + 'aaa</div>' +
-    '<div><input type="checkbox">' + '\u200B' + 'bbb</div>' +
+    '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>aaa</div></div>' +
+    '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>bbb</div></div>' +
     '</div>';
 
   // 获取todo项和文本节点
   const todoBlock = editor.theDom.firstChild as HTMLElement;
   const todoItem = todoBlock.firstChild as HTMLElement;
-  const textNode = todoItem.lastChild as Node; // "aaa" 文本节点
+  const textNode = todoItem.lastChild.firstChild as Node; // "aaa" 文本节点
 
-  setRange(textNode, 1, textNode, 1);
+  setRange(textNode, 0, textNode, 0);
 
   const enterEvent = new KeyboardEvent('keydown', {
     bubbles: true,
@@ -372,7 +374,7 @@ test('todo list backspace handling 01', () => {
   expect(editor.theDom.innerHTML).toBe(
     '<div data-btype="basic">aaa</div>' +
     '<div data-btype="todo">' +
-    '<div><input type="checkbox">' + '\u200B' + 'bbb</div>' +
+    '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>bbb</div></div>' +
     '</div>'
   );
 });
@@ -386,17 +388,17 @@ test('todo list backspace handling 02', () => {
 
   // 设置初始内容 - 一个todo列表项
   editor.theDom.innerHTML = '<div data-btype="todo">' +
-    '<div><input type="checkbox">' + '\u200B' + 'aaa</div>' +
-    '<div><input type="checkbox">' + '\u200B' + 'bbb</div>' +
-    '<div><input type="checkbox">' + '\u200B' + 'ccc</div>' +
+    '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>aaa</div></div>' +
+    '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>bbb</div></div>' +
+    '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>ccc</div></div>' +
     '</div>';
 
   // 获取todo项和文本节点
   const todoBlock = editor.theDom.firstChild as HTMLElement;
   const todoItem = todoBlock.childNodes[1] as HTMLElement;
-  const textNode = todoItem.lastChild as Node;
+  const textNode = todoItem.lastChild.firstChild as Node;
 
-  setRange(textNode, 1, textNode, 1);
+  setRange(textNode, 0, textNode, 0);
 
   const enterEvent = new KeyboardEvent('keydown', {
     bubbles: true,
@@ -408,44 +410,11 @@ test('todo list backspace handling 02', () => {
 
   expect(editor.theDom.innerHTML).toBe(
     '<div data-btype="todo">' +
-    '<div><input type="checkbox">' + '\u200B' + 'aaa</div>' +
+    '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>aaa</div></div>' +
     '</div>' +
     '<div data-btype="basic">bbb</div>' +
     '<div data-btype="todo">' +
-    '<div><input type="checkbox">' + '\u200B' + 'ccc</div>' +
+    '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>ccc</div></div>' +
     '</div>'
   );
-});
-
-
-test('todo list ArrowLeft handling', () => {
-  const container = document.createElement('div');
-  const editor = new Editor(container, () => {}, () => {});
-  document.body.appendChild(container);
-
-  // 设置初始内容 - 一个todo列表项
-  editor.theDom.innerHTML = '<div data-btype="todo">' +
-    '<div><input type="checkbox">' + '\u200B' + 'aaa</div>' +
-    '<div><input type="checkbox">' + '\u200B' + 'bbb</div>' +
-    '</div>';
-
-  // 获取todo项和文本节点
-  const todoBlock = editor.theDom.firstChild as HTMLElement;
-  const todoItem = todoBlock.childNodes[1] as HTMLElement;
-  const textNode = todoItem.lastChild as Node;
-
-  setRange(textNode, 1, textNode, 1);
-
-  const enterEvent = new KeyboardEvent('keydown', {
-    bubbles: true,
-    cancelable: true,
-    key: 'ArrowLeft'
-  });
-
-  editor.theDom.dispatchEvent(enterEvent);
-  
-  let range = getSelectionRange()
-  
-  expect(range.startContainer).toBe(todoBlock.firstChild.childNodes[1])
-  expect(range.startOffset).toBe((todoBlock.firstChild.childNodes[1] as Text).length)
 });

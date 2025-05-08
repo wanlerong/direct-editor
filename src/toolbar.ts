@@ -12,7 +12,7 @@ import {
 import {LineLevel} from "./const/const.js";
 import {replaceListType} from "./components/ul.js";
 import {Action, ActiveStatus} from "./const/activeStatus.js";
-import {basicBlockConfig, listBlockConfig, imgBlockConfig, todoBlockConfig} from "./block/block.js";
+import {basicBlockConfig, listBlockConfig, imgBlockConfig, todoBlockConfig, createTodoItem} from "./block/block.js";
 import {BlockInfoNone, BlockType} from "./block/blockType.js";
 import {aSchema} from "./schema/schema";
 
@@ -599,20 +599,7 @@ export class Toolbar {
       
       // 转换组内的每个basic块为todo项
       group.forEach(block => {
-        const todoItem = document.createElement('div');
-        todoItem.className = 'todo-item'
-
-        let span = document.createElement('span');
-        span.setAttribute("contenteditable", "false")
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        span.appendChild(checkbox)
-        todoItem.appendChild(span)
-       
-        const todoItemTxtDiv = document.createElement('div');
-        todoItemTxtDiv.replaceChildren(...block.childNodes)
-        todoItem.appendChild(todoItemTxtDiv)
-       
+        const todoItem = createTodoItem(...block.childNodes)
         todoBlock.appendChild(todoItem);
       });
       

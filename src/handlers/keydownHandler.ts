@@ -9,7 +9,7 @@ import {
 } from "../domUtils.js";
 import {indentLi, isNestedLi} from "../components/ul.js";
 import {RangeIterator} from "../rangeIterator.js";
-import {basicBlockConfig, getBlockType, listBlockConfig, todoBlockConfig} from "../block/block.js";
+import {basicBlockConfig, createTodoItem, getBlockType, listBlockConfig, todoBlockConfig} from "../block/block.js";
 import {BlockType} from "../block/blockType";
 import {Toolbar} from "../toolbar";
 
@@ -77,20 +77,18 @@ export function handleBackspace(e: KeyboardEvent) {
 function handleTodoBackspace(event: KeyboardEvent) {
   if (event.key !== 'Backspace') return;
 
-
   const range = getSelectionRange()
   const { startContainer, startOffset } = range;
-
-  // 验证是否在零宽空格后的位置
-  if (
-    startContainer.nodeType !== Node.TEXT_NODE ||
-    (startContainer as Text).textContent?.charCodeAt(0) !== 0x200B ||
-    startOffset !== 1
-  ) return;
-
+  
   // 获取当前待办项 DIV
   const currentTodoItem = startContainer.parentElement?.closest('div[data-btype="todo"] > div');
   if (!currentTodoItem) return;
+  
+  if (
+    startContainer.nodeType !== Node.TEXT_NODE ||
+    getTextPosition(currentTodoItem, range) !== 0 ||
+    startOffset !== 0
+  ) return;
 
   event.preventDefault();
 
@@ -99,17 +97,10 @@ function handleTodoBackspace(event: KeyboardEvent) {
   if (!todoList) return;
 
   // 创建新基础块
-  
   const basicBlock = basicBlockConfig.createElement();
-  
-  currentTodoItem.querySelector('input')?.remove();
-  startContainer.textContent = startContainer.textContent.slice(1);
-
-
-  basicBlock.replaceChildren(...currentTodoItem.childNodes);
+  basicBlock.replaceChildren(...currentTodoItem.childNodes[1].childNodes)
 
   const newTodoList = todoBlockConfig.createElement();
-  // 移动后续项到新列表
   let nextSibling = currentTodoItem.nextElementSibling;
   while (nextSibling) {
     const temp = nextSibling.nextElementSibling;
@@ -209,55 +200,12 @@ function handleTodoEnterKey(event: KeyboardEvent) {
   if (!currentTodoItemDiv) return;
 
   event.preventDefault();
-
-  const newTodoItemDiv = document.createElement('div');
-  const newCheckbox = document.createElement('input');
-  newCheckbox.type = 'checkbox';
-  newTodoItemDiv.appendChild(newCheckbox);
-
-  // 添加零宽空格以让光标可以正确放置
-  const textNode = document.createTextNode('\u200B');
-  newTodoItemDiv.appendChild(textNode);
+  const newTodoItemDiv = createTodoItem(document.createElement("br"))
   currentTodoItemDiv.insertAdjacentElement('afterend', newTodoItemDiv);
 
   // 设置光标到新待办项的零宽空格后
   const newRange = document.createRange();
   newRange.collapse(true);
-  setRange(textNode, 1,textNode, 1)
-}
-
-export function handleArrowLeft(event: KeyboardEvent) {
-  handleTodoArrowLeft(event)
-}
-
-function handleTodoArrowLeft(event: KeyboardEvent) {
-  if (event.key !== 'ArrowLeft') return;
-
-  let range = getSelectionRange()
-  const {startContainer, startOffset} = range;
-
-  // 验证是否在待办项的零宽空格后第一个位置
-  if (
-    startContainer.nodeType !== Node.TEXT_NODE ||
-    (startContainer as Text).textContent?.charCodeAt(0) !== 0x200B ||
-    startOffset !== 1
-  ) return;
-
-  // 获取当前待办项容器
-  const currentTodoItem = startContainer.parentElement?.closest('div[data-btype="todo"] > div');
-  if (!currentTodoItem) return;
   
-  event.preventDefault();
-  
-  // 获取前一个兄弟待办项
-  const prevTodoItem = currentTodoItem.previousElementSibling as HTMLElement;
-  if (!prevTodoItem) return;
-
-  // 找到前一个待办项的文本节点
-  const prevTextNode = getLastTextNode(prevTodoItem)
-  
-  if (prevTextNode) {
-    const newOffset = (prevTextNode as Text).length;
-    setRange(prevTextNode, newOffset, prevTextNode, newOffset)
-  }
+  setRange(newTodoItemDiv, 1,newTodoItemDiv, 1)
 }

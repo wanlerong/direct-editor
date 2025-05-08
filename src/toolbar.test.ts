@@ -213,16 +213,15 @@ test('toggleTodoList Case 1', () => {
   // 执行转换
   editor.toolbar.toggleTodoList()
   
-  let zeroSpace = '\u200B'
   // 验证结果 - 删除空白字符后比较
   const expectedHTML = `
     <div class="direct-editor" contenteditable="true">
       <div data-btype="todo">
-        <div>
-          <input type="checkbox">${zeroSpace}1234
+        <div class="todo-item">
+          <span contenteditable="false"><input type="checkbox"></span><div>1234</div>
         </div>
-        <div>
-          <input type="checkbox">${zeroSpace}567
+        <div class="todo-item">
+          <span contenteditable="false"><input type="checkbox"></span><div>567</div>
         </div>
       </div>
     </div>
@@ -239,10 +238,10 @@ test('toggleTodoList Case 2', () => {
   const editorDom = editor.theDom
   
   // 设置初始内容
-  editorDom.innerHTML = '<div data-btype="todo"><div><input type="checkbox">111</div></div>' +
+  editorDom.innerHTML = '<div data-btype="todo"><div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div></div>' +
     '<div data-btype="basic">222</div>' +
     '<div data-btype="basic">333</div>' +
-    '<div data-btype="todo"><div><input type="checkbox">444</div></div>';
+    '<div data-btype="todo"><div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>444</div></div></div>';
   
   const firstTodoBlock = editorDom.firstChild
   const firstTodoItem = firstTodoBlock.firstChild
@@ -250,31 +249,22 @@ test('toggleTodoList Case 2', () => {
   const lastTodoBlock = editorDom.childNodes[3]
   const lastTodoItem = lastTodoBlock.firstChild
   
-  const firstText = firstTodoItem.childNodes[1]
-  const lastText = lastTodoItem.childNodes[1]
+  const firstText = firstTodoItem.childNodes[1].firstChild
+  const lastText = lastTodoItem.childNodes[1].firstChild
   
   // 选中从第一个到最后一个块的内容
   setRange(firstText, 1, lastText, 1)
   
   editor.toolbar.toggleTodoList()
   
-  let zeroSpace = '\u200B' 
   // 验证结果
   const expectedHTML = `
     <div class="direct-editor" contenteditable="true">
       <div data-btype="todo">
-        <div>
-          <input type="checkbox">${zeroSpace}111
-        </div>
-        <div>
-          <input type="checkbox">${zeroSpace}222
-        </div>
-        <div>
-          <input type="checkbox">${zeroSpace}333
-        </div>
-        <div>
-          <input type="checkbox">${zeroSpace}444
-        </div>
+        <div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>
+        <div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>222</div></div>
+        <div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>333</div></div>
+        <div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>444</div></div>
       </div>
     </div>
   `.replace(/\s+/g, '')

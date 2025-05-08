@@ -251,40 +251,19 @@ test('normalize merge adjacent todo blocks', () => {
   let editor = new Editor(div, () => {}, () => {});
   let editorDom = (div.firstChild as HTMLElement);
   editorDom.innerHTML = '<div data-btype="todo">' +
-    '<div><input type="checkbox">111</div>' +
+    '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>' +
     '</div>' +
     '<div data-btype="todo">' +
-    '<div><input type="checkbox">222</div>' +
-    '<div><input type="checkbox">333</div>' +
+    '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>' +
+    '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>' +
     '</div>';
   editor.normalize();
 
   expect(editorDom.innerHTML).toBe(
     '<div data-btype="todo">' +
-    '<div><input type="checkbox">' + '\u200B' + '111</div>' +
-    '<div><input type="checkbox">' + '\u200B' + '222</div>' +
-    '<div><input type="checkbox">' + '\u200B' + '333</div>' +
-    '</div>'
-  );
-});
-
-test('normalize ensures zero-width space after todo checkbox', () => {
-  let div = document.createElement("div");
-  let editor = new Editor(div, () => {}, () => {});
-  let editorDom = (div.firstChild as HTMLElement);
-  
-  editorDom.innerHTML = '<div data-btype="todo">'
-      + '<div><input type="checkbox">111</div>'
-      + '<div><input type="checkbox"></div>'
-      +'<div><input type="checkbox">'+ '\u200B' + '已有零宽空格</div>'
-    +'</div>';
-  editor.normalize();
-
-  expect(editorDom.innerHTML).toBe(
-    '<div data-btype="todo">' +
-    '<div><input type="checkbox">'+ '\u200B' + '111</div>' +
-    '<div><input type="checkbox">'+ '\u200B' + '</div>' +
-    '<div><input type="checkbox">'+ '\u200B' + '已有零宽空格</div>' +
+    '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>' +
+    '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>' +
+    '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>' +
     '</div>'
   );
 });
@@ -295,20 +274,20 @@ test('normalize todo block with missing input', () => {
   let editorDom = (div.firstChild as HTMLElement);
 
   editorDom.innerHTML = '<div data-btype="todo">'
-    + '<div><input type="checkbox">111</div>'
+    + '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>'
     + '<div>22</div>'
-    +'<div><input type="checkbox">'+ '\u200B' + '已有零宽空格</div>'
-    +'</div>';
+    + '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>'
+    + '</div>';
   
   editor.normalize();
 
   expect(editorDom.innerHTML).toBe(
     '<div data-btype="todo">' +
-    '<div><input type="checkbox">'+ '\u200B' + '111</div>' +
+    '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>' +
     '</div>'+
     '<div data-btype="basic">22</div>' +
     '<div data-btype="todo">' +
-    '<div><input type="checkbox">'+ '\u200B' + '已有零宽空格</div>' +
+    '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>' +
     '</div>'
   );
 });
@@ -320,7 +299,7 @@ test('normalize todo block with missing input 02', () => {
 
   editorDom.innerHTML = '<div data-btype="todo">'
     + '<div>111</div>'
-    +'<div><input type="checkbox">'+ '\u200B' + '已有零宽空格</div>'
+    +'<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>'
     +'</div>';
 
   editor.normalize();
@@ -328,7 +307,7 @@ test('normalize todo block with missing input 02', () => {
   expect(editorDom.innerHTML).toBe(
     '<div data-btype="basic">111</div>' +
     '<div data-btype="todo">' +
-    '<div><input type="checkbox">'+ '\u200B' + '已有零宽空格</div>' +
+      '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>' +
     '</div>'
   );
 });
@@ -340,26 +319,26 @@ test('normalize todo block with missing input 03', () => {
   let editorDom = (div.firstChild as HTMLElement);
 
   editorDom.innerHTML = '<div data-btype="todo">'
-    + '<div><input type="checkbox">111</div>'
+    + '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>'
     + '<div>22</div>'
-    + '<div><input type="checkbox">111</div>'
+    + '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>'
     + '<div>22</div>'
-    +'<div><input type="checkbox">'+ '\u200B' + '已有零宽空格</div>'
-    +'</div>';
+    + '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>'
+    + '</div>';
 
   editor.normalize();
 
   expect(editorDom.innerHTML).toBe(
     '<div data-btype="todo">' +
-    '<div><input type="checkbox">'+ '\u200B' + '111</div>' +
+    '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>' +
     '</div>'+
     '<div data-btype="basic">22</div>' +
     '<div data-btype="todo">' +
-    '<div><input type="checkbox">'+ '\u200B' + '111</div>' +
+    '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>' +
     '</div>'+
     '<div data-btype="basic">22</div>' +
     '<div data-btype="todo">' +
-    '<div><input type="checkbox">'+ '\u200B' + '已有零宽空格</div>' +
+    '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>' +
     '</div>'
   );
 });

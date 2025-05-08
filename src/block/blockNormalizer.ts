@@ -265,7 +265,7 @@ export default class BlockNormalizer {
   private postProcess(container: HTMLElement) {
     this.mergeAdjacentLists(container);
     this.mergeAdjacentTodos(container);
-    this.ensureTodoZeroWidthSpace(container);
+    this.normalizeTodo(container);
     this.handleEmptyElements(container);
     sanitizeNode(container)
   }
@@ -392,7 +392,7 @@ export default class BlockNormalizer {
     // remove all empty span
     const spanItems = container.querySelectorAll('span');
     spanItems.forEach((span) => {
-      if (span.textContent == "") {
+      if (span.textContent == "" && span.children.length === 0) {
         span.remove()
       }
     });
@@ -447,33 +447,9 @@ export default class BlockNormalizer {
     return true;
   }
   
-  /**
-   * 确保所有todo 列表项的 checkbox 后有零宽空格字符
-   */
-  private ensureTodoZeroWidthSpace(container: HTMLElement) {
+  private normalizeTodo(container: HTMLElement) {
     let todoBlocks = container.querySelectorAll(`div[data-btype="${BlockType.Todo}"]`);
     todoBlocks.forEach(todoBlock => this.normalizeTodoBlock(todoBlock as HTMLElement))
-    
-    todoBlocks = container.querySelectorAll(`div[data-btype="${BlockType.Todo}"]`);
-    todoBlocks.forEach(todoBlock => {
-      const todoItems = todoBlock.children;
-      Array.from(todoItems).forEach(item => {
-        const checkbox = item.querySelector('input[type="checkbox"]');
-        if (checkbox) {
-          const nextNode = checkbox.nextSibling;
-          if (!nextNode || 
-              nextNode.nodeType !== Node.TEXT_NODE || 
-              !nextNode.textContent.startsWith('\u200B')) {
-            const zeroWidthSpace = document.createTextNode('\u200B');
-            if (nextNode && nextNode.nodeType === Node.TEXT_NODE) {
-              nextNode.textContent = '\u200B' + nextNode.textContent;
-            } else {
-              checkbox.parentNode.insertBefore(zeroWidthSpace, checkbox.nextSibling);
-            }
-          }
-        }
-      });
-    });
   }
 
   private normalizeTodoBlock(todoBlock: HTMLElement) {
