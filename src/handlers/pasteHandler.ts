@@ -28,12 +28,10 @@ export function handlePaste(e: ClipboardEvent): void {
 
   const html = clipboardData.getData('text/html');
   if (html) {
-    console.log(html)
     result = processHTML(html);
   } else {
     const text = clipboardData.getData('text/plain');
     if (text) {
-      console.log(text)
       result = processPlainText(text);
     }
   }

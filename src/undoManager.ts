@@ -12,7 +12,7 @@ export class UndoManager {
   constructor(editor: Editor) {
     this.editor = editor
   }
-  
+
   push(deltaItem: DeltaItem): void {
     this.undoStack.push(deltaItem);
     this.redoStack = [];  // 每次保存新状态时清空 redo 栈
@@ -21,33 +21,29 @@ export class UndoManager {
     }
   }
 
-  undo() {
-    if (this.undoStack.length > 0) {
-      const item = this.undoStack.pop();
-      console.log('undo stack', JSON.stringify(this.undoStack))
-      let iDelta = item.delta.inverse(this.editor.getNextDeltas(item.delta))
+  private executeOperation(sourceStack: DeltaItem[], targetStack: DeltaItem[], operation: string): void {
+    if (sourceStack.length > 0) {
+      const item = sourceStack.pop();
+      console.log(`${operation} stack`, JSON.stringify(sourceStack));
+
+      let iDelta = item.delta.inverse(this.editor.getNextDeltas(item.delta));
       if (iDelta == null) {
-        return
+        return;
       }
-      item.delta.nextReserve = iDelta
-      console.log('undo inverse', JSON.stringify(item), JSON.stringify(iDelta))
-      this.editor.applyDelta(iDelta, DeltaSource.UndoRedo)
-      this.redoStack.push({delta:iDelta});
+
+      item.delta.nextReserve = iDelta;
+      console.log(`${operation} inverse`, JSON.stringify(item), JSON.stringify(iDelta));
+
+      this.editor.applyDelta(iDelta, DeltaSource.UndoRedo);
+      targetStack.push({delta: iDelta});
     }
   }
+  
+  undo(): void {
+    this.executeOperation(this.undoStack, this.redoStack, 'undo');
+  }
 
-  redo() {
-    if (this.redoStack.length > 0) {
-      const item = this.redoStack.pop();
-      console.log('redo stack', JSON.stringify(this.redoStack))
-      let iDelta = item.delta.inverse(this.editor.getNextDeltas(item.delta))
-      if (iDelta == null) {
-        return
-      }
-      item.delta.nextReserve = iDelta
-      console.log('redo inverse', JSON.stringify(item), JSON.stringify(iDelta))
-      this.editor.applyDelta(iDelta, DeltaSource.UndoRedo)
-      this.undoStack.push({delta:iDelta});
-    }
+  redo(): void {
+    this.executeOperation(this.redoStack, this.undoStack, 'redo');
   }
 }

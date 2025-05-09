@@ -26,28 +26,25 @@ export function getClosestAncestorIn(node: Node, ancestor: Node): Node {
 
 // div -> .... -> node
 // 返回的是 div
-export function getClosestAncestorByNodeName(node: Node, nodeName: string): Node {
+export function getClosestAncestor(node: Node, nodeNames: string | string[]): Node {
   let n = node;
+  const names = Array.isArray(nodeNames) ? nodeNames : [nodeNames];
+  
   while (n) {
-    if (n.nodeName == nodeName) {
-      return n
+    if (names.includes(n.nodeName)) {
+      return n;
     }
-    n = n.parentNode
+    n = n.parentNode;
   }
   return null;
 }
 
-// div -> .... -> node
-// 返回的是 div
+export function getClosestAncestorByNodeName(node: Node, nodeName: string): Node {
+  return getClosestAncestor(node, nodeName);
+}
+
 export function getClosestAncestorByNodeNames(node: Node, nodeNames: string[]): Node {
-  let n = node;
-  while (n) {
-    if (nodeNames.includes(n.nodeName)) {
-      return n
-    }
-    n = n.parentNode
-  }
-  return null;
+  return getClosestAncestor(node, nodeNames);
 }
 
 export function getNodeLength(node: Node) {
