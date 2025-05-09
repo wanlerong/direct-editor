@@ -129,7 +129,6 @@ btn10.addEventListener('click', (event) => {
 });
 
 btnLink.addEventListener('click', () => {
-  console.log("aaa")
   linkUrlInput.style.display = "block"
   linkTextInput.style.display = "block"
   confirmLink.style.display = "block"

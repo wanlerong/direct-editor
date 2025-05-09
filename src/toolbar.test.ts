@@ -59,9 +59,6 @@ describe('insertLink', () => {
       // 选中 [cross<span>element</span>]
       setRange(editor.theDom.firstChild.childNodes[1], 0, editor.theDom.firstChild.childNodes[3].firstChild, 0);
       editor.cacheSelection();
-      
-      console.log(getSelectionRange().cloneContents().textContent)
-
       editor.toolbar.insertLink('nested.com', 'new-link');
 
       assertHTML(`

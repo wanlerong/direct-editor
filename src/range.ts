@@ -24,7 +24,7 @@ export function getSelectionRange(): Range {
 }
 
 export function splitRange(range: Range) {
-  console.log('splitRange:', range, range.startContainer, range.startOffset, range.endContainer, range.endOffset)
+  // console.log('splitRange:', range, range.startContainer, range.startOffset, range.endContainer, range.endOffset)
   if (!isTextNode(range.startContainer) || !isTextNode(range.endContainer) || range.collapsed) {
     return
   }

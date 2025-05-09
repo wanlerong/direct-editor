@@ -141,7 +141,6 @@ export class Delta {
         })
         delete reverseDeltasMap[nextDelta.seq]
         reverseDeltasCount--
-        // console.log(reverseDeltasCount)
         if (reverseDeltasCount == 0) {
           finalPureDeltas.push(...pureDeltas)
           // console.log(JSON.stringify(pureDeltas), JSON.stringify(finalPureDeltas))
@@ -163,7 +162,6 @@ export class Delta {
       }
     })
 
-    // console.log("11111 final", JSON.stringify(finalPureDeltas))
     return this.adjustPurePath(finalPureDeltas)
   }
 

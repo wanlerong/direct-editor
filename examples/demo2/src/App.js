@@ -47,11 +47,9 @@ function App() {
 
   const handleClick = () => {
     theEditor.toolbar.bold(true)
-    console.log('Button clicked!');
   };
   const handleClick2 = () => {
     theEditor.toolbar.toggleList("ul")
-    console.log('Button clicked!');
   };
 
   return (
