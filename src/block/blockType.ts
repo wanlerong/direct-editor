@@ -5,6 +5,7 @@ export enum BlockType {
   List = "list",
   Image = "img",
   Todo = "todo",
+  Code = "code",
 }
 
 // 二级类型定义

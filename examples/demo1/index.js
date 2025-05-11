@@ -11,6 +11,7 @@ let btn71 = document.getElementById("btn71")
 let btn8 = document.getElementById("btn8")
 let btn9 = document.getElementById("btn9")
 let btn10 = document.getElementById("btn10")
+let btn11 = document.getElementById("btn11")
 
 let btnLink = document.getElementById("btnLink")
 let linkUrlInput = document.getElementById('linkUrlInput');
@@ -55,7 +56,14 @@ let e = new Editor(document.getElementById("container"), (ops) => {
   } else {
     btn10.className = ''
   }
-  
+
+  if (as.disableActions.includes(ActiveStatusConst.Action.CODE)) {
+    btn11.className = 'disable'
+  } else {
+    btn11.className = ''
+  }
+
+
   if (!as.link.canInsert && !as.link.canEdit) {
     btnLink.className = 'disable'
   } else {
@@ -126,6 +134,10 @@ btn9.addEventListener('click', (event) => {
 
 btn10.addEventListener('click', (event) => {
   e.toolbar.toggleTodoList()
+});
+
+btn11.addEventListener('click', (event) => {
+  e.toolbar.toggleCode()
 });
 
 btnLink.addEventListener('click', () => {

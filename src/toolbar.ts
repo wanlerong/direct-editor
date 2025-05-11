@@ -12,7 +12,15 @@ import {
 import {LineLevel} from "./const/const.js";
 import {replaceListType} from "./components/ul.js";
 import {Action, ActiveStatus} from "./const/activeStatus.js";
-import {basicBlockConfig, listBlockConfig, imgBlockConfig, todoBlockConfig, createTodoItem} from "./block/block.js";
+import {
+  basicBlockConfig,
+  listBlockConfig,
+  imgBlockConfig,
+  todoBlockConfig,
+  createTodoItem,
+  codeBlockConfig,
+  createCodeLine
+} from "./block/block.js";
 import {BlockInfoNone, BlockType} from "./block/blockType.js";
 import {aSchema} from "./schema/schema";
 
@@ -168,34 +176,45 @@ export class Toolbar {
   calculateDisableActions(): Action[] {
     let range = getSelectionRange();
     let actions: Action[] = [];
-    const {hasListOverlap, hasTitleOverlap, hasTodoOverlap} = this.checkOverlap(range);
+    const {hasListOverlap, hasTitleOverlap, hasTodoOverlap, hasCodeOverlap} = this.checkOverlap(range);
     if (hasListOverlap) {
       actions.push(Action.Line);
       actions.push(Action.TODO);
+      actions.push(Action.Code);
     }
     if (hasTitleOverlap) {
       actions.push(Action.ORDERED_LIST);
       actions.push(Action.UN_ORDERED_LIST);
       actions.push(Action.TODO);
+      actions.push(Action.Code);
     }
     if (hasTodoOverlap) {
       actions.push(Action.ORDERED_LIST);
       actions.push(Action.UN_ORDERED_LIST);
       actions.push(Action.Line);
+      actions.push(Action.Code);
+    }
+    if (hasCodeOverlap) {
+      actions.push(Action.ORDERED_LIST);
+      actions.push(Action.UN_ORDERED_LIST);
+      actions.push(Action.Line);
+      actions.push(Action.TODO);
     }
     
     return actions;
   }
 
   // ul/ol 和 h 互斥，计算当前选区是否存在重叠
-  checkOverlap(range: Range): { hasListOverlap: boolean, hasTitleOverlap: boolean, hasTodoOverlap: boolean } {
+  checkOverlap(range: Range): { hasListOverlap: boolean, hasTitleOverlap: boolean, hasTodoOverlap: boolean, hasCodeOverlap: boolean } {
     let hasListOverlap = false;
     let hasTitleOverlap = false;
     let hasTodoOverlap = false;
+    let hasCodeOverlap = false;
 
-    // 判断节点是否在 ul、ol、h 标题或 todo 块中
-    const isNodeInListOrTitleOrTodo = (node: Node): { inList: boolean, inTitle: boolean, inTodo: boolean } => {
+    // 判断节点是否在 ul、ol、h 标题、todo 或 code 块中
+    const isNodeInListOrTitleOrTodoOrCode = (node: Node): { inList: boolean, inTitle: boolean, inTodo: boolean, inCode: boolean } => {
       let inTodo = false;
+      let inCode = false;
       
       while (node) {
         if (node.nodeType === Node.ELEMENT_NODE) {
@@ -206,32 +225,38 @@ export class Toolbar {
           if (element.dataset?.btype === BlockType.Todo) {
             inTodo = true;
           }
+
+          // 检查是否在 Code 块中
+          if (element.dataset?.btype === BlockType.Code) {
+            inCode = true;
+          }
           
           if (tagName === 'ul' || tagName === 'ol') {
-            return {inList: true, inTitle: false, inTodo};
+            return {inList: true, inTitle: false, inTodo, inCode};
           } else if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tagName)) {
-            return {inList: false, inTitle: true, inTodo};
+            return {inList: false, inTitle: true, inTodo, inCode};
           }
         }
         node = node.parentNode;
       }
-      return {inList: false, inTitle: false, inTodo};
+      return {inList: false, inTitle: false, inTodo, inCode};
     };
 
-    let startResult = isNodeInListOrTitleOrTodo(range.startContainer);
-    let endResult = isNodeInListOrTitleOrTodo(range.endContainer);
+    let startResult = isNodeInListOrTitleOrTodoOrCode(range.startContainer);
+    let endResult = isNodeInListOrTitleOrTodoOrCode(range.endContainer);
 
     hasListOverlap = startResult.inList || endResult.inList;
     hasTitleOverlap = startResult.inTitle || endResult.inTitle;
     hasTodoOverlap = startResult.inTodo || endResult.inTodo;
+    hasCodeOverlap = startResult.inCode || endResult.inCode;
 
-    if (hasListOverlap && hasTitleOverlap && hasTodoOverlap) {
-      return {hasListOverlap, hasTitleOverlap, hasTodoOverlap};
+    if (hasListOverlap && hasTitleOverlap && hasTodoOverlap && hasCodeOverlap) {
+      return {hasListOverlap, hasTitleOverlap, hasTodoOverlap, hasCodeOverlap};
     }
 
     iterateSubtree(new RangeIterator(range), (node) => {
       if (isCharacterDataNode(node) || isElementNode(node)) {
-        let result = isNodeInListOrTitleOrTodo(node);
+        let result = isNodeInListOrTitleOrTodoOrCode(node);
         if (result.inList) {
           hasListOverlap = true;
         }
@@ -241,15 +266,18 @@ export class Toolbar {
         if (result.inTodo) {
           hasTodoOverlap = true;
         }
+        if (result.inCode) {
+          hasCodeOverlap = true;
+        }
         
-        if (hasListOverlap && hasTitleOverlap && hasTodoOverlap){
+        if (hasListOverlap && hasTitleOverlap && hasTodoOverlap && hasCodeOverlap){
           return true;
         }
       }
       return false;
     });
 
-    return {hasListOverlap, hasTitleOverlap, hasTodoOverlap};
+    return {hasListOverlap, hasTitleOverlap, hasTodoOverlap, hasCodeOverlap};
   }
 
   toggleList(listType: 'ul' | 'ol') {
@@ -612,6 +640,79 @@ export class Toolbar {
     
     this.editor.normalize();
     
+    try {
+      setRange(startContainer, startOffset, endContainer, endOffset);
+    } catch (e) {
+      console.warn('恢复选区失败', e);
+    }
+    this.checkActiveStatus();
+  }
+
+  toggleCode() {
+    if (this.activeStatus.disableActions.includes(Action.Code)) {
+      return;
+    }
+
+    let range = getSelectionRange();
+    if (!range) return;
+
+    const {startContainer, startOffset, endContainer, endOffset} = range.cloneRange();
+
+    // 提取连续的basic块组
+    let basicGroups: HTMLElement[][] = [];
+    let currentGroup: HTMLElement[] = [];
+
+    iterateSubtree(new RangeIterator(range), (node) => {
+      while (node) {
+        if (node.nodeName === "DIV" && (node as HTMLElement).dataset.btype) {
+          let block = (node as HTMLElement)
+
+          if (block.dataset.btype === BlockType.Basic) {
+            if (!currentGroup.includes(block)) {
+              currentGroup.push(block);
+            }
+          } else {
+            if (currentGroup.length > 0) {
+              basicGroups.push([...currentGroup]);
+              currentGroup = [];
+            }
+          }
+          return true
+        }
+        node = node.parentNode;
+      }
+      return false;
+    });
+
+
+    if (currentGroup.length > 0) {
+      basicGroups.push(currentGroup);
+    }
+
+    if (basicGroups.length === 0) {
+      return;
+    }
+
+    basicGroups.forEach(group => {
+      if (group.length === 0) return;
+
+      const codeBlock = codeBlockConfig.createElement();
+
+      // 转换组内的每个basic块为todo项
+      group.forEach(block => {
+        const codeLine = createCodeLine(...block.childNodes)
+        codeBlock.appendChild(codeLine);
+      });
+
+      const firstBlock = group[0];
+      firstBlock.parentNode.replaceChild(codeBlock, firstBlock);
+      for (let i = 1; i < group.length; i++) {
+        group[i].remove();
+      }
+    });
+
+    this.editor.normalize();
+
     try {
       setRange(startContainer, startOffset, endContainer, endOffset);
     } catch (e) {

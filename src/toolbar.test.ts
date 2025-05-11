@@ -297,3 +297,35 @@ test('checkActiveStatus 01', () => {
   expect(activeStatus.disableActions).toContain(Action.UN_ORDERED_LIST)
   expect(activeStatus.disableActions).not.toContain(Action.TODO)
 })
+
+test('toggleCode Case 1', () => {
+  const div = document.createElement("div")
+  const editor = new Editor(div, () => {}, () => {})
+  document.body.appendChild(div)
+  const editorDom = editor.theDom
+
+  editorDom.innerHTML = '<div data-btype="basic">1234</div><div data-btype="basic">567</div>'
+
+  const firstChild = editorDom.firstChild
+  const secondChild = editorDom.childNodes[1]
+
+  const firstTextNode = firstChild.firstChild
+  const secondTextNode = secondChild.firstChild
+  // 选中 "34" 到 "56"
+  setRange(firstTextNode, 2, secondTextNode, 2)
+
+  editor.toolbar.toggleCode()
+
+  // 验证结果 - 删除空白字符后比较
+  const expectedHTML = `
+    <div class="direct-editor" contenteditable="true">
+      <div data-btype="code">
+        <div>1234</div>
+        <div>567</div>
+      </div>
+    </div>
+  `.replace(/\s+/g, '')
+
+  const actualHTML = div.innerHTML.replace(/\s+/g, '')
+  expect(actualHTML).toBe(expectedHTML)
+})

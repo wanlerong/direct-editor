@@ -15,7 +15,7 @@ export const rootSchema: HTMLStructureRule = {
   childAllowedTags: ["div"],
   childAllowText: false,
   attributes: ["class", "contenteditable"],
-  childAllowedBlocks: [BlockType.Basic, BlockType.Line, BlockType.List, BlockType.Image, BlockType.Todo],
+  childAllowedBlocks: [BlockType.Basic, BlockType.Line, BlockType.List, BlockType.Image, BlockType.Todo, BlockType.Code],
 }
 
 export const spanSchema: HTMLStructureRule = {
@@ -145,3 +145,20 @@ export const todoSchema: HTMLStructureRule = {
   }
 }
 
+export const codeLineSchema: HTMLStructureRule = {
+  childAllowedTags: ["br"],
+  childAllowText: true,
+  attributes: ["id", "data-btype"],
+  children: {
+    "br": brSchema,
+  }
+}
+
+export const codeSchema: HTMLStructureRule = {
+  childAllowedTags: ["div"],
+  childAllowText: false,
+  attributes: ["id", "data-btype"],
+  children: {
+    "div": codeLineSchema
+  }
+}

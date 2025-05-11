@@ -1,4 +1,4 @@
-import {HTMLStructureRule, basicSchema, lineSchema, listSchema, imgSchema, todoSchema} from "../schema/schema.js";
+import {HTMLStructureRule, basicSchema, lineSchema, listSchema, imgSchema, todoSchema, codeSchema} from "../schema/schema.js";
 import {BlockType} from "./blockType.js";
 
 export interface BlockConfig {
@@ -57,6 +57,16 @@ export const todoBlockConfig: BlockConfig = {
   }
 }
 
+export const codeBlockConfig: BlockConfig = {
+  type: BlockType.Code,
+  schema: codeSchema,
+  createElement: () => {
+    const el = document.createElement('div');
+    el.dataset.btype = BlockType.Code;
+    return el;
+  }
+}
+
 export function createBlockElement(btype: string, content?: DocumentFragment): HTMLElement {
   const block = document.createElement('div');
   block.dataset.btype = btype;
@@ -95,4 +105,10 @@ export function createTodoItem(...nodes : Node[]): HTMLElement {
   todoItem.appendChild(todoItemTxtDiv)
   
   return todoItem
+}
+
+export function createCodeLine(...nodes : Node[]): HTMLElement {
+  const codeItem = document.createElement('div');
+  codeItem.replaceChildren(...nodes);
+  return codeItem;
 }
