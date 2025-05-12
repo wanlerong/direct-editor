@@ -12,6 +12,7 @@ let btn8 = document.getElementById("btn8")
 let btn9 = document.getElementById("btn9")
 let btn10 = document.getElementById("btn10")
 let btn11 = document.getElementById("btn11")
+let btn12 = document.getElementById("btn12")
 
 let btnLink = document.getElementById("btnLink")
 let linkUrlInput = document.getElementById('linkUrlInput');
@@ -138,6 +139,10 @@ btn10.addEventListener('click', (event) => {
 
 btn11.addEventListener('click', (event) => {
   e.toolbar.toggleCode()
+});
+
+btn12.addEventListener('click', (event) => {
+  e.toolbar.insertTable(3, 3)
 });
 
 btnLink.addEventListener('click', () => {

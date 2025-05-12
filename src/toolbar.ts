@@ -19,7 +19,9 @@ import {
   todoBlockConfig,
   createTodoItem,
   codeBlockConfig,
-  createCodeLine
+  createCodeLine,
+  tableBlockConfig,
+  createTableRow
 } from "./block/block.js";
 import {BlockInfoNone, BlockType} from "./block/blockType.js";
 import {aSchema} from "./schema/schema";
@@ -719,5 +721,52 @@ export class Toolbar {
       console.warn('恢复选区失败', e);
     }
     this.checkActiveStatus();
+  }
+
+  insertTable(rows: number, cols: number) {
+    if (!rows || !cols || rows < 1 || cols < 1) {
+      return;
+    }
+    
+    let range = getSelectionRange();
+    if (!range) return;
+
+    // 获取选区所在的块
+    let block: HTMLElement | null = null;
+    let node = range.endContainer;
+    while (node) {
+      if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).hasAttribute('data-btype')) {
+        block = node as HTMLElement;
+        break;
+      }
+      node = node.parentNode;
+    }
+    
+    // 创建表格块
+    const tableBlock = tableBlockConfig.createElement();
+    const table = document.createElement('table');
+    
+    // 创建表格行和单元格
+    for (let i = 0; i < rows; i++) {
+      table.appendChild(createTableRow(cols));
+    }
+    
+    tableBlock.appendChild(table);
+    
+    // 插入表格块
+    if (block) {
+      block.insertAdjacentElement('afterend', tableBlock);
+    } else {
+      // 如果没有找到块，则插入到编辑器末尾
+      this.editor.theDom.appendChild(tableBlock);
+    }
+    
+    // 更新选区到新插入的表格块
+    const newRange = document.createRange();
+    newRange.selectNodeContents(tableBlock.querySelector('td'));
+    newRange.collapse(true);
+    setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset);
+    
+    this.editor.normalize();
   }
 }

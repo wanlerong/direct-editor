@@ -1,5 +1,4 @@
 import { indentLi, isNestedLi, replaceListType } from './ul';
-import {Editor} from "../editor";
 
 // 辅助函数：创建一个简单的列表结构
 function createSimpleList() {

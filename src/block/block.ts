@@ -1,4 +1,4 @@
-import {HTMLStructureRule, basicSchema, lineSchema, listSchema, imgSchema, todoSchema, codeSchema} from "../schema/schema.js";
+import {HTMLStructureRule, basicSchema, lineSchema, listSchema, imgSchema, todoSchema, codeSchema, tableSchema} from "../schema/schema.js";
 import {BlockType} from "./blockType.js";
 
 export interface BlockConfig {
@@ -67,6 +67,16 @@ export const codeBlockConfig: BlockConfig = {
   }
 }
 
+export const tableBlockConfig: BlockConfig = {
+  type: BlockType.Table,
+  schema: tableSchema,
+  createElement: () => {
+    const el = document.createElement('div');
+    el.dataset.btype = BlockType.Table;
+    return el;
+  }
+}
+
 export function createBlockElement(btype: string, content?: DocumentFragment): HTMLElement {
   const block = document.createElement('div');
   block.dataset.btype = btype;
@@ -111,4 +121,19 @@ export function createCodeLine(...nodes : Node[]): HTMLElement {
   const codeItem = document.createElement('div');
   codeItem.replaceChildren(...nodes);
   return codeItem;
+}
+
+export function createTableCell(): HTMLElement {
+  const td = document.createElement('td');
+  const br = document.createElement('br');
+  td.appendChild(br);
+  return td;
+}
+
+export function createTableRow(colCount: number): HTMLElement {
+  const tr = document.createElement('tr');
+  for (let i = 0; i < colCount; i++) {
+    tr.appendChild(createTableCell());
+  }
+  return tr;
 }

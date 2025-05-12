@@ -7,7 +7,8 @@ import {
   lineBlockConfig,
   listBlockConfig,
   todoBlockConfig,
-  codeBlockConfig
+  codeBlockConfig,
+  tableBlockConfig
 } from "./block.js";
 import {BlockType} from "./blockType.js";
 import {HTMLStructureRule, listSchema, rootSchema} from "../schema/schema.js";
@@ -24,6 +25,7 @@ export default class BlockNormalizer {
     this.blockRegistry.set(BlockType.Image, imgBlockConfig);
     this.blockRegistry.set(BlockType.Todo, todoBlockConfig);
     this.blockRegistry.set(BlockType.Code, codeBlockConfig);
+    this.blockRegistry.set(BlockType.Table, tableBlockConfig);
   }
 
   normalize(container: HTMLElement) {
