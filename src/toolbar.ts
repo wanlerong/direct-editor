@@ -25,6 +25,7 @@ import {
 } from "./block/block.js";
 import {BlockInfoNone, BlockType} from "./block/blockType.js";
 import {aSchema} from "./schema/schema";
+import { TableManager } from "./components/table.js";
 
 export interface LinkOperationState {
   canInsert: boolean;
@@ -36,6 +37,7 @@ export interface LinkOperationState {
 export class Toolbar {
   private editor: Editor
   private activeStatus: ActiveStatus
+  private tableManager: TableManager
 
   constructor(editor: Editor) {
     this.editor = editor
@@ -53,6 +55,8 @@ export class Toolbar {
         suggestedUrl: "",
       }
     }
+    
+    this.tableManager = new TableManager(editor);
   }
 
   formatText(styleKey: string, value: string | null) {
@@ -173,6 +177,9 @@ export class Toolbar {
     this.activeStatus.disableActions = this.calculateDisableActions()
     this.activeStatus.link = this.getLinkOperationState()
     this.editor.asChange(this.activeStatus)
+    
+    // 更新表格单元格选项菜单
+    this.tableManager.updateCellOptionsMenu();
   }
 
   calculateDisableActions(): Action[] {
@@ -724,49 +731,6 @@ export class Toolbar {
   }
 
   insertTable(rows: number, cols: number) {
-    if (!rows || !cols || rows < 1 || cols < 1) {
-      return;
-    }
-    
-    let range = getSelectionRange();
-    if (!range) return;
-
-    // 获取选区所在的块
-    let block: HTMLElement | null = null;
-    let node = range.endContainer;
-    while (node) {
-      if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).hasAttribute('data-btype')) {
-        block = node as HTMLElement;
-        break;
-      }
-      node = node.parentNode;
-    }
-    
-    // 创建表格块
-    const tableBlock = tableBlockConfig.createElement();
-    const table = document.createElement('table');
-    
-    // 创建表格行和单元格
-    for (let i = 0; i < rows; i++) {
-      table.appendChild(createTableRow(cols));
-    }
-    
-    tableBlock.appendChild(table);
-    
-    // 插入表格块
-    if (block) {
-      block.insertAdjacentElement('afterend', tableBlock);
-    } else {
-      // 如果没有找到块，则插入到编辑器末尾
-      this.editor.theDom.appendChild(tableBlock);
-    }
-    
-    // 更新选区到新插入的表格块
-    const newRange = document.createRange();
-    newRange.selectNodeContents(tableBlock.querySelector('td'));
-    newRange.collapse(true);
-    setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset);
-    
-    this.editor.normalize();
+    this.tableManager.insertTable(rows, cols);
   }
 }
