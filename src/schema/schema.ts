@@ -164,12 +164,10 @@ export const codeSchema: HTMLStructureRule = {
 }
 
 export const tableCellSchema: HTMLStructureRule = {
-  childAllowedTags: ["br"],
-  childAllowText: true,
+  childAllowedTags: ["div"],
+  childAllowText: false,
   attributes: ["id"],
-  children: {
-    "br": brSchema,
-  }
+  childAllowedBlocks: [BlockType.Basic, BlockType.Line, BlockType.List, BlockType.Image, BlockType.Todo, BlockType.Code]
 }
 
 export const tableRowSchema: HTMLStructureRule = {
