@@ -58,3 +58,56 @@ test('normalize un-list to basic', () => {
     '</div>'
   );
 });
+
+test('normalize nested merge ul', () => {
+  let div = document.createElement("div");
+  let editor = new Editor(div, () => {}, () => {});
+  let editorDom = (div.firstChild as HTMLElement);
+  editorDom.innerHTML = '<div data-btype="table">' +
+    '<table>' +
+    '<tr>' +
+    '<td><div data-btype="basic"><span>Text</span></div></td>' +
+    '<td><div data-btype="list"><ul><li>111</li></ul></div>' +
+        '<div data-btype="list"><ul><li>222</li></ul></div></td>' +
+    '</tr>' +
+    '</table>' +
+    '</div>';
+  editor.normalize();
+  
+  expect(editorDom.innerHTML).toBe(
+    '<div data-btype="table">' +
+    '<table>' +
+    '<tr>' +
+    '<td><div data-btype="basic"><span>Text</span></div></td>' +
+    '<td><div data-btype="list"><ul><li>111</li><li>222</li></ul></div></td>' +
+    '</tr>' +
+    '</table>' +
+    '</div>'
+  );
+});
+
+test('normalize nested remove stray text nodes', () => {
+  let div = document.createElement("div");
+  let editor = new Editor(div, () => {}, () => {});
+  let editorDom = (div.firstChild as HTMLElement);
+  editorDom.innerHTML = '<div data-btype="table">' +
+    '<table>' +
+    '<tr>' +
+    '<td><div data-btype="basic"><span>Text</span></div></td>' +
+    '<td><div data-btype="basic">111</div> stray text</td>' +
+    '</tr>' +
+    '</table>' +
+    '</div>';
+  editor.normalize();
+
+  expect(editorDom.innerHTML).toBe(
+    '<div data-btype="table">' +
+    '<table>' +
+    '<tr>' +
+    '<td><div data-btype="basic"><span>Text</span></div></td>' +
+    '<td><div data-btype="basic">111</div></td>' +
+    '</tr>' +
+    '</table>' +
+    '</div>'
+  );
+});

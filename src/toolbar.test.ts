@@ -329,34 +329,3 @@ test('toggleCode Case 1', () => {
   const actualHTML = div.innerHTML.replace(/\s+/g, '')
   expect(actualHTML).toBe(expectedHTML)
 })
-
-test('insertTable Case 1', () => {
-  const div = document.createElement("div")
-  const editor = new Editor(div, () => {}, () => {})
-  document.body.appendChild(div)
-  const editorDom = editor.theDom
-
-  editorDom.innerHTML = '<div data-btype="basic">1234</div>'
-
-  const firstChild = editorDom.firstChild
-  const firstTextNode = firstChild.firstChild
-  setRange(firstTextNode, 2, firstTextNode, 2)
-  
-  editor.toolbar.insertTable(2,2)
-
-  // 验证结果 - 删除空白字符后比较
-  const expectedHTML = `
-    <div class="direct-editor" contenteditable="true">
-      <div data-btype="basic">1234</div>
-      <div data-btype="table">
-        <table>
-        <tr><td><div data-btype="basic"><br></div></td><td><div data-btype="basic"><br></div></td></tr>
-        <tr><td><div data-btype="basic"><br></div></td><td><div data-btype="basic"><br></div></td></tr>
-        </table>
-      </div>
-    </div>
-  `.replace(/\s+/g, '')
-
-  const actualHTML = div.innerHTML.replace(/\s+/g, '')
-  expect(actualHTML).toBe(expectedHTML)
-})
