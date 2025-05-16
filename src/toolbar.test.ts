@@ -350,8 +350,8 @@ test('insertTable Case 1', () => {
       <div data-btype="basic">1234</div>
       <div data-btype="table">
         <table>
-        <tr><td><br></td><td><br></td></tr>
-        <tr><td><br></td><td><br></td></tr>
+        <tr><td><div data-btype="basic"><br></div></td><td><div data-btype="basic"><br></div></td></tr>
+        <tr><td><div data-btype="basic"><br></div></td><td><div data-btype="basic"><br></div></td></tr>
         </table>
       </div>
     </div>

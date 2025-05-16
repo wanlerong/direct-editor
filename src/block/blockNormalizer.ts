@@ -32,8 +32,15 @@ export default class BlockNormalizer {
     if (!container.hasChildNodes()) {
       container.appendChild(basicBlockConfig.createElement());
     }
+    this.preProcess(container)
 
-    // preProcess
+    this.processContainer(container, rootSchema);
+    // console.log("before postProcess", container.innerHTML)
+    this.postProcess(container);
+    // console.log("after postProcess", container.innerHTML)
+  }
+
+  private preProcess(container: HTMLElement) {
     Array.from(container.childNodes).forEach(n => {
       if (n.nodeType == Node.ELEMENT_NODE && n.nodeName == "DIV") {
         // if div contain ul, it should only have one child which is ul
@@ -46,19 +53,19 @@ export default class BlockNormalizer {
           });
           (n as HTMLElement).insertAdjacentElement('beforebegin', ele)
         }
-        
+
         if (n.childNodes.length > 1 && (getBlockType(n as HTMLElement) == BlockType.Line || getBlockType(n as HTMLElement) == BlockType.Image)) {
           this.splitLineBlock(n as HTMLElement)
         }
-        
+
         // 验证img block是否满足schema要求，不满足则转为basic block
         const blockType = getBlockType(n as HTMLElement);
         if (blockType === BlockType.Image) {
           // 检查是否只有一个子元素且为img标签
-          const isValid = n.childNodes.length === 1 && 
-                         n.firstChild.nodeType === Node.ELEMENT_NODE && 
-                         (n.firstChild as HTMLElement).tagName === 'IMG';
-          
+          const isValid = n.childNodes.length === 1 &&
+            n.firstChild.nodeType === Node.ELEMENT_NODE &&
+            (n.firstChild as HTMLElement).tagName === 'IMG';
+
           if (!isValid) {
             (n as HTMLElement).setAttribute('data-btype', 'basic')
           }
@@ -69,13 +76,8 @@ export default class BlockNormalizer {
         }
       }
     })
-
-    this.processContainer(container, rootSchema);
-    // console.log("before postProcess", container.innerHTML)
-    this.postProcess(container);
-    // console.log("after postProcess", container.innerHTML)
   }
-  
+
   private processContainer(
     container: HTMLElement,
     schema: HTMLStructureRule | null
@@ -117,18 +119,17 @@ export default class BlockNormalizer {
       return;
     }
 
-    // 应用 schema 规则
     this.applySchema(element, config.schema);
 
     // 递归处理子元素
     this.processContainer(element, config.schema);
   }
-  
+
   private splitLineBlock(container: HTMLElement) {
     if (container.childNodes.length <= 1) {
       return
     }
-    
+
     const fragments: {
       type: BlockType;
       nodes: Node[];
@@ -142,14 +143,14 @@ export default class BlockNormalizer {
         (isElementNode(node) && (node as HTMLElement).tagName.toLowerCase() == 'blockquote')
       ) {
         if (currentFragment.length > 0) {
-          fragments.push({ type: currentType!, nodes: currentFragment });
+          fragments.push({type: currentType!, nodes: currentFragment});
           currentFragment = [];
         }
         currentType = BlockType.Line;
         currentFragment.push(node);
       } else if (node.nodeName.toLowerCase() === 'img') {
         if (currentFragment.length > 0) {
-          fragments.push({ type: currentType!, nodes: currentFragment });
+          fragments.push({type: currentType!, nodes: currentFragment});
           currentFragment = [];
         }
         currentType = BlockType.Image;
@@ -157,7 +158,7 @@ export default class BlockNormalizer {
       } else {
         if (currentType !== BlockType.Basic) {
           if (currentFragment.length > 0) {
-            fragments.push({ type: currentType!, nodes: currentFragment });
+            fragments.push({type: currentType!, nodes: currentFragment});
           }
           currentType = BlockType.Basic;
           currentFragment = [];
@@ -167,19 +168,19 @@ export default class BlockNormalizer {
     });
 
     if (currentFragment.length > 0) {
-      fragments.push({ type: currentType!, nodes: currentFragment });
+      fragments.push({type: currentType!, nodes: currentFragment});
     }
-    
+
     // 重新组织 DOM 结构
     if (fragments.length > 1) {
-      const newElements = fragments.map(({ type, nodes }) => {
+      const newElements = fragments.map(({type, nodes}) => {
         const newBlock = createBlockElement(type);
         nodes.forEach(n => newBlock.appendChild(n))
         return newBlock;
       });
-      
+
       container.replaceWith(...newElements);
-      setRange(newElements[1],0,newElements[1], 0)
+      setRange(newElements[1], 0, newElements[1], 0)
     }
   }
 
@@ -205,14 +206,6 @@ export default class BlockNormalizer {
             this.unwrapElement(childElement);
             return;
           }
-
-          // 应用子规则
-          const childRule = schema.children?.[childTag];
-          if (childRule) {
-            this.applySchema(childElement, childRule);
-          } else {
-            this.unwrapElement(childElement);
-          }
         }
       });
   }
@@ -226,17 +219,21 @@ export default class BlockNormalizer {
       return;
     }
 
-    // 校验是否允许当前标签
     const tagName = element.tagName.toLowerCase();
     if (!parentSchema.childAllowedTags.includes(tagName)) {
       this.unwrapElement(element);
       return;
     }
 
-    // 应用子元素规则
     const childRule = parentSchema.children?.[tagName];
     if (childRule) {
-      this.applySchema(element, childRule);
+      if (childRule.childAllowedBlocks && childRule.childAllowedBlocks.length > 0) {
+        this.cleanAttributes(element, childRule);
+        this.normalize(element)
+      } else {
+        this.applySchema(element, childRule);
+        this.processContainer(element, childRule);
+      }
     }
   }
 
@@ -401,7 +398,7 @@ export default class BlockNormalizer {
       }
     });
   }
-  
+
   validateElement(element: HTMLElement, schema: HTMLStructureRule | null): boolean {
     if (!schema) {
       return true; // No schema, always valid
@@ -450,7 +447,7 @@ export default class BlockNormalizer {
 
     return true;
   }
-  
+
   private normalizeTodo(container: HTMLElement) {
     let todoBlocks = container.querySelectorAll(`div[data-btype="${BlockType.Todo}"]`);
     todoBlocks.forEach(todoBlock => this.normalizeTodoBlock(todoBlock as HTMLElement))
@@ -460,16 +457,16 @@ export default class BlockNormalizer {
     const todoItems = Array.from(todoBlock.children).filter((item): item is HTMLElement => item instanceof HTMLElement);
     let hasInvalidItems = false;
     let invalidItems: HTMLElement[] = [];
-    
+
     todoItems.forEach(item => {
       if (!item.querySelector('input[type="checkbox"]')) {
         hasInvalidItems = true;
         invalidItems.push(item);
       }
     });
-    
+
     if (!hasInvalidItems) return;
-    
+
     // 如果有无效项，需要分割todo块
     let currentTodoBlock = todoBlock;
     let nextTodoBlock: HTMLElement | null = null;
@@ -492,7 +489,7 @@ export default class BlockNormalizer {
         }
       }
     }
-    
+
     if (nextTodoBlock && nextTodoBlock.children.length === 0) {
       nextTodoBlock.remove();
     }
@@ -526,12 +523,12 @@ function sanitizeNode(node: Node) {
       element.removeAttribute('style')
     }
   }
-  
+
   // 递归处理子节点
   Array.from(element.childNodes).forEach(child => {
     sanitizeNode(child)
   });
-  
+
   return element;
 }
 

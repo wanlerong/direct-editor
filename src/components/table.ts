@@ -1,5 +1,5 @@
 import { setRange } from "../range.js";
-import { createTableRow, tableBlockConfig } from "../block/block.js";
+import {tableBlockConfig, basicBlockConfig, createTableRow, createTableCell} from "../block/block.js";
 import { Editor } from "../editor.js";
 import { getSelectionRange } from "../range.js";
 
@@ -32,7 +32,8 @@ export function addRow(tableElement: HTMLTableElement, rowIdx: number): void {
   // 更新选区到新行的第一个单元格
   try {
     const newRange = document.createRange();
-    newRange.selectNodeContents((newRow as HTMLTableRowElement).cells[0]);
+    const firstCell = (newRow as HTMLTableRowElement).cells[0];
+    newRange.selectNodeContents(firstCell.firstChild.firstChild);
     newRange.collapse(true);
     setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset);
   } catch (e) {
@@ -49,12 +50,7 @@ export function addColumn(tableElement: HTMLTableElement, columnIdx: number): vo
   Array.from(rows).forEach(row => {
     if (columnIdx >= row.cells.length) return;
     
-    // 创建新单元格
-    const newCell = document.createElement('td');
-    const br = document.createElement('br');
-    newCell.appendChild(br);
-    
-    // 在指定列后插入新单元格
+    const newCell = createTableCell()
     const refCell = row.cells[columnIdx];
     refCell.insertAdjacentElement('afterend', newCell);
   });
@@ -62,7 +58,7 @@ export function addColumn(tableElement: HTMLTableElement, columnIdx: number): vo
   // 更新选区到第一行的新单元格
   const firstRowNewCell = rows[0].cells[columnIdx + 1];
   const newRange = document.createRange();
-  newRange.selectNodeContents(firstRowNewCell);
+  newRange.selectNodeContents(firstRowNewCell.firstChild.firstChild);
   newRange.collapse(true);
   setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset);
 }
@@ -80,7 +76,7 @@ export function deleteRow(tableElement: HTMLTableElement, rowIdx: number): void 
   if (tableElement.rows.length > 0 && tableElement.rows[0].cells.length > 0) {
     const firstCell = tableElement.rows[0].cells[0];
     const newRange = document.createRange();
-    newRange.selectNodeContents(firstCell);
+    newRange.selectNodeContents(firstCell.firstChild.firstChild);
     newRange.collapse(true);
     setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset);
   }
@@ -106,22 +102,22 @@ export function deleteColumn(tableElement: HTMLTableElement, columnIdx: number):
   if (tableElement.rows.length > 0 && tableElement.rows[0].cells.length > 0) {
     const firstCell = tableElement.rows[0].cells[0];
     const newRange = document.createRange();
-    newRange.selectNodeContents(firstCell);
+    newRange.selectNodeContents(firstCell.firstChild.firstChild);
     newRange.collapse(true);
     setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset);
   }
 }
+
+
 
 export function createTable(rows: number, cols: number): HTMLElement {
   if (rows < 1 || cols < 1) {
     return null;
   }
   
-  // 创建表格块
   const tableBlock = tableBlockConfig.createElement();
   const table = document.createElement('table');
   
-  // 创建表格行和单元格
   for (let i = 0; i < rows; i++) {
     table.appendChild(createTableRow(cols));
   }
@@ -188,7 +184,9 @@ export class TableManager {
     
     // 更新选区到新插入的表格块
     const newRange = document.createRange();
-    newRange.selectNodeContents(tableBlock.querySelector('td'));
+    const firstCell = tableBlock.querySelector('td');
+    const basicBlock = firstCell.querySelector('div[data-btype="basic"]');
+    newRange.selectNodeContents(basicBlock || firstCell);
     newRange.collapse(true);
     setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset);
     

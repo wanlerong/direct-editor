@@ -125,8 +125,10 @@ export function createCodeLine(...nodes : Node[]): HTMLElement {
 
 export function createTableCell(): HTMLElement {
   const td = document.createElement('td');
+  const basicBlock = basicBlockConfig.createElement();
   const br = document.createElement('br');
-  td.appendChild(br);
+  basicBlock.appendChild(br);
+  td.appendChild(basicBlock);
   return td;
 }
 

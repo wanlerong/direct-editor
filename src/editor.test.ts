@@ -285,7 +285,7 @@ test('normalize todo block with missing input', () => {
     '<div data-btype="todo">' +
     '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>' +
     '</div>'+
-    '<div data-btype="basic">22</div>' +
+    '<div data-btype="basic"><br></div>' +
     '<div data-btype="todo">' +
     '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>' +
     '</div>'
@@ -305,7 +305,7 @@ test('normalize todo block with missing input 02', () => {
   editor.normalize();
 
   expect(editorDom.innerHTML).toBe(
-    '<div data-btype="basic">111</div>' +
+    '<div data-btype="basic"><br></div>' +
     '<div data-btype="todo">' +
       '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>' +
     '</div>'
@@ -332,11 +332,11 @@ test('normalize todo block with missing input 03', () => {
     '<div data-btype="todo">' +
     '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>' +
     '</div>'+
-    '<div data-btype="basic">22</div>' +
+    '<div data-btype="basic"><br></div>' +
     '<div data-btype="todo">' +
     '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>' +
     '</div>'+
-    '<div data-btype="basic">22</div>' +
+    '<div data-btype="basic"><br></div>' +
     '<div data-btype="todo">' +
     '<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>111</div></div>' +
     '</div>'
