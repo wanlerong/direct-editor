@@ -223,18 +223,29 @@ export class TableManager {
     // 创建箭头按钮
     const arrowButton = document.createElement('button');
     arrowButton.className = 'cell-options-arrow';
-    arrowButton.innerHTML = '▼';
+    arrowButton.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
     arrowButton.style.cursor = 'pointer';
-    arrowButton.style.background = 'white';
-    arrowButton.style.border = '1px solid #ccc';
-    arrowButton.style.borderRadius = '4px';
-    arrowButton.style.padding = '4px 8px'; // 增加点击区域
-    arrowButton.style.width = '30px'; // 固定宽度
-    arrowButton.style.height = '30px'; // 固定高度
-    arrowButton.style.fontSize = '14px'; // 适当的字体大小
-    arrowButton.style.lineHeight = '1'; // 改进垂直对齐
-    arrowButton.style.userSelect = 'none'; // 防止文本选择
-    arrowButton.style.outline = 'none'; // 移除焦点轮廓
+    arrowButton.style.background = '#f5f5f5';
+    arrowButton.style.border = 'none';
+    arrowButton.style.borderRadius = '3px';
+    arrowButton.style.padding = '2px';
+    arrowButton.style.width = '20px';
+    arrowButton.style.height = '20px';
+    arrowButton.style.display = 'flex';
+    arrowButton.style.alignItems = 'center';
+    arrowButton.style.justifyContent = 'center';
+    arrowButton.style.color = '#666';
+    arrowButton.style.transition = 'all 0.2s ease';
+    arrowButton.style.userSelect = 'none';
+    arrowButton.style.outline = 'none';
+    arrowButton.addEventListener('mouseenter', () => {
+      arrowButton.style.background = '#e6e6e6';
+    });
+    arrowButton.addEventListener('mouseleave', () => {
+      arrowButton.style.background = '#f5f5f5';
+    });
     arrowButton.addEventListener('click', this.toggleCellOptionsDropdown.bind(this));
     this.cellOptionsMenu.appendChild(arrowButton);
     
@@ -412,7 +423,7 @@ export class TableManager {
     const rect = cellElement.getBoundingClientRect();
     
     // 定位菜单到单元格右上角，确保有一些边距
-    this.cellOptionsMenu.style.top = `${rect.top + window.scrollY - 5}px`;
+    this.cellOptionsMenu.style.top = `${rect.top + window.scrollY + 2}px`;
     this.cellOptionsMenu.style.left = `${rect.right + window.scrollX - 25}px`;
     this.cellOptionsMenu.style.display = 'block';
     
@@ -420,7 +431,7 @@ export class TableManager {
     const arrowButton = this.cellOptionsMenu.querySelector('.cell-options-arrow') as HTMLElement;
     if (arrowButton) {
       arrowButton.style.width = '24px';
-      arrowButton.style.height = '24px';
+      arrowButton.style.height = '18px';
       arrowButton.style.cursor = 'pointer';
     }
     
@@ -496,7 +507,7 @@ export class TableManager {
     const rect = this.currentCellElement.getBoundingClientRect();
     
     // 定位菜单到单元格右上角，确保有一些边距
-    this.cellOptionsMenu.style.top = `${rect.top + window.scrollY - 5}px`;
+    this.cellOptionsMenu.style.top = `${rect.top + window.scrollY + 2}px`;
     this.cellOptionsMenu.style.left = `${rect.right + window.scrollX - 25}px`;
   }
 } 
