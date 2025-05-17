@@ -2,6 +2,7 @@ import { setRange } from "../range.js";
 import {tableBlockConfig, basicBlockConfig, createTableRow, createTableCell} from "../block/block.js";
 import { Editor } from "../editor.js";
 import { getSelectionRange } from "../range.js";
+import {getClosestBlock} from "../domUtils";
 
 export function getCellColumnIndex(cell: HTMLTableCellElement): number {
   const row = cell.closest('tr');
@@ -160,29 +161,16 @@ export class TableManager {
     let range = getSelectionRange();
     if (!range) return;
 
-    // 获取选区所在的块
-    let block: HTMLElement | null = null;
-    let node = range.endContainer;
-    while (node) {
-      if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).hasAttribute('data-btype')) {
-        block = node as HTMLElement;
-        break;
-      }
-      node = node.parentNode;
-    }
+    let block = getClosestBlock(range.endContainer)
     
-    // 创建表格
     const tableBlock = createTable(rows, cols);
     
-    // 插入表格块
     if (block) {
       block.insertAdjacentElement('afterend', tableBlock);
     } else {
-      // 如果没有找到块，则插入到编辑器末尾
       this.editor.theDom.appendChild(tableBlock);
     }
     
-    // 更新选区到新插入的表格块
     const newRange = document.createRange();
     const firstCell = tableBlock.querySelector('td');
     const basicBlock = firstCell.querySelector('div[data-btype="basic"]');

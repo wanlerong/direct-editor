@@ -1,6 +1,13 @@
 import {Editor} from "./editor.js"
 import {RangeIterator} from "./rangeIterator.js";
-import {getClosestAncestorByNodeName, insertAfter, isCharacterDataNode, isElementNode, isTextNode} from "./domUtils.js";
+import {
+  getClosestAncestorByNodeName,
+  getClosestBlock,
+  insertAfter,
+  isCharacterDataNode,
+  isElementNode,
+  isTextNode
+} from "./domUtils.js";
 import {
   getIntersectionBlockInfo,
   getIntersectionStyle,
@@ -20,8 +27,6 @@ import {
   createTodoItem,
   codeBlockConfig,
   createCodeLine,
-  tableBlockConfig,
-  createTableRow
 } from "./block/block.js";
 import {BlockInfoNone, BlockType} from "./block/blockType.js";
 import {aSchema} from "./schema/schema";
@@ -550,24 +555,13 @@ export class Toolbar {
     let range = getSelectionRange()
     if (!range) return
 
-    // 获取选区所在的块
-    let block: HTMLElement | null = null
-    let node = range.endContainer
-    while (node) {
-      if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).hasAttribute('data-btype')) {
-        block = node as HTMLElement
-        break
-      }
-      node = node.parentNode
-    }
+    let block = getClosestBlock(range.endContainer)
     
-    // 创建图片块
     const imgBlock = imgBlockConfig.createElement()
     const img = document.createElement('img');
     img.setAttribute('src', src);
     imgBlock.appendChild(img);
 
-    // 插入图片块
     if (block) {
       block.insertAdjacentElement('afterend', imgBlock)
     } else {

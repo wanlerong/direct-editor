@@ -47,6 +47,19 @@ export function getClosestAncestorByNodeNames(node: Node, nodeNames: string[]): 
   return getClosestAncestor(node, nodeNames);
 }
 
+export function getClosestBlock(node: Node) : HTMLElement {
+  let block: HTMLElement | null = null
+  while (node) {
+    if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).hasAttribute('data-btype')) {
+      block = node as HTMLElement
+      break
+    }
+    node = node.parentNode
+  }
+  
+  return block
+}
+
 export function getNodeLength(node: Node) {
   let childNodes;
   return isCharacterDataNode(node) ? (node as Text).length : ((childNodes = node.childNodes) ? childNodes.length : 0);

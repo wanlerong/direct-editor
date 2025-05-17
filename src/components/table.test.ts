@@ -172,8 +172,8 @@ describe('TableManager', () => {
     editorDom = (container.firstChild as HTMLElement);
 
     editorDom.innerHTML = '<div data-btype="basic">1234</div>'
-    firstChild = editorDom.firstChild
-    firstTextNode = firstChild.firstChild
+    firstChild = editorDom.firstChild!
+    firstTextNode = firstChild.firstChild!
   });
 
   afterEach(() => {

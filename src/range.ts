@@ -1,6 +1,6 @@
 import {
   applyInlineStylesFormNode,
-  createSpanWithText, getInlineStyles,
+  createSpanWithText, getClosestBlock, getInlineStyles,
   insertAfter,
   isCharacterDataNode,
   isTextNode,
@@ -133,20 +133,7 @@ export function getIntersectionBlockInfo(): BlockInfo {
 
   iterateSubtree(new RangeIterator(range), (node) => {
     if (isCharacterDataNode(node) || node.nodeName === "BR") {
-      let current = node;
-      let blockElement = null;
-      
-      while (current) {
-        if (current.nodeType === Node.ELEMENT_NODE) {
-          const el = current as HTMLElement;
-          if (el.hasAttribute('data-btype')) {
-            blockElement = el;
-            break;
-          }
-        }
-        current = current.parentNode;
-      }
-
+      let blockElement = getClosestBlock(node);
       if (blockElement && !seenElements.has(blockElement)) {
         seenElements.add(blockElement);
         const blockInfo = parseBlockElement(blockElement);
