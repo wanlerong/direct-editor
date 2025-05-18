@@ -10,9 +10,9 @@ import {DeltaSource} from "./const/const.js";
 import {domToVirtualNode, VirtualNode} from "./lib/virtualNode.js";
 import {handlePaste} from "./handlers/pasteHandler.js";
 import BlockNormalizer from "./block/blockNormalizer.js";
+import { editorStyle } from "./editorStyles.js";
 
 export class Editor {
-
   public deltaSeq: number;
   public toolbar: Toolbar;
   public undoManager: UndoManager;
@@ -112,6 +112,8 @@ export class Editor {
   }
 
   constructor(dom: HTMLElement, callback: (ops: Op[]) => void, asChangeFunc: (as: ActiveStatus) => void) {
+    Editor.injectStyles();
+    
     let d = document.createElement("div")
     d.setAttribute("class", "direct-editor")
     d.setAttribute("contenteditable", "true")
@@ -276,5 +278,14 @@ export class Editor {
 
   applyOps(ops: Op[]) {
     this.applyDelta(new Delta(ops), DeltaSource.OUT)
+  }
+
+  public static injectStyles(): void {
+    if (document.getElementById('direct-editor-styles')) return;
+    
+    const style = document.createElement('style');
+    style.id = 'direct-editor-styles';
+    style.textContent = editorStyle;
+    document.head.appendChild(style);
   }
 }
