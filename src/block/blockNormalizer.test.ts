@@ -111,3 +111,27 @@ test('normalize nested remove stray text nodes', () => {
     '</div>'
   );
 });
+
+test('normalize split multiple table blocks', () => {
+  let div = document.createElement("div");
+  let editor = new Editor(div, () => {}, () => {});
+  let editorDom = (div.firstChild as HTMLElement);
+  editorDom.innerHTML = '<div data-btype="table">' +
+    '123<table>' +
+    '<tr>' +
+    '<td><div data-btype="basic"><span>Text</span></div></td>' +
+    '</tr>' +
+    '</table>123' +
+    '</div>';
+  editor.normalize();
+
+  expect(editorDom.innerHTML).toBe('<div data-btype="basic">123</div>' +
+    '<div data-btype="table">' +
+    '<table>' +
+    '<tr>' +
+    '<td><div data-btype="basic"><span>Text</span></div></td>' +
+    '</tr>' +
+    '</table>' +
+    '</div>' + 
+    '<div data-btype="basic">123</div>');
+});

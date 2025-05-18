@@ -54,7 +54,9 @@ export default class BlockNormalizer {
           (n as HTMLElement).insertAdjacentElement('beforebegin', ele)
         }
 
-        if (n.childNodes.length > 1 && (getBlockType(n as HTMLElement) == BlockType.Line || getBlockType(n as HTMLElement) == BlockType.Image)) {
+        if (n.childNodes.length > 1 &&
+          [BlockType.Line, BlockType.Image, BlockType.Table].includes(getBlockType(n as HTMLElement))
+        ) {
           this.splitLineBlock(n as HTMLElement)
         }
 
@@ -154,6 +156,13 @@ export default class BlockNormalizer {
           currentFragment = [];
         }
         currentType = BlockType.Image;
+        currentFragment.push(node);
+      } else if (node.nodeName.toLowerCase() === 'table') {
+        if (currentFragment.length > 0) {
+          fragments.push({type: currentType!, nodes: currentFragment});
+          currentFragment = [];
+        }
+        currentType = BlockType.Table;
         currentFragment.push(node);
       } else {
         if (currentType !== BlockType.Basic) {
@@ -509,7 +518,7 @@ const ALLOWED_STYLES: Record<string, RegExp> = {
 // only preset style collections are allowed to be retained
 function sanitizeNode(node: Node) {
   if (node.nodeType !== Node.ELEMENT_NODE) {
-    return node
+    return
   }
   let element = node as HTMLElement
 
