@@ -166,7 +166,7 @@ export const codeSchema: HTMLStructureRule = {
 export const tableCellSchema: HTMLStructureRule = {
   childAllowedTags: ["div"],
   childAllowText: false,
-  attributes: ["id"],
+  attributes: ["id","class","colspan","rowspan"],
   childAllowedBlocks: [BlockType.Basic, BlockType.Line, BlockType.List, BlockType.Image, BlockType.Todo, BlockType.Code]
 }
 

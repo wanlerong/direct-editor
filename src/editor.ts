@@ -95,7 +95,7 @@ export class Editor {
     })
     this.appendDelta(delta)
     if (this.customCallback) {
-      console.log("send ops", JSON.stringify(ops))
+      // console.log("send ops", JSON.stringify(ops))
       this.customCallback(ops)
     }
   };
@@ -104,7 +104,7 @@ export class Editor {
     this.deltaSeq++
     delta.seq = this.deltaSeq
     this.deltas.push(delta)
-    console.log("deltas", JSON.stringify(this.deltas))
+    // console.log("deltas", JSON.stringify(this.deltas))
   }
 
   getNextDeltas(delta: Delta) {
@@ -266,7 +266,7 @@ export class Editor {
     this.observe()
     if (source === DeltaSource.UndoRedo) {
       if (this.customCallback) {
-        console.log("send ops", JSON.stringify(delta.ops))
+        // console.log("send ops", JSON.stringify(delta.ops))
         this.customCallback(delta.ops)
       }
     }
