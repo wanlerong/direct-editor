@@ -307,6 +307,37 @@ export class TableManager {
     });
   }
   
+  // 检查是否有单元格与选区有交集但未被完全包含
+  private hasPartiallyOverlappingCells(range: CellPosition, cellDetails?: Map<HTMLTableCellElement, CellPosition>): boolean {
+    if (!this.currentTable) return false;
+    
+    const details = cellDetails || this.calculateCellDetails();
+    
+    for (const [cell, pos] of details.entries()) {
+      // 检查单元格是否与选区有交集
+      const hasOverlap = !(
+        pos.endRow < range.startRow || 
+        pos.startRow > range.endRow || 
+        pos.endCol < range.startCol || 
+        pos.startCol > range.endCol
+      );
+      
+      // 检查单元格是否未被完全包含
+      const isFullyContained = 
+        pos.startRow >= range.startRow && 
+        pos.endRow <= range.endRow &&
+        pos.startCol >= range.startCol && 
+        pos.endCol <= range.endCol;
+      
+      // 如果有交集但未被完全包含，返回true
+      if (hasOverlap && !isFullyContained) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+  
   // todo: is Draft now
   private mergeCells(): void {
     if (this.selectedCells.length <= 1) return;
@@ -314,6 +345,11 @@ export class TableManager {
     const cellDetails = this.calculateCellDetails();
     const range = this.getCellsRange(this.selectedCells[0], this.selectedCells[this.selectedCells.length - 1], cellDetails);
     if (!range) return;
+    
+    // 如果有未完全包含在选区内的单元格，不执行合并操作
+    if (this.hasPartiallyOverlappingCells(range, cellDetails)) {
+      return;
+    }
     
     const rowSpan = range.endRow - range.startRow + 1;
     const colSpan = range.endCol - range.startCol + 1;
@@ -660,8 +696,17 @@ export class TableManager {
         const splitCellOption = dropdown.querySelector('.cell-option-item:nth-of-type(6)') as HTMLElement;
         
         if (mergeCellsOption && splitCellOption) {
-          if (this.selectedCells.length > 1) {
-            mergeCellsOption.classList.remove('disabled');
+          // 检查是否可以合并单元格
+          const canMerge = this.selectedCells.length > 1;
+          if (canMerge) {
+            // 检查是否有未完全包含在选区内的单元格
+            const cellDetails = this.calculateCellDetails();
+            const range = this.getCellsRange(this.selectedCells[0], this.selectedCells[this.selectedCells.length - 1], cellDetails);
+            if (range && this.hasPartiallyOverlappingCells(range, cellDetails)) {
+              mergeCellsOption.classList.add('disabled');
+            } else {
+              mergeCellsOption.classList.remove('disabled');
+            }
           } else {
             mergeCellsOption.classList.add('disabled');
           }

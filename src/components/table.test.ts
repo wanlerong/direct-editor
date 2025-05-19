@@ -682,4 +682,86 @@ describe('TableManager', () => {
     expect((tableManager as any).highlightCell).not.toHaveBeenCalledWith(cellA); // A不在选区内
     expect((tableManager as any).highlightCell).not.toHaveBeenCalledWith(cellE);
   });
+  
+  // 测试部分重叠单元格的检测功能
+  test('hasPartiallyOverlappingCells correctly detects partially overlapping cells', () => {
+    const hasPartiallyOverlappingCellsMethod = (TableManager.prototype as any).hasPartiallyOverlappingCells;
+    const calculateCellDetailsMethod = (TableManager.prototype as any).calculateCellDetails;
+    
+    // 创建一个有合并单元格的表格
+    document.body.innerHTML = `
+      <table id="testTable">
+        <tr>
+          <td id="cellA">A</td>
+          <td id="cellB">B</td>
+          <td id="cellC">C</td>
+        </tr>
+        <tr>
+          <td id="cellD" colspan="2">D</td>
+          <td id="cellF">F</td>
+        </tr>
+        <tr>
+          <td id="cellG">G</td>
+          <td id="cellH">H</td>
+          <td id="cellI">I</td>
+        </tr>
+      </table>
+    `;
+    
+    const table = document.getElementById('testTable') as HTMLTableElement;
+    
+    // 设置必要的私有属性
+    (tableManager as any).currentTable = table;
+    
+    // 计算单元格位置信息
+    const cellDetails = calculateCellDetailsMethod.call(tableManager);
+    
+    // 测试用例1：B~F的选择，D有部分重叠
+    const range1: CellPosition = {
+      startRow: 0,
+      startCol: 1, // B的列索引
+      endRow: 1,
+      endCol: 2  // F的列索引
+    };
+    
+    // D有部分在选区外，应该返回true
+    const result1 = hasPartiallyOverlappingCellsMethod.call(tableManager, range1, cellDetails);
+    expect(result1).toBe(true);
+    
+    // 测试用例2：B~H的选择，D有部分重叠
+    const range2: CellPosition = {
+      startRow: 0,
+      startCol: 1, // B的列索引
+      endRow: 2,
+      endCol: 1  // H的列索引
+    };
+    
+    // D有部分在选区外，应该返回true
+    const result2 = hasPartiallyOverlappingCellsMethod.call(tableManager, range2, cellDetails);
+    expect(result2).toBe(true);
+    
+    // 测试用例3：完整选择A~I，应该没有部分重叠的单元格
+    const range3: CellPosition = {
+      startRow: 0,
+      startCol: 0,
+      endRow: 2,
+      endCol: 2
+    };
+    
+    // 所有单元格都完全在选区内，应该返回false
+    const result3 = hasPartiallyOverlappingCellsMethod.call(tableManager, range3, cellDetails);
+    expect(result3).toBe(false);
+    
+    // 测试用例4：选择A~D，D完全包含在选区内
+    const range4: CellPosition = {
+      startRow: 0,
+      startCol: 0,
+      endRow: 1,
+      endCol: 1
+    };
+    
+    // D完全在选区内，应该返回false
+    const result4 = hasPartiallyOverlappingCellsMethod.call(tableManager, range4, cellDetails);
+    expect(result4).toBe(false);
+  });
 }); 
