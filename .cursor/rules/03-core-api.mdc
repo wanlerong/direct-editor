@@ -8,7 +8,7 @@ alwaysApply: false
 ## Editor 类
 [src/editor.ts](mdc:src/editor.ts)
 
-主要编辑器类，管理编辑器状态和操作。
+编辑器类
 
 ### 构造函数
 ```typescript

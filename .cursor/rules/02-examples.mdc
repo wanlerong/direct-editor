@@ -4,7 +4,7 @@ globs:
 alwaysApply: false
 ---
 # 示例使用说明
-Direct Editor提供了演示示例，展示编辑器的基本功能和用法。
+Direct Editor 的基本功能和用法。
 
 ## 示例目录
 - [examples/demo1/](mdc:examples/demo1): 基础功能
@@ -13,12 +13,6 @@ Direct Editor提供了演示示例，展示编辑器的基本功能和用法。
 ## Demo1 示例
 [examples/demo1/index.html](mdc:examples/demo1/index.html): 主HTML文件
 [examples/demo1/index.js](mdc:examples/demo1/index.js): 示例代码
-
-### 运行示例
-1. 进入示例目录: `cd examples/demo1`
-2. 安装依赖: `npm install`
-3. 运行打包: `npx webpack`
-4. 在浏览器中打开index.html文件
 
 ## API Usage
 示例中的关键代码：

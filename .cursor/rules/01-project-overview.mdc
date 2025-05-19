@@ -27,11 +27,11 @@ alwaysApply: false
 - ...
 
 ## 核心文件
-- @src/editor.ts: 编辑器主类，处理输入、选区和变更
-- @src/toolbar.ts: 工具栏功能实现，提供格式化操作
-- @src/range.ts: 选区处理相关功能
+- @src/editor.ts: 编辑器主类
+- @src/toolbar.ts: 工具栏功能，提供格式化操作
+- @src/range.ts: 选区处理相关
 - @src/domUtils.ts: DOM 操作辅助工具
-- @src/undoManager.ts: 撤销/重做功能管理
+- @src/undoManager.ts: 撤销/重做
 
 ## 目录结构
 - `src/components/`: 编辑器组件

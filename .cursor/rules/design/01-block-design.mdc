@@ -6,9 +6,9 @@ alwaysApply: false
 # block 设计理念
 一篇文档的内容，是由 block array 组成的
 
-1. **语义化结构**: 每个 block 都有明确的语义，如段落、标题、列表等
-2. **一致性**: 确保相同类型的 block 具有一致的结构
-3. **可扩展性**: 允许轻松添加新的 block 类型
+1. 每个 block 都有明确的语义，如段落、标题、列表等
+2. 确保相同类型的 block 具有一致的结构
+3. 允许轻松添加新的 block 类型
 
 ## 实现方式
 
@@ -23,7 +23,7 @@ export enum BlockType {
   List = "list",     // 列表类型（有序、无序）
   Table = "table",   // 表格类型
   Code = "code",     // 代码类型
-  // ...其他类型
+  // ...
 }
 
 // 子类型进一步细分
@@ -48,7 +48,8 @@ export enum LineSubType {
 - 执行格式转换操作
 
 ### A demo doc content
-```
+
+```html
 <div class="direct-editor" contenteditable="true">
 	<div data-btype="basic">some text<span style="font-weight: bold; font-style: italic">styled text</span></div>
 	<div data-btype="basic">text text<a href="https://www.notedeep.com">some link label</a></div>
@@ -72,7 +73,7 @@ export enum LineSubType {
 		<div>some code</div>
 	</div>
 	<div data-btype="table">
-		<table>
+        <table>
 			<tr>
                 <td><div data-btype="basic">cell1</div></td>
                 <td><div data-btype="basic">cell2</div></td>
