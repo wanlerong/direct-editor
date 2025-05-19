@@ -1,0 +1,42 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Direct Editor 项目概览
+
+这是一个富文本编辑器项目，核心指导思想是简单且直接。不做过于复杂的技术方案。
+基于浏览器 contenteditable。
+不使用mvc，简单、直接地依靠dom来做。dom 本身就是 model。
+
+# 目标
+- 优秀的编辑体验
+- 支持实时协同编辑
+- 扩展性,简单可靠
+- 高性能
+- 支持移动端
+
+## 主要功能
+- 文字格式化（加粗、斜体、下划线等）
+- 段落样式（标题、引用块等）
+- 列表（有序、无序、待办事项）
+- 链接，图片
+- 表格
+- 撤销/重做
+- 协同编辑
+- ...
+
+## 核心文件
+- @src/editor.ts: 编辑器主类，处理输入、选区和变更
+- @src/toolbar.ts: 工具栏功能实现，提供格式化操作
+- @src/range.ts: 选区处理相关功能
+- @src/domUtils.ts: DOM 操作辅助工具
+- @src/undoManager.ts: 撤销/重做功能管理
+
+## 目录结构
+- `src/components/`: 编辑器组件
+- `src/handlers/`: 事件处理器（键盘、粘贴等）
+- `src/schema/`: 数据模型定义，用于 normalize
+- `src/block/`: 内容的基本单位，就是 block，一篇文档就是由一个 block array 组成的。
+- `src/lib/`: 辅助库
+- `src/const/`: 常量定义

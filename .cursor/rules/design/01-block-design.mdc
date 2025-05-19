@@ -1,0 +1,92 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# block 设计理念
+一篇文档的内容，是由 block array 组成的
+
+1. **语义化结构**: 每个 block 都有明确的语义，如段落、标题、列表等
+2. **一致性**: 确保相同类型的 block 具有一致的结构
+3. **可扩展性**: 允许轻松添加新的 block 类型
+
+## 实现方式
+
+### block类型系统
+
+我们使用`blockType.ts`定义所有block类型，确保类型明确且一致：
+
+```typescript
+// 基本类型划分
+export enum BlockType {
+  Line = "line",     // 行类型（段落、标题等）
+  List = "list",     // 列表类型（有序、无序）
+  Table = "table",   // 表格类型
+  Code = "code",     // 代码类型
+  // ...其他类型
+}
+
+// 子类型进一步细分
+export enum LineSubType {
+  Basic = "basic",         // 基本段落
+  H1 = "h1",               // 一级标题
+  H2 = "h2",               // 二级标题
+  Blockquote = "blockquote", // 引用块
+  // ...其他子类型
+}
+```
+
+### normalize
+
+通过`blockNormalizer.ts`确保所有结构符合预期：
+
+1. 每个 block 需要有正确的标记（如`data-btype`属性）
+
+标准化机制保证了，即使执行以下操作，也不会得到非预期的内容。
+- 用户直接编辑HTML
+- 粘贴外部内容
+- 执行格式转换操作
+
+### A demo doc content
+```
+<div class="direct-editor" contenteditable="true">
+	<div data-btype="basic">some text<span style="font-weight: bold; font-style: italic">styled text</span></div>
+	<div data-btype="basic">text text<a href="https://www.notedeep.com">some link label</a></div>
+	<div data-btype="line"><h1>标题一</h1></div>
+	<div data-btype="line"><h2>标题二</h2></div>
+	<div data-btype="line"><h3>标题三</h3></div>
+	<div data-btype="line"><blockquote>引用块</blockquote></div>
+	<div data-btype="list">
+		<ul>
+			<li>无序列表 item</li>
+			<li>无序列表 item</li>
+		</ul>
+	</div>
+	<div data-btype="todo">
+		<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>待办事项 item</div></div>
+		<div class="todo-item"><span contenteditable="false"><input type="checkbox"></span><div>待办事项 item</div></div>
+	</div>
+	<div data-btype="code">
+		<div>some code</div>
+		<div>some code</div>
+		<div>some code</div>
+	</div>
+	<div data-btype="table">
+		<table>
+			<tr>
+                <td><div data-btype="basic">cell1</div></td>
+                <td><div data-btype="basic">cell2</div></td>
+            </tr>
+            <tr>
+                <td><div data-btype="basic">cell3</div></td>
+                <td><div data-btype="basic">cell4</div></td>
+            </tr>
+		</table>
+	</div>
+    <div data-btype="img">
+        <img src="http://static.notedeep.com/xxx.png">
+    </div>
+</div>
+```
+
+

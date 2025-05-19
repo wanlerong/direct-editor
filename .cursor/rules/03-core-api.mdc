@@ -1,0 +1,60 @@
+---
+description: 
+globs: src/editor.ts,src/toolbar.ts,src/undoManager.ts
+alwaysApply: false
+---
+# 核心API
+
+## Editor 类
+[src/editor.ts](mdc:src/editor.ts)
+
+主要编辑器类，管理编辑器状态和操作。
+
+### 构造函数
+```typescript
+constructor(dom: HTMLElement, callback: (ops: Op[]) => void, asChangeFunc: (as: ActiveStatus) => void)
+```
+- `dom`: 编辑器容器元素
+- `callback`: 操作变更回调函数
+- `asChangeFunc`: 活动状态变更回调函数
+
+### 主要方法
+- `normalize()`: 规范化文档结构
+- `observe()`: 开始观察DOM变更
+- `applyDelta(delta: Delta, source?: DeltaSource)`: 应用增量变更
+- `applyOps(ops: Op[])`: 应用 Ops
+- `cacheSelection()`: 缓存当前选区
+- `restoreSelection()`: 恢复缓存的选区
+
+## Toolbar 类
+[src/toolbar.ts](mdc:src/toolbar.ts)
+
+提供编辑器的格式化和编辑操作。
+
+### 文本格式化
+- `bold(value: boolean)`: 设置文本加粗
+- `italic(value: boolean)`: 设置文本斜体
+- `underline(value: boolean)`: 设置文本下划线
+- `strikethrough(value: boolean)`: 设置文本删除线
+
+### 段落操作
+- `line(level: LineLevel)`: 设置段落级别（标题、引用等）
+- `toggleList(listType: string)`: 切换列表类型（有序、无序）
+- `toggleTodoList()`: 切换待办事项列表
+- `toggleCode()`: 切换代码块
+
+### 插入操作
+- `insertLink(url: string, text: string)`: 插入链接
+- `editLink(url: string, text: string)`: 编辑链接
+- `insertImg(url: string)`: 插入图片
+- `insertTable(rows: number, cols: number)`: 插入表格
+
+## UndoManager 类
+[src/undoManager.ts](mdc:src/undoManager.ts)
+
+管理编辑器的撤销/重做功能。
+
+### 主要方法
+- `undo()`: 撤销上一步操作
+- `redo()`: 重做上一步操作
+- `push(record: UndoRecord)`: 将操作记录添加到撤销栈
