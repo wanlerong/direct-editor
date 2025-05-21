@@ -432,41 +432,11 @@ export class TableManager {
     else if (rowSpan === tableRows) {
       // 设置colSpan为1
       targetCell.colSpan = 1;
-      
-      // 删除目标单元格所在列的其他单元格
-      for (let r = 0; r < tableRows; r++) {
-        if (r === range.startRow) continue; // 跳过目标单元格所在行
-        
-        const row = this.currentTable.rows[r];
-        if (!row) continue;
-        
-        for (let c = row.cells.length - 1; c >= 0; c--) {
-          const cell = row.cells[c];
-          const pos = cellDetails.get(cell);
-          
-          // 删除与目标列有重叠的单元格
-          if (pos && pos.startCol <= range.startCol && 
-              pos.endCol >= range.startCol) {
-            row.deleteCell(c);
-          }
-        }
-      }
     }
     // 仅占满所有列的情况
     else if (colSpan === tableCols) {
       // 设置rowSpan为1
       targetCell.rowSpan = 1;
-      
-      // 确保目标行只有目标单元格
-      const targetRow = this.currentTable.rows[range.startRow];
-      if (targetRow) {
-        for (let c = targetRow.cells.length - 1; c >= 0; c--) {
-          if (targetRow.cells[c] !== targetCell) {
-            targetRow.deleteCell(c);
-          }
-        }
-      }
-      
       // 只删除选区范围内的其他行
       for (let r = range.endRow; r >= range.startRow; r--) {
         if (r === range.startRow) continue; // 跳过目标行
