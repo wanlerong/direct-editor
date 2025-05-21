@@ -134,6 +134,7 @@ export class TableManager {
   private selectionStartCell: HTMLTableCellElement | null = null;
   private selectedCells: HTMLTableCellElement[] = [];
   private currentTable: HTMLTableElement | null = null;
+  private currentSelectionRange: CellPosition | null = null;
   
   constructor(editor: Editor) {
     this.editor = editor;
@@ -304,7 +305,10 @@ export class TableManager {
         this.highlightCell(cell);
         this.selectedCells.push(cell);
       }
-    });
+          });
+    
+    // 保存当前选区范围
+    this.currentSelectionRange = range;
   }
   
   // 检查是否有单元格与选区有交集但未被完全包含
@@ -338,12 +342,11 @@ export class TableManager {
     return false;
   }
   
-  // todo: is Draft now
   private mergeCells(): void {
     if (this.selectedCells.length <= 1) return;
     
     const cellDetails = this.calculateCellDetails();
-    const range = this.getCellsRange(this.selectedCells[0], this.selectedCells[this.selectedCells.length - 1], cellDetails);
+    const range = this.currentSelectionRange;
     if (!range) return;
     
     // 如果有未完全包含在选区内的单元格，不执行合并操作
@@ -351,40 +354,165 @@ export class TableManager {
       return;
     }
     
-    const rowSpan = range.endRow - range.startRow + 1;
-    const colSpan = range.endCol - range.startCol + 1;
-    const targetCell = this.selectedCells[0];
+    const tableRows = this.currentTable.rows.length;
+    const tableCols = this.getTableColumnCount();
     
+    // 计算初始的rowspan和colspan
+    let rowSpan = range.endRow - range.startRow + 1;
+    let colSpan = range.endCol - range.startCol + 1;
+    
+    // 选择目标单元格（左上角的单元格）
+    const targetCell = this.findCellAt(range.startRow, range.startCol);
+    if (!targetCell) return;
+    
+    // 收集所有选中单元格的内容
     const contents: Node[] = [];
+    const seenCells = new Set<HTMLTableCellElement>();
+    
     this.selectedCells.forEach(cell => {
-      Array.from(cell.childNodes).forEach(node => {
-        contents.push(node.cloneNode(true));
-      });
+      if (!seenCells.has(cell)) {
+        Array.from(cell.childNodes).forEach(node => {
+          contents.push(node.cloneNode(true));
+        });
+        seenCells.add(cell);
+      }
     });
     
+    // 如果没有内容，添加一个空的基本块
+    if (contents.length === 0) {
+      const basicBlock = document.createElement('div');
+      basicBlock.setAttribute('data-btype', 'basic');
+      basicBlock.innerHTML = '<br>';
+      contents.push(basicBlock);
+    }
+    
+    // 1. 先执行合并操作
+    
+    // 设置目标单元格的初始属性和内容
     targetCell.rowSpan = rowSpan;
     targetCell.colSpan = colSpan;
     targetCell.replaceChildren(...contents);
     
-    // 移除其他被合并的单元格
-    for (let i = range.startRow; i <= range.endRow; i++) {
-      const row = this.currentTable.rows[i];
+    // 删除其他被选中的单元格
+    for (let r = range.endRow; r >= range.startRow; r--) {
+      const row = this.currentTable.rows[r];
       if (!row) continue;
       
-      // 从右向左删除，避免索引变化
-      for (let j = range.endCol; j >= range.startCol; j--) {
-        // 跳过目标单元格
-        if (i === range.startRow && j === range.startCol) continue;
+      for (let c = row.cells.length - 1; c >= 0; c--) {
+        const cell = row.cells[c];
+        if (cell === targetCell) continue; // 跳过目标单元格
         
-        const cell = row.cells[j];
-        if (cell) {
-          row.deleteCell(j);
+        const pos = cellDetails.get(cell);
+        if (!pos) continue;
+        
+        // 删除范围内的其他单元格
+        if (pos.startRow >= range.startRow && 
+            pos.endRow <= range.endRow &&
+            pos.startCol >= range.startCol && 
+            pos.endCol <= range.endCol) {
+          row.deleteCell(c);
         }
+      }
+    }
+    
+    // 2. 合并后处理特殊情况
+    
+    // 同时占满所有行和列的情况
+    if (rowSpan === tableRows && colSpan === tableCols) {
+      // 设置为单个单元格
+      targetCell.rowSpan = 1;
+      targetCell.colSpan = 1;
+      
+      // 保留第一行，删除所有其他行
+      while (this.currentTable.rows.length > 1) {
+        this.currentTable.deleteRow(1);
+      }
+    }
+    // 仅占满所有行的情况
+    else if (rowSpan === tableRows) {
+      // 设置colSpan为1
+      targetCell.colSpan = 1;
+      
+      // 删除目标单元格所在列的其他单元格
+      for (let r = 0; r < tableRows; r++) {
+        if (r === range.startRow) continue; // 跳过目标单元格所在行
+        
+        const row = this.currentTable.rows[r];
+        if (!row) continue;
+        
+        for (let c = row.cells.length - 1; c >= 0; c--) {
+          const cell = row.cells[c];
+          const pos = cellDetails.get(cell);
+          
+          // 删除与目标列有重叠的单元格
+          if (pos && pos.startCol <= range.startCol && 
+              pos.endCol >= range.startCol) {
+            row.deleteCell(c);
+          }
+        }
+      }
+    }
+    // 仅占满所有列的情况
+    else if (colSpan === tableCols) {
+      // 设置rowSpan为1
+      targetCell.rowSpan = 1;
+      
+      // 确保目标行只有目标单元格
+      const targetRow = this.currentTable.rows[range.startRow];
+      if (targetRow) {
+        for (let c = targetRow.cells.length - 1; c >= 0; c--) {
+          if (targetRow.cells[c] !== targetCell) {
+            targetRow.deleteCell(c);
+          }
+        }
+      }
+      
+      // 只删除选区范围内的其他行
+      for (let r = range.endRow; r >= range.startRow; r--) {
+        if (r === range.startRow) continue; // 跳过目标行
+        this.currentTable.deleteRow(r);
       }
     }
     
     this.clearSelection();
     this.editor.normalize();
+  }
+  
+  // 获取表格的列数
+  private getTableColumnCount(): number {
+    if (!this.currentTable || !this.currentTable.rows.length) return 0;
+    
+    let colCount = 0;
+    const firstRow = this.currentTable.rows[0];
+    
+    for (let i = 0; i < firstRow.cells.length; i++) {
+      colCount += firstRow.cells[i].colSpan || 1;
+    }
+    
+    return colCount;
+  }
+  
+  // 根据行列索引查找单元格
+  private findCellAt(rowIndex: number, colIndex: number): HTMLTableCellElement | null {
+    if (!this.currentTable) return null;
+    
+    const row = this.currentTable.rows[rowIndex];
+    if (!row) return null;
+    
+    // 遍历行中的单元格，计算实际列位置
+    let currentColIndex = 0;
+    
+    for (let i = 0; i < row.cells.length; i++) {
+      const cell = row.cells[i];
+      
+      if (currentColIndex === colIndex) {
+        return cell;
+      }
+      
+      currentColIndex += cell.colSpan || 1;
+    }
+    
+    return null;
   }
   
   // todo: is Draft now

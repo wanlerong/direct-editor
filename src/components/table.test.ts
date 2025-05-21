@@ -331,51 +331,6 @@ describe('TableManager', () => {
     expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cell7);
   });
   
-  // 测试单元格合并功能
-  test('mergeCells correctly merges selected cells', () => {
-    const mergeCellsMethod = (TableManager.prototype as any).mergeCells;
-    const calculateCellDetailsMethod = (TableManager.prototype as any).calculateCellDetails;
-    
-    // 创建表格并设置测试环境
-    document.body.innerHTML = `
-      <table id="testTable">
-        <tr>
-          <td id="cell1"><div data-btype="basic">A</div></td>
-          <td id="cell2"><div data-btype="basic">B</div></td>
-        </tr>
-        <tr>
-          <td id="cell3"><div data-btype="basic">C</div></td>
-          <td id="cell4"><div data-btype="basic">D</div></td>
-        </tr>
-      </table>
-    `;
-    
-    const table = document.getElementById('testTable') as HTMLTableElement;
-    const cell1 = document.getElementById('cell1') as HTMLTableCellElement;
-    const cell2 = document.getElementById('cell2') as HTMLTableCellElement;
-    const cell3 = document.getElementById('cell3') as HTMLTableCellElement;
-    const cell4 = document.getElementById('cell4') as HTMLTableCellElement;
-    
-    // 设置必要的私有属性
-    (tableManager as any).currentTable = table;
-    (tableManager as any).selectedCells = [cell1, cell2, cell3, cell4];
-    (tableManager as any).clearSelection = jest.fn();
-    (tableManager as any).editor.normalize = jest.fn();
-    (tableManager as any).calculateCellDetails = calculateCellDetailsMethod;
-    
-    // 调用合并方法
-    mergeCellsMethod.call(tableManager);
-    
-    // 验证结果
-    expect(cell1.rowSpan).toBe(2);
-    expect(cell1.colSpan).toBe(2);
-    expect(table.rows.length).toBe(2);
-    expect(table.rows[0].cells.length).toBe(1);
-    expect(table.rows[1].cells.length).toBe(0);
-    expect((tableManager as any).clearSelection).toHaveBeenCalled();
-    expect((tableManager as any).editor.normalize).toHaveBeenCalled();
-  });
-  
   // 测试单元格拆分功能
   test('splitCell correctly splits a merged cell', () => {
     const splitCellMethod = (TableManager.prototype as any).splitCell;
@@ -764,4 +719,370 @@ describe('TableManager', () => {
     const result4 = hasPartiallyOverlappingCellsMethod.call(tableManager, range4, cellDetails);
     expect(result4).toBe(false);
   });
+  
+  // 测试改进后的mergeCells方法
+  test('mergeCells handles cells with existing colspan or rowspan', () => {
+    const mergeCellsMethod = (TableManager.prototype as any).mergeCells;
+    const calculateCellDetailsMethod = (TableManager.prototype as any).calculateCellDetails;
+    const getTableColumnCountMethod = (TableManager.prototype as any).getTableColumnCount;
+    const findCellAtMethod = (TableManager.prototype as any).findCellAt;
+    
+    // 创建表格并设置测试环境
+    document.body.innerHTML = `
+      <table id="testTable">
+        <tr>
+          <td id="cell1"><div data-btype="basic">A</div></td>
+          <td id="cell2"><div data-btype="basic">B</div></td>
+          <td id="cell3"><div data-btype="basic">C</div></td>
+        </tr>
+        <tr>
+          <td id="cell4" colspan="2"><div data-btype="basic">D</div></td>
+          <td id="cell5"><div data-btype="basic">F</div></td>
+        </tr>
+        <tr>
+          <td id="cell6"><div data-btype="basic">G</div></td>
+          <td id="cell7"><div data-btype="basic">H</div></td>
+          <td id="cell8"><div data-btype="basic">I</div></td>
+        </tr>
+      </table>
+    `;
+    
+    const table = document.getElementById('testTable') as HTMLTableElement;
+    const cell1 = document.getElementById('cell1') as HTMLTableCellElement;
+    const cell2 = document.getElementById('cell2') as HTMLTableCellElement;
+    const cell4 = document.getElementById('cell4') as HTMLTableCellElement;
+    
+    // 设置必要的私有属性和方法
+    (tableManager as any).currentTable = table;
+    (tableManager as any).selectedCells = [cell1, cell2, cell4];
+    (tableManager as any).clearSelection = jest.fn();
+    (tableManager as any).editor.normalize = jest.fn();
+    (tableManager as any).calculateCellDetails = calculateCellDetailsMethod;
+    (tableManager as any).hasPartiallyOverlappingCells = jest.fn().mockReturnValue(false);
+    (tableManager as any).getTableColumnCount = getTableColumnCountMethod;
+    
+    // 模拟findCellAt方法，返回cell1
+    (tableManager as any).findCellAt = jest.fn().mockReturnValue(cell1);
+    
+    // 设置当前选区范围
+    (tableManager as any).currentSelectionRange = {
+      startRow: 0,
+      startCol: 0,
+      endRow: 1,
+      endCol: 1
+    };
+    
+    // 调用合并方法
+    mergeCellsMethod.call(tableManager);
+    
+    // 验证表格结构
+    expect(cell1.rowSpan).toBe(2); // 合并后应该跨2行
+    expect(cell1.colSpan).toBe(2); // 合并后应该跨2列
+    expect((tableManager as any).clearSelection).toHaveBeenCalled();
+    expect((tableManager as any).editor.normalize).toHaveBeenCalled();
+    
+    // 验证合并后的表格结构
+    expect(table.rows.length).toBe(3); // 保留3行
+    expect(table.rows[0].cells.length).toBe(2); // 第一行现在有2个单元格（合并单元格和C）
+    expect(table.rows[1].cells.length).toBe(1); // 第二行只有F单元格
+    expect(table.rows[2].cells.length).toBe(3); // 第三行不变
+    
+    // 验证内容合并
+    expect(cell1.innerHTML).toContain('A');
+    expect(cell1.innerHTML).toContain('B');
+    expect(cell1.innerHTML).toContain('D');
+    
+    // 验证HTML结构
+    const cellC = document.getElementById('cell3') as HTMLTableCellElement;
+    const cellF = document.getElementById('cell5') as HTMLTableCellElement;
+    
+    expect(cellC).not.toBeNull(); // C单元格仍然存在
+    expect(cellF).not.toBeNull(); // F单元格仍然存在
+    expect(table.rows[2].cells[0].innerHTML).toContain('G'); // 第三行不受影响
+  });
+  
+  test('mergeCells handles special case when spanning all columns', () => {
+    const mergeCellsMethod = (TableManager.prototype as any).mergeCells;
+    const calculateCellDetailsMethod = (TableManager.prototype as any).calculateCellDetails;
+    const getTableColumnCountMethod = (TableManager.prototype as any).getTableColumnCount;
+    
+    // 创建表格并设置测试环境
+    document.body.innerHTML = '<table id="testTable">'+
+        '<tr>'+
+          '<td id="cell1"><div data-btype="basic">A</div></td>'+
+          '<td id="cell2"><div data-btype="basic">B</div></td>'+
+          '<td id="cell3"><div data-btype="basic">C</div></td>'+
+        '</tr>'+
+        '<tr>'+
+          '<td id="cell4"><div data-btype="basic">D</div></td>'+
+          '<td id="cell5"><div data-btype="basic">E</div></td>'+
+          '<td id="cell6"><div data-btype="basic">F</div></td>'+
+        '</tr>'+
+         '<tr>'+
+          '<td id="cell7"><div data-btype="basic">G</div></td>'+
+          '<td id="cell8"><div data-btype="basic">H</div></td>'+
+          '<td id="cell9"><div data-btype="basic">I</div></td>'+
+        '</tr>'+
+      '</table>'
+    ;
+    
+    const table = document.getElementById('testTable') as HTMLTableElement;
+    const cell1 = document.getElementById('cell1') as HTMLTableCellElement;
+    const cell2 = document.getElementById('cell2') as HTMLTableCellElement;
+    const cell3 = document.getElementById('cell3') as HTMLTableCellElement;
+    const cell4 = document.getElementById('cell4') as HTMLTableCellElement;
+    const cell5 = document.getElementById('cell5') as HTMLTableCellElement;
+    const cell6 = document.getElementById('cell6') as HTMLTableCellElement;
+    
+    // 设置必要的私有属性和方法
+    (tableManager as any).currentTable = table;
+    (tableManager as any).selectedCells = [cell1, cell2, cell3, cell4, cell5, cell6];
+    (tableManager as any).clearSelection = jest.fn();
+    (tableManager as any).editor.normalize = jest.fn();
+    (tableManager as any).calculateCellDetails = calculateCellDetailsMethod;
+    (tableManager as any).hasPartiallyOverlappingCells = jest.fn().mockReturnValue(false);
+    
+    // 模拟getTableColumnCount方法，返回3（即表格总列数）
+    (tableManager as any).getTableColumnCount = jest.fn().mockReturnValue(3);
+    
+    // 模拟findCellAt方法，返回cell1
+    (tableManager as any).findCellAt = jest.fn().mockReturnValue(cell1);
+    
+    // 设置当前选区范围
+    (tableManager as any).currentSelectionRange = {
+      startRow: 0,
+      startCol: 0,
+      endRow: 1,
+      endCol: 2
+    };
+    
+    // 调用合并方法
+    mergeCellsMethod.call(tableManager);
+    
+    let ele = table.firstChild.nodeName.toLowerCase() === 'tbody' ? table.firstChild : table
+    expect((ele as HTMLElement).innerHTML.replace(/\s+/g, '')).toBe(
+      `<tr>
+          <td id="cell1" rowspan="1" colspan="3">
+            <div data-btype="basic">A</div>
+            <div data-btype="basic">B</div>
+            <div data-btype="basic">C</div>
+            <div data-btype="basic">D</div>
+            <div data-btype="basic">E</div>
+            <div data-btype="basic">F</div>
+          </td>
+        </tr>
+         <tr>
+          <td id="cell7"><div data-btype="basic">G</div></td>
+          <td id="cell8"><div data-btype="basic">H</div></td>
+          <td id="cell9"><div data-btype="basic">I</div></td>
+        </tr>
+    `.replace(/\s+/g, ''));
+  });
+  
+  test('mergeCells 01', () => {
+    const mergeCellsMethod = (TableManager.prototype as any).mergeCells;
+    const calculateCellDetailsMethod = (TableManager.prototype as any).calculateCellDetails;
+    
+    // 创建表格并设置测试环境
+    document.body.innerHTML = `
+      <table id="testTable">
+        <tr>
+          <td id="cell1"><div data-btype="basic">A</div></td>
+          <td id="cell2"><div data-btype="basic">B</div></td>
+        </tr>
+        <tr>
+          <td id="cell3"><div data-btype="basic">C</div></td>
+          <td id="cell4"><div data-btype="basic">D</div></td>
+        </tr>
+        <tr>
+          <td id="cell5"><div data-btype="basic">E</div></td>
+          <td id="cell6"><div data-btype="basic">F</div></td>
+        </tr>
+      </table>
+    `;
+    
+    const table = document.getElementById('testTable') as HTMLTableElement;
+    const cell1 = document.getElementById('cell1') as HTMLTableCellElement;
+    const cell3 = document.getElementById('cell3') as HTMLTableCellElement;
+    const cell5 = document.getElementById('cell5') as HTMLTableCellElement;
+    
+    // 设置必要的私有属性和方法
+    (tableManager as any).currentTable = table;
+    (tableManager as any).selectedCells = [cell1, cell3, cell5];
+    (tableManager as any).clearSelection = jest.fn();
+    (tableManager as any).editor.normalize = jest.fn();
+    (tableManager as any).calculateCellDetails = calculateCellDetailsMethod;
+    (tableManager as any).hasPartiallyOverlappingCells = jest.fn().mockReturnValue(false);
+    (tableManager as any).getTableColumnCount = jest.fn().mockReturnValue(2);
+    
+    // 模拟findCellAt方法，返回cell1
+    (tableManager as any).findCellAt = jest.fn().mockReturnValue(cell1);
+    
+    // 设置当前选区范围
+    (tableManager as any).currentSelectionRange = {
+      startRow: 0,
+      startCol: 0,
+      endRow: 2,
+      endCol: 0
+    };
+    
+    // 调用合并方法
+    mergeCellsMethod.call(tableManager);
+    
+    expect(cell1.rowSpan).toBe(3);
+    expect((tableManager as any).clearSelection).toHaveBeenCalled();
+    expect((tableManager as any).editor.normalize).toHaveBeenCalled();
+    
+    expect(table.rows.length).toBe(3);
+    expect(table.rows[0].cells.length).toBe(2);
+    expect(table.rows[1].cells.length).toBe(1);
+    expect(table.rows[2].cells.length).toBe(1);
+    
+    expect(table.rows[0].cells[0].innerHTML).toContain('A');
+    expect(table.rows[0].cells[0].innerHTML).toContain('C');
+    expect(table.rows[0].cells[0].innerHTML).toContain('E');
+    expect(table.rows[0].cells[1].innerHTML).toContain('B');
+  });
+  
+  test('mergeCells combines content from all selected cells', () => {
+    const mergeCellsMethod = (TableManager.prototype as any).mergeCells;
+    const calculateCellDetailsMethod = (TableManager.prototype as any).calculateCellDetails;
+    
+    // 创建表格并设置测试环境
+    document.body.innerHTML = `
+      <table id="testTable">
+        <tr>
+          <td id="cell1"><div data-btype="basic">Content 1</div></td>
+          <td id="cell2"><div data-btype="basic">Content 2</div></td>
+        </tr>
+        <tr>
+          <td id="cell3"><div data-btype="basic">Content 3</div></td>
+          <td id="cell4"><div data-btype="basic">Content 4</div></td>
+        </tr>
+      </table>
+    `;
+    
+    const table = document.getElementById('testTable') as HTMLTableElement;
+    const cell1 = document.getElementById('cell1') as HTMLTableCellElement;
+    const cell2 = document.getElementById('cell2') as HTMLTableCellElement;
+    const cell3 = document.getElementById('cell3') as HTMLTableCellElement;
+    const cell4 = document.getElementById('cell4') as HTMLTableCellElement;
+    
+    // 设置必要的私有属性和方法
+    (tableManager as any).currentTable = table;
+    (tableManager as any).selectedCells = [cell1, cell2, cell3, cell4];
+    (tableManager as any).clearSelection = jest.fn();
+    (tableManager as any).editor.normalize = jest.fn();
+    (tableManager as any).calculateCellDetails = calculateCellDetailsMethod;
+    (tableManager as any).hasPartiallyOverlappingCells = jest.fn().mockReturnValue(false);
+    (tableManager as any).getTableColumnCount = jest.fn().mockReturnValue(2);
+    
+    // 模拟findCellAt方法，返回cell1
+    (tableManager as any).findCellAt = jest.fn().mockReturnValue(cell1);
+    
+    // 设置当前选区范围
+    (tableManager as any).currentSelectionRange = {
+      startRow: 0,
+      startCol: 0,
+      endRow: 1,
+      endCol: 1
+    };
+    
+    mergeCellsMethod.call(tableManager);
+    
+    expect(table.rows.length).toBe(1);
+    expect(table.rows[0].cells.length).toBe(1);
+    
+    // 验证单元格属性
+    expect(cell1.rowSpan).toBe(1);
+    expect(cell1.colSpan).toBe(1);
+    
+    expect(cell1.innerHTML).toContain('Content 1');
+    expect(cell1.innerHTML).toContain('Content 2');
+    expect(cell1.innerHTML).toContain('Content 3');
+    expect(cell1.innerHTML).toContain('Content 4');
+    
+    // 验证合并内容的DOM结构 - 所有原始单元格的内容被保留
+    const contentDivs = cell1.querySelectorAll('div[data-btype="basic"]');
+    expect(contentDivs.length).toBe(4); // 应该包含4个内容块
+  });
+  
+  test('mergeCells case1: 框选A-F合并后保留第三行G、H、I', () => {
+    const mergeCellsMethod = (TableManager.prototype as any).mergeCells;
+    const calculateCellDetailsMethod = (TableManager.prototype as any).calculateCellDetails;
+    
+    // 创建表格并设置测试环境 - case1场景
+    document.body.innerHTML = `
+      <table id="testTable">
+        <tr>
+          <td id="cellA"><div data-btype="basic">A</div></td>
+          <td id="cellB"><div data-btype="basic">B</div></td>
+          <td id="cellC"><div data-btype="basic">C</div></td>
+        </tr>
+        <tr>
+          <td id="cellD"><div data-btype="basic">D</div></td>
+          <td id="cellE"><div data-btype="basic">E</div></td>
+          <td id="cellF"><div data-btype="basic">F</div></td>
+        </tr>
+        <tr>
+          <td id="cellG"><div data-btype="basic">G</div></td>
+          <td id="cellH"><div data-btype="basic">H</div></td>
+          <td id="cellI"><div data-btype="basic">I</div></td>
+        </tr>
+      </table>
+    `;
+    
+    const table = document.getElementById('testTable') as HTMLTableElement;
+    const cellA = document.getElementById('cellA') as HTMLTableCellElement;
+    const cellB = document.getElementById('cellB') as HTMLTableCellElement;
+    const cellC = document.getElementById('cellC') as HTMLTableCellElement;
+    const cellD = document.getElementById('cellD') as HTMLTableCellElement;
+    const cellE = document.getElementById('cellE') as HTMLTableCellElement;
+    const cellF = document.getElementById('cellF') as HTMLTableCellElement;
+    
+    // 设置必要的私有属性和方法
+    (tableManager as any).currentTable = table;
+    (tableManager as any).selectedCells = [cellA, cellB, cellC, cellD, cellE, cellF];
+    (tableManager as any).clearSelection = jest.fn();
+    (tableManager as any).editor.normalize = jest.fn();
+    (tableManager as any).calculateCellDetails = calculateCellDetailsMethod;
+    (tableManager as any).hasPartiallyOverlappingCells = jest.fn().mockReturnValue(false);
+    (tableManager as any).getTableColumnCount = jest.fn().mockReturnValue(3);
+    
+    // 模拟findCellAt方法，返回cellA
+    (tableManager as any).findCellAt = jest.fn().mockReturnValue(cellA);
+    
+    // 设置当前选区范围
+    (tableManager as any).currentSelectionRange = {
+      startRow: 0,
+      startCol: 0,
+      endRow: 1,
+      endCol: 2
+    };
+    
+    // 调用合并方法
+    mergeCellsMethod.call(tableManager);
+    
+    // 验证合并后表格的结构
+    expect(table.rows.length).toBe(2);
+    expect(table.rows[0].cells.length).toBe(1);
+    expect(table.rows[1].cells.length).toBe(3);
+    
+    expect(cellA.rowSpan).toBe(1);
+    expect(cellA.colSpan).toBe(3);
+    
+    // 验证合并内容
+    expect(cellA.innerHTML).toContain('A');
+    expect(cellA.innerHTML).toContain('B');
+    expect(cellA.innerHTML).toContain('C');
+    expect(cellA.innerHTML).toContain('D');
+    expect(cellA.innerHTML).toContain('E');
+    expect(cellA.innerHTML).toContain('F');
+    
+    // 验证第三行保留原样
+    expect(table.rows[1].cells[0].innerHTML).toContain('G');
+    expect(table.rows[1].cells[1].innerHTML).toContain('H');
+    expect(table.rows[1].cells[2].innerHTML).toContain('I');
+  });
+
 }); 
