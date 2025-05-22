@@ -17,43 +17,44 @@ export function getCellColumnIndex(cell: HTMLTableCellElement): number {
   return Array.from(row.cells).indexOf(cell);
 }
 
+// Set cursor to the first cell in a table
+function setCursorToFirstCell(table: HTMLTableElement): void {
+  if (!table || !table.rows.length || !table.rows[0].cells.length) return;
+  
+  const firstCell = table.rows[0].cells[0];
+  const newRange = document.createRange();
+  newRange.selectNodeContents(firstCell.firstChild.firstChild);
+  newRange.collapse(true);
+  setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset);
+}
+
 export function addRow(tableElement: HTMLTableElement, rowIdx: number): void {
-  if (rowIdx < 0 || !tableElement) {
-    return;
-  }
+  if (rowIdx < 0 || !tableElement || rowIdx >= tableElement.rows.length) return;
   
-  const rows = tableElement.rows;
-  if (rowIdx >= rows.length) {
-    return;
-  }
-  
-  const colCount = rows[0].cells.length;
-  
+  const colCount = tableElement.rows[0].cells.length;
   const newRow = createTableRow(colCount);
   
-  if (rowIdx < rows.length - 1) {
-    rows[rowIdx].insertAdjacentElement('afterend', newRow);
+  if (rowIdx < tableElement.rows.length - 1) {
+    tableElement.rows[rowIdx].insertAdjacentElement('afterend', newRow);
   } else {
     tableElement.appendChild(newRow);
   }
   
   try {
-    const newRange = document.createRange();
     const firstCell = (newRow as HTMLTableRowElement).cells[0];
+    const newRange = document.createRange();
     newRange.selectNodeContents(firstCell.firstChild.firstChild);
     newRange.collapse(true);
     setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset);
   } catch (e) {
+    console.warn("Failed to set cursor position after adding row:", e);
   }
 }
 
 export function addColumn(tableElement: HTMLTableElement, columnIdx: number): void {
-  if (columnIdx < 0 || !tableElement) return;
+  if (columnIdx < 0 || !tableElement || !tableElement.rows.length) return;
   
-  const rows = tableElement.rows;
-  if (rows.length === 0) return;
-  
-  Array.from(rows).forEach(row => {
+  Array.from(tableElement.rows).forEach(row => {
     if (columnIdx >= row.cells.length) return;
     
     const newCell = createTableCell()
@@ -61,7 +62,7 @@ export function addColumn(tableElement: HTMLTableElement, columnIdx: number): vo
     refCell.insertAdjacentElement('afterend', newCell);
   });
   
-  const firstRowNewCell = rows[0].cells[columnIdx + 1];
+  const firstRowNewCell = tableElement.rows[0].cells[columnIdx + 1];
   const newRange = document.createRange();
   newRange.selectNodeContents(firstRowNewCell.firstChild.firstChild);
   newRange.collapse(true);
@@ -71,26 +72,18 @@ export function addColumn(tableElement: HTMLTableElement, columnIdx: number): vo
 export function deleteRow(tableElement: HTMLTableElement, rowIdx: number): void {
   if (!tableElement || rowIdx < 0 || rowIdx >= tableElement.rows.length) return;
   
-  // 至少保留一行
+  // Keep at least one row
   if (tableElement.rows.length <= 1) return;
   
   tableElement.deleteRow(rowIdx);
-  
-  if (tableElement.rows.length > 0 && tableElement.rows[0].cells.length > 0) {
-    const firstCell = tableElement.rows[0].cells[0];
-    const newRange = document.createRange();
-    newRange.selectNodeContents(firstCell.firstChild.firstChild);
-    newRange.collapse(true);
-    setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset);
-  }
+  setCursorToFirstCell(tableElement);
 }
 
 export function deleteColumn(tableElement: HTMLTableElement, columnIdx: number): void {
-  if (!tableElement || columnIdx < 0) return;
+  if (!tableElement || columnIdx < 0 || !tableElement.rows.length || 
+      columnIdx >= tableElement.rows[0].cells.length) return;
   
-  if (tableElement.rows.length === 0 || columnIdx >= tableElement.rows[0].cells.length) return;
-  
-  // 至少保留一列
+  // Keep at least one column
   if (tableElement.rows[0].cells.length <= 1) return;
   
   Array.from(tableElement.rows).forEach(row => {
@@ -99,19 +92,11 @@ export function deleteColumn(tableElement: HTMLTableElement, columnIdx: number):
     }
   });
   
-  if (tableElement.rows.length > 0 && tableElement.rows[0].cells.length > 0) {
-    const firstCell = tableElement.rows[0].cells[0];
-    const newRange = document.createRange();
-    newRange.selectNodeContents(firstCell.firstChild.firstChild);
-    newRange.collapse(true);
-    setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset);
-  }
+  setCursorToFirstCell(tableElement);
 }
 
 export function createTable(rows: number, cols: number): HTMLElement {
-  if (rows < 1 || cols < 1) {
-    return null;
-  }
+  if (rows < 1 || cols < 1) return null;
   
   const tableBlock = tableBlockConfig.createElement();
   const table = document.createElement('table');
@@ -129,7 +114,7 @@ export class TableManager {
   private cellOptionsMenu: HTMLElement | null = null;
   private currentCellElement: HTMLTableCellElement | null = null;
   
-  // 框选相关的状态变量
+  // Selection related state variables
   private isSelecting: boolean = false;
   private selectionStartCell: HTMLTableCellElement | null = null;
   private selectedCells: HTMLTableCellElement[] = [];
@@ -140,7 +125,7 @@ export class TableManager {
     this.editor = editor;
     this.initCellOptionsMenu();
     
-    // 监听选择变化显示/隐藏菜单
+    // Listen for selection changes to show/hide menu
     document.addEventListener('selectionchange', this.handleSelectionChange.bind(this));
     
     this.editor.theDom.addEventListener('blur', () => {
@@ -163,21 +148,21 @@ export class TableManager {
     const target = event.target as HTMLElement;
     const cell = target.closest('td') as HTMLTableCellElement;
     
-    if (cell) {
-      this.currentTable = cell.closest('table');
-      if (!this.currentTable) return;
-      
-      this.clearSelection();
-      this.isSelecting = true;
-      this.selectionStartCell = cell;
-      this.selectedCells = [cell];
-    }
+    if (!cell) return;
+    
+    this.currentTable = cell.closest('table');
+    if (!this.currentTable) return;
+    
+    this.clearSelection();
+    this.isSelecting = true;
+    this.selectionStartCell = cell;
+    this.selectedCells = [cell];
   }
   
   private handleMouseMove(event: MouseEvent): void {
     if (!this.isSelecting || !this.selectionStartCell || !this.currentTable) return;
     
-    // 获取当前鼠标下的元素
+    // Get the element under current mouse position
     const target = document.elementFromPoint(event.clientX, event.clientY);
     if (!target) return;
     
@@ -188,8 +173,7 @@ export class TableManager {
     const range = this.getCellsRange(this.selectionStartCell, currentCell, cellDetails);
     if (!range) return;
     
-    const isMultipleSelection = 
-      (range.endRow > range.startRow) || (range.endCol > range.startCol);
+    const isMultipleSelection = (range.endRow > range.startRow) || (range.endCol > range.startCol);
     
     if (isMultipleSelection) {
       this.updateSelectedCells(range, cellDetails);
@@ -200,9 +184,7 @@ export class TableManager {
   }
   
   private handleMouseUp(event: MouseEvent): void {
-    if (this.isSelecting) {
-      this.isSelecting = false;
-    }
+    this.isSelecting = false;
   }
   
   private clearSelection(): void {
@@ -221,7 +203,7 @@ export class TableManager {
     cell.classList.add('cell-selected');
   }
   
-  // 计算表格中每个单元格所占的矩形范围，处理rowSpan和colSpan
+  // Calculate the rectangular range of each cell, handling rowSpan and colSpan
   private calculateCellDetails(): Map<HTMLTableCellElement, CellPosition> {
     const cellDetails: Map<HTMLTableCellElement, CellPosition> = new Map();
     
@@ -229,7 +211,7 @@ export class TableManager {
     
     const rows = Array.from(this.currentTable.rows);
     
-    // 使用二维矩阵记录单元格占用情况
+    // Use a 2D matrix to track cell occupancy
     const matrix: Array<Array<boolean>> = [];
     for (let i = 0; i < rows.length; i++) {
       matrix[i] = [];
@@ -244,10 +226,12 @@ export class TableManager {
         const rowSpan = cell.rowSpan || 1;
         const colSpan = cell.colSpan || 1;
         
+        // Find the next available column position
         while (colIdx < matrix[rowIdx].length && matrix[rowIdx][colIdx]) {
           colIdx++;
         }
         
+        // Mark all cells covered by this cell as occupied
         for (let r = 0; r < rowSpan; r++) {
           for (let c = 0; c < colSpan; c++) {
             if (rowIdx + r < matrix.length) {
@@ -259,6 +243,7 @@ export class TableManager {
           }
         }
         
+        // Record the cell's position
         cellDetails.set(cell, {
           startRow: rowIdx,
           startCol: colIdx,
@@ -299,26 +284,26 @@ export class TableManager {
     const details = cellDetails || this.calculateCellDetails();
     
     details.forEach((pos, cell) => {
-      // 单元格完全包含在选择范围内才被选中
+      // Only select cells fully contained within the range
       if (pos.startRow >= range.startRow && pos.endRow <= range.endRow &&
           pos.startCol >= range.startCol && pos.endCol <= range.endCol) {
         this.highlightCell(cell);
         this.selectedCells.push(cell);
       }
-          });
+    });
     
-    // 保存当前选区范围
+    // Save the current selection range
     this.currentSelectionRange = range;
   }
   
-  // 检查是否有单元格与选区有交集但未被完全包含
+  // Check if any cells partially overlap with the selection but aren't fully contained
   private hasPartiallyOverlappingCells(range: CellPosition, cellDetails?: Map<HTMLTableCellElement, CellPosition>): boolean {
     if (!this.currentTable) return false;
     
     const details = cellDetails || this.calculateCellDetails();
     
     for (const [cell, pos] of details.entries()) {
-      // 检查单元格是否与选区有交集
+      // Check if cell overlaps with selection
       const hasOverlap = !(
         pos.endRow < range.startRow || 
         pos.startRow > range.endRow || 
@@ -326,14 +311,14 @@ export class TableManager {
         pos.startCol > range.endCol
       );
       
-      // 检查单元格是否未被完全包含
+      // Check if cell is fully contained
       const isFullyContained = 
         pos.startRow >= range.startRow && 
         pos.endRow <= range.endRow &&
         pos.startCol >= range.startCol && 
         pos.endCol <= range.endCol;
       
-      // 如果有交集但未被完全包含，返回true
+      // If overlaps but not fully contained, return true
       if (hasOverlap && !isFullyContained) {
         return true;
       }
@@ -349,7 +334,7 @@ export class TableManager {
     const range = this.currentSelectionRange;
     if (!range) return;
     
-    // 如果有未完全包含在选区内的单元格，不执行合并操作
+    // Don't merge if any cells are only partially in the selection
     if (this.hasPartiallyOverlappingCells(range, cellDetails)) {
       return;
     }
@@ -357,15 +342,15 @@ export class TableManager {
     const tableRows = this.currentTable.rows.length;
     const tableCols = this.getTableColumnCount();
     
-    // 计算初始的rowspan和colspan
-    let rowSpan = range.endRow - range.startRow + 1;
-    let colSpan = range.endCol - range.startCol + 1;
+    // Calculate initial rowspan and colspan
+    const rowSpan = range.endRow - range.startRow + 1;
+    const colSpan = range.endCol - range.startCol + 1;
     
-    // 选择目标单元格（左上角的单元格）
+    // Target cell (top-left corner)
     const targetCell = this.findCellAt(range.startRow, range.startCol);
     if (!targetCell) return;
     
-    // 收集所有选中单元格的内容
+    // Collect content from all selected cells
     const contents: Node[] = [];
     const seenCells = new Set<HTMLTableCellElement>();
     
@@ -378,7 +363,7 @@ export class TableManager {
       }
     });
     
-    // 如果没有内容，添加一个空的基本块
+    // Add an empty basic block if there's no content
     if (contents.length === 0) {
       const basicBlock = document.createElement('div');
       basicBlock.setAttribute('data-btype', 'basic');
@@ -386,26 +371,26 @@ export class TableManager {
       contents.push(basicBlock);
     }
     
-    // 1. 先执行合并操作
+    // 1. Execute merge operation
     
-    // 设置目标单元格的初始属性和内容
+    // Set target cell attributes and content
     targetCell.rowSpan = rowSpan;
     targetCell.colSpan = colSpan;
     targetCell.replaceChildren(...contents);
     
-    // 删除其他被选中的单元格
+    // Remove other selected cells
     for (let r = range.endRow; r >= range.startRow; r--) {
       const row = this.currentTable.rows[r];
       if (!row) continue;
       
       for (let c = row.cells.length - 1; c >= 0; c--) {
         const cell = row.cells[c];
-        if (cell === targetCell) continue; // 跳过目标单元格
+        if (cell === targetCell) continue; // Skip target cell
         
         const pos = cellDetails.get(cell);
         if (!pos) continue;
         
-        // 删除范围内的其他单元格
+        // Delete cells within the range
         if (pos.startRow >= range.startRow && 
             pos.endRow <= range.endRow &&
             pos.startCol >= range.startCol && 
@@ -415,31 +400,29 @@ export class TableManager {
       }
     }
     
-    // 2. 合并后处理特殊情况
+    // 2. Handle special cases after merging
     
-    // 同时占满所有行和列的情况
+    // Special case: spanning all rows and columns
     if (rowSpan === tableRows && colSpan === tableCols) {
-      // 设置为单个单元格
+      // Set to a single cell
       targetCell.rowSpan = 1;
       targetCell.colSpan = 1;
       
-      // 保留第一行，删除所有其他行
+      // Keep first row, delete all other rows
       while (this.currentTable.rows.length > 1) {
         this.currentTable.deleteRow(1);
       }
     }
-    // 仅占满所有行的情况
+    // Special case: spanning all rows
     else if (rowSpan === tableRows) {
-      // 设置colSpan为1
       targetCell.colSpan = 1;
     }
-    // 仅占满所有列的情况
+    // Special case: spanning all columns
     else if (colSpan === tableCols) {
-      // 设置rowSpan为1
       targetCell.rowSpan = 1;
-      // 只删除选区范围内的其他行
+      // Delete only rows in the selection range
       for (let r = range.endRow; r >= range.startRow; r--) {
-        if (r === range.startRow) continue; // 跳过目标行
+        if (r === range.startRow) continue; // Skip target row
         this.currentTable.deleteRow(r);
       }
     }
@@ -448,7 +431,7 @@ export class TableManager {
     this.editor.normalize();
   }
   
-  // 获取表格的列数
+  // Get the number of columns in the table
   private getTableColumnCount(): number {
     if (!this.currentTable || !this.currentTable.rows.length) return 0;
     
@@ -462,14 +445,14 @@ export class TableManager {
     return colCount;
   }
   
-  // 根据行列索引查找单元格
+  // Find cell at specific row and column indices
   private findCellAt(rowIndex: number, colIndex: number): HTMLTableCellElement | null {
     if (!this.currentTable) return null;
     
     const row = this.currentTable.rows[rowIndex];
     if (!row) return null;
     
-    // 遍历行中的单元格，计算实际列位置
+    // Iterate through cells in the row, calculating actual column position
     let currentColIndex = 0;
     
     for (let i = 0; i < row.cells.length; i++) {
@@ -485,7 +468,6 @@ export class TableManager {
     return null;
   }
   
-  // todo: is Draft now
   private splitCell(): void {
     if (this.selectedCells.length !== 1) return;
     
@@ -495,38 +477,35 @@ export class TableManager {
     const table = cell.closest('table');
     if (!table) return;
     
-    let rowIndex = -1, colIndex = -1;
+    // Find cell position using cellDetails for consistency
+    const cellDetails = this.calculateCellDetails();
+    const cellPosition = cellDetails.get(cell);
+    if (!cellPosition) return;
+    
+    const rowIndex = cellPosition.startRow;
+    const colIndex = cellPosition.startCol;
     const rows = Array.from(table.rows);
-    
-    for (let i = 0; i < rows.length; i++) {
-      const cells = Array.from(rows[i].cells);
-      const idx = cells.indexOf(cell);
-      if (idx !== -1) {
-        rowIndex = i;
-        colIndex = idx;
-        break;
-      }
-    }
-    
-    if (rowIndex === -1 || colIndex === -1) return;
     
     const originalRowSpan = cell.rowSpan;
     const originalColSpan = cell.colSpan;
     
+    // Reset the original cell
     cell.rowSpan = 1;
     cell.colSpan = 1;
     
+    // Create and insert new cells
     for (let i = 0; i < originalRowSpan; i++) {
       const row = rows[rowIndex + i];
       if (!row) continue;
       
       for (let j = 0; j < originalColSpan; j++) {
+        // Skip the original cell
         if (i === 0 && j === 0) continue;
         
         const newCell = createTableCell();
         
         if (j === 0) {
-          // 第一列单元格需要特殊处理位置
+          // For cells in first column, special handling for position
           let insertBefore = null;
           
           for (let k = 0; k < row.cells.length; k++) {
@@ -543,6 +522,7 @@ export class TableManager {
             row.appendChild(newCell);
           }
         } else {
+          // For other cells, insert at appropriate position
           if (colIndex + j < row.cells.length) {
             row.insertBefore(newCell, row.cells[colIndex + j]);
           } else {
@@ -575,66 +555,32 @@ export class TableManager {
     const dropdown = document.createElement('div');
     dropdown.className = 'cell-options-dropdown';
     
-    const addRowOption = document.createElement('div');
-    addRowOption.className = 'cell-option-item';
-    addRowOption.textContent = 'Add row below';
-    addRowOption.addEventListener('click', (event) => {
-      event.stopPropagation();
-      this.handleAddRowBelow();
-      this.hideCellOptionsDropdown();
-    });
-    dropdown.appendChild(addRowOption);
+    const menuItems = [
+      { text: 'Add row below', handler: this.handleAddRowBelow },
+      { text: 'Add column right', handler: this.handleAddColumnRight },
+      { text: 'Delete row', handler: this.handleDeleteRow },
+      { text: 'Delete column', handler: this.handleDeleteColumn },
+      { text: 'Merge cells', handler: this.mergeCells },
+      { text: 'Split cell', handler: this.splitCell }
+    ];
     
-    const addColumnOption = document.createElement('div');
-    addColumnOption.className = 'cell-option-item';
-    addColumnOption.textContent = 'Add column right';
-    addColumnOption.addEventListener('click', (event) => {
-      event.stopPropagation();
-      this.handleAddColumnRight();
-      this.hideCellOptionsDropdown();
+    menuItems.forEach((item, index) => {
+      const menuItem = document.createElement('div');
+      menuItem.className = 'cell-option-item';
+      menuItem.textContent = item.text;
+      
+      if (index === menuItems.length - 1) {
+        menuItem.style.borderBottom = 'none';
+      }
+      
+      menuItem.addEventListener('click', (event) => {
+        event.stopPropagation();
+        item.handler.call(this);
+        this.hideCellOptionsDropdown();
+      });
+      
+      dropdown.appendChild(menuItem);
     });
-    dropdown.appendChild(addColumnOption);
-    
-    const deleteRowOption = document.createElement('div');
-    deleteRowOption.className = 'cell-option-item';
-    deleteRowOption.textContent = 'Delete row';
-    deleteRowOption.addEventListener('click', (event) => {
-      event.stopPropagation();
-      this.handleDeleteRow();
-      this.hideCellOptionsDropdown();
-    });
-    dropdown.appendChild(deleteRowOption);
-    
-    const deleteColumnOption = document.createElement('div');
-    deleteColumnOption.className = 'cell-option-item';
-    deleteColumnOption.textContent = 'Delete column';
-    deleteColumnOption.addEventListener('click', (event) => {
-      event.stopPropagation();
-      this.handleDeleteColumn();
-      this.hideCellOptionsDropdown();
-    });
-    dropdown.appendChild(deleteColumnOption);
-    
-    const mergeCellsOption = document.createElement('div');
-    mergeCellsOption.className = 'cell-option-item';
-    mergeCellsOption.textContent = 'Merge cells';
-    mergeCellsOption.addEventListener('click', (event) => {
-      event.stopPropagation();
-      this.mergeCells();
-      this.hideCellOptionsDropdown();
-    });
-    dropdown.appendChild(mergeCellsOption);
-    
-    const splitCellOption = document.createElement('div');
-    splitCellOption.className = 'cell-option-item';
-    splitCellOption.textContent = 'Split cell';
-    splitCellOption.style.borderBottom = 'none'; // 最后一项不需要底部边框
-    splitCellOption.addEventListener('click', (event) => {
-      event.stopPropagation();
-      this.splitCell();
-      this.hideCellOptionsDropdown();
-    });
-    dropdown.appendChild(splitCellOption);
     
     this.cellOptionsMenu.appendChild(dropdown);
     document.body.appendChild(this.cellOptionsMenu);
@@ -645,21 +591,17 @@ export class TableManager {
   }
   
   private handleAddRowBelow(): void {
-    if (!this.currentCellElement) {
-      return;
-    }
+    if (!this.currentCellElement) return;
+    
     const rowElement = this.currentCellElement.closest('tr');
-    if (!rowElement) {
-      return;
-    }
+    if (!rowElement) return;
+    
     const tableElement = rowElement.closest('table');
-    if (!tableElement) {
-      return;
-    }
+    if (!tableElement) return;
+    
     const rowIndex = Array.from(tableElement.rows).indexOf(rowElement);
-    if (rowIndex === -1) {
-      return;
-    }
+    if (rowIndex === -1) return;
+    
     addRow(tableElement, rowIndex);
     this.editor.normalize();
   }
@@ -707,9 +649,7 @@ export class TableManager {
   }
   
   private handleSelectionChange(): void {
-    setTimeout(() => {
-      this.updateCellOptionsMenu();
-    }, 0);
+    setTimeout(() => this.updateCellOptionsMenu(), 0);
   }
   
   updateCellOptionsMenu(): void {
@@ -719,7 +659,7 @@ export class TableManager {
       return;
     }
     
-    // 查找选区是否在表格单元格内
+    // Find if selection is inside a table cell
     let node = range.startContainer;
     let cellElement: HTMLTableCellElement | null = null;
     
@@ -740,21 +680,21 @@ export class TableManager {
   private showCellOptionsMenu(cellElement: HTMLTableCellElement): void {
     if (!this.cellOptionsMenu) return;
     
-    // 如果是相同的单元格，只需更新位置
+    // If same cell, just update position
     if (this.currentCellElement === cellElement && this.cellOptionsMenu.style.display !== 'none') {
       this.updateCellOptionsMenuPosition();
       return;
     }
     
-    // 获取单元格的位置
+    // Get cell position
     const rect = cellElement.getBoundingClientRect();
     
-    // 定位菜单到单元格右上角，确保有一些边距
+    // Position menu at top-right of cell with some margin
     this.cellOptionsMenu.style.top = `${rect.top + window.scrollY + 2}px`;
     this.cellOptionsMenu.style.left = `${rect.right + window.scrollX - 25}px`;
     this.cellOptionsMenu.style.display = 'block';
     
-    // 隐藏下拉部分
+    // Hide dropdown part
     const dropdown = this.cellOptionsMenu.querySelector('.cell-options-dropdown') as HTMLElement;
     if (dropdown) {
       dropdown.style.display = 'none';
@@ -774,62 +714,60 @@ export class TableManager {
     event.preventDefault();
     
     const dropdown = this.cellOptionsMenu.querySelector('.cell-options-dropdown') as HTMLElement;
-    if (dropdown) {
-      if (dropdown.style.display === 'none') {
-        const buttonRect = (event.target as HTMLElement).getBoundingClientRect();
-        dropdown.style.top = `${buttonRect.height + 2}px`;
-        dropdown.style.left = '0';
-        
-        const dropdownRect = dropdown.getBoundingClientRect();
-        const viewportWidth = window.innerWidth;
-        if (buttonRect.left + dropdownRect.width > viewportWidth) {
-          dropdown.style.left = 'auto';
-          dropdown.style.right = '0';
-        }
-        
-        dropdown.style.display = 'block';
-        
-        // 更新合并/拆分单元格选项的可用性
-        const mergeCellsOption = dropdown.querySelector('.cell-option-item:nth-of-type(5)') as HTMLElement;
-        const splitCellOption = dropdown.querySelector('.cell-option-item:nth-of-type(6)') as HTMLElement;
-        
-        if (mergeCellsOption && splitCellOption) {
-          // 检查是否可以合并单元格
-          const canMerge = this.selectedCells.length > 1;
-          if (canMerge) {
-            // 检查是否有未完全包含在选区内的单元格
-            const cellDetails = this.calculateCellDetails();
-            const range = this.getCellsRange(this.selectedCells[0], this.selectedCells[this.selectedCells.length - 1], cellDetails);
-            if (range && this.hasPartiallyOverlappingCells(range, cellDetails)) {
-              mergeCellsOption.classList.add('disabled');
-            } else {
-              mergeCellsOption.classList.remove('disabled');
-            }
-          } else {
-            mergeCellsOption.classList.add('disabled');
-          }
-          
-          const canSplit = this.selectedCells.length === 1 && 
-                         (this.selectedCells[0].rowSpan > 1 || this.selectedCells[0].colSpan > 1);
-          if (canSplit) {
-            splitCellOption.classList.remove('disabled');
-          } else {
-            splitCellOption.classList.add('disabled');
-          }
-        }
-        
-        setTimeout(() => {
-          document.addEventListener('click', this.handleOutsideClick);
-        }, 0);
-      } else {
-        dropdown.style.display = 'none';
-        document.removeEventListener('click', this.handleOutsideClick);
+    if (!dropdown) return;
+    
+    if (dropdown.style.display === 'none') {
+      const buttonRect = (event.target as HTMLElement).getBoundingClientRect();
+      dropdown.style.top = `${buttonRect.height + 2}px`;
+      dropdown.style.left = '0';
+      
+      const dropdownRect = dropdown.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      if (buttonRect.left + dropdownRect.width > viewportWidth) {
+        dropdown.style.left = 'auto';
+        dropdown.style.right = '0';
       }
+      
+      dropdown.style.display = 'block';
+      
+      // Update merge/split cell option availability
+      const mergeCellsOption = dropdown.querySelector('.cell-option-item:nth-of-type(5)') as HTMLElement;
+      const splitCellOption = dropdown.querySelector('.cell-option-item:nth-of-type(6)') as HTMLElement;
+      
+      if (mergeCellsOption && splitCellOption) {
+        // Check if cells can be merged
+        const canMerge = this.selectedCells.length > 1;
+        if (canMerge) {
+          // Check if any cells are only partially in selection
+          const cellDetails = this.calculateCellDetails();
+          const range = this.getCellsRange(this.selectedCells[0], this.selectedCells[this.selectedCells.length - 1], cellDetails);
+          if (range && this.hasPartiallyOverlappingCells(range, cellDetails)) {
+            mergeCellsOption.classList.add('disabled');
+          } else {
+            mergeCellsOption.classList.remove('disabled');
+          }
+        } else {
+          mergeCellsOption.classList.add('disabled');
+        }
+        
+        // Check if cell can be split
+        const canSplit = this.selectedCells.length === 1 && 
+                      (this.selectedCells[0].rowSpan > 1 || this.selectedCells[0].colSpan > 1);
+        
+        canSplit ? splitCellOption.classList.remove('disabled') : splitCellOption.classList.add('disabled');
+      }
+      
+      setTimeout(() => {
+        document.addEventListener('click', this.handleOutsideClick);
+      }, 0);
+    } else {
+      dropdown.style.display = 'none';
+      document.removeEventListener('click', this.handleOutsideClick);
     }
   }
   
   private hideCellOptionsDropdown(): void {
-    const dropdown = this.cellOptionsMenu.querySelector('.cell-options-dropdown') as HTMLElement;
+    const dropdown = this.cellOptionsMenu?.querySelector('.cell-options-dropdown') as HTMLElement;
     if (dropdown) {
       dropdown.style.display = 'none';
     }
@@ -837,7 +775,7 @@ export class TableManager {
   }
   
   private handleOutsideClick = (event: MouseEvent): void => {
-    // 使用箭头函数保持this上下文
+    // Arrow function to maintain this context
     if (this.cellOptionsMenu && !this.cellOptionsMenu.contains(event.target as Node)) {
       this.hideCellOptionsDropdown();
     }
@@ -848,18 +786,16 @@ export class TableManager {
       return;
     }
     
-    // 获取当前单元格的位置
+    // Get current cell position
     const rect = this.currentCellElement.getBoundingClientRect();
     
-    // 定位菜单到单元格右上角，确保有一些边距
+    // Position menu at top-right of cell with some margin
     this.cellOptionsMenu.style.top = `${rect.top + window.scrollY + 2}px`;
     this.cellOptionsMenu.style.left = `${rect.right + window.scrollX - 25}px`;
   }
   
   insertTable(rows: number, cols: number): void {
-    if (!rows || !cols || rows < 1 || cols < 1) {
-      return;
-    }
+    if (!rows || !cols || rows < 1 || cols < 1) return;
     
     let range = getSelectionRange();
     if (!range) return;
@@ -867,6 +803,7 @@ export class TableManager {
     let block = getClosestBlock(range.endContainer)
     
     const tableBlock = createTable(rows, cols);
+    if (!tableBlock) return;
     
     if (block) {
       block.insertAdjacentElement('afterend', tableBlock);
@@ -874,12 +811,15 @@ export class TableManager {
       this.editor.theDom.appendChild(tableBlock);
     }
     
-    const newRange = document.createRange();
     const firstCell = tableBlock.querySelector('td');
-    const basicBlock = firstCell.querySelector('div[data-btype="basic"]');
-    newRange.selectNodeContents(basicBlock || firstCell);
-    newRange.collapse(true);
-    setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset);
+    const basicBlock = firstCell?.querySelector('div[data-btype="basic"]');
+    
+    if (firstCell) {
+      const newRange = document.createRange();
+      newRange.selectNodeContents(basicBlock || firstCell);
+      newRange.collapse(true);
+      setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset);
+    }
     
     this.editor.normalize();
   }
