@@ -330,41 +330,6 @@ describe('TableManager', () => {
     expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cell6);
     expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cell7);
   });
-  
-  // 测试单元格拆分功能
-  test('splitCell correctly splits a merged cell', () => {
-    const splitCellMethod = (TableManager.prototype as any).splitCell;
-    
-    // 创建一个有合并单元格的表格
-    document.body.innerHTML = `
-      <table id="testTable">
-        <tr>
-          <td id="mergedCell" rowspan="2" colspan="2"><div data-btype="basic">Merged</div></td>
-        </tr>
-        <tr></tr>
-      </table>
-    `;
-    
-    const table = document.getElementById('testTable') as HTMLTableElement;
-    const mergedCell = document.getElementById('mergedCell') as HTMLTableCellElement;
-    
-    // 设置必要的私有属性
-    (tableManager as any).currentTable = table;
-    (tableManager as any).selectedCells = [mergedCell];
-    (tableManager as any).clearSelection = jest.fn();
-    (tableManager as any).editor.normalize = jest.fn();
-    
-    // 调用拆分方法
-    splitCellMethod.call(tableManager);
-    
-    // 验证结果
-    expect(mergedCell.rowSpan).toBe(1);
-    expect(mergedCell.colSpan).toBe(1);
-    expect(table.rows[0].cells.length).toBe(2);
-    expect(table.rows[1].cells.length).toBe(2);
-    expect((tableManager as any).clearSelection).toHaveBeenCalled();
-    expect((tableManager as any).editor.normalize).toHaveBeenCalled();
-  });
 
   // 测试从A单元格到D单元格的选择，确保B也被正确选中
   test('getCellsRange and updateSelectedCells correctly handle A to D selection including B', () => {
@@ -859,7 +824,7 @@ describe('TableManager', () => {
     // 调用合并方法
     mergeCellsMethod.call(tableManager);
     
-    let ele = table.firstChild.nodeName.toLowerCase() === 'tbody' ? table.firstChild : table
+    let ele = table.firstChild!.nodeName.toLowerCase() === 'tbody' ? table.firstChild : table
     expect((ele as HTMLElement).innerHTML.replace(/\s+/g, '')).toBe(
       `<tr>
           <td id="cell1" rowspan="1" colspan="3">
@@ -1085,4 +1050,244 @@ describe('TableManager', () => {
     expect(table.rows[1].cells[2].innerHTML).toContain('I');
   });
 
+  test('splitCell correctly splits a cell with rowspan and colspan', () => {
+    const splitCellMethod = (TableManager.prototype as any).splitCell;
+    
+    // Create a table with merged cells
+    document.body.innerHTML = `
+      <table id="testTable">
+        <tr>
+          <td id="cell1" rowspan="2" colspan="2"><div data-btype="basic">合并单元格</div></td>
+          <td id="cell2"><div data-btype="basic">C</div></td>
+        </tr>
+        <tr>
+          <td id="cell3"><div data-btype="basic">F</div></td>
+        </tr>
+        <tr>
+          <td id="cell4"><div data-btype="basic">G</div></td>
+          <td id="cell5"><div data-btype="basic">H</div></td>
+          <td id="cell6"><div data-btype="basic">I</div></td>
+        </tr>
+      </table>
+    `;
+    
+    const table = document.getElementById('testTable') as HTMLTableElement;
+    const cell1 = document.getElementById('cell1') as HTMLTableCellElement;
+    
+    // Set required properties and methods
+    (tableManager as any).currentTable = table;
+    (tableManager as any).selectedCells = [cell1];
+    (tableManager as any).clearSelection = jest.fn();
+    (tableManager as any).editor.normalize = jest.fn();
+    
+    // Call split method
+    splitCellMethod.call(tableManager);
+    
+    // Verify table structure after split
+    expect(cell1.rowSpan).toBe(1);
+    expect(cell1.colSpan).toBe(1);
+    
+    // Verify cell count in first row
+    expect(table.rows[0].cells.length).toBe(3);
+    
+    // Verify cell count in second row
+    expect(table.rows[1].cells.length).toBe(3);
+    
+    // Verify content is preserved
+    expect(cell1.innerHTML).toContain('合并单元格');
+    
+    // Verify new cells structure
+    const firstRowSecondCell = table.rows[0].cells[1];
+    const secondRowFirstCell = table.rows[1].cells[0];
+    const secondRowSecondCell = table.rows[1].cells[1];
+    
+    expect(firstRowSecondCell.querySelector('div[data-btype="basic"]')).not.toBeNull();
+    expect(secondRowFirstCell.querySelector('div[data-btype="basic"]')).not.toBeNull();
+    expect(secondRowSecondCell.querySelector('div[data-btype="basic"]')).not.toBeNull();
+    
+    // Verify required methods were called
+    expect((tableManager as any).clearSelection).toHaveBeenCalled();
+    expect((tableManager as any).editor.normalize).toHaveBeenCalled();
+  });
+
+  test('splitCell handles cell with only rowspan', () => {
+    const splitCellMethod = (TableManager.prototype as any).splitCell;
+    
+    // Create a table with a rowspan cell
+    document.body.innerHTML = `
+      <table id="testTable">
+        <tr>
+          <td id="cell1" rowspan="3"><div data-btype="basic">跨行单元格</div></td>
+          <td id="cell2"><div data-btype="basic">B</div></td>
+        </tr>
+        <tr>
+          <td id="cell3"><div data-btype="basic">D</div></td>
+        </tr>
+        <tr>
+          <td id="cell4"><div data-btype="basic">F</div></td>
+        </tr>
+      </table>
+    `;
+    
+    const table = document.getElementById('testTable') as HTMLTableElement;
+    const cell1 = document.getElementById('cell1') as HTMLTableCellElement;
+    
+    // Set required properties and methods
+    (tableManager as any).currentTable = table;
+    (tableManager as any).selectedCells = [cell1];
+    (tableManager as any).clearSelection = jest.fn();
+    (tableManager as any).editor.normalize = jest.fn();
+    
+    // Call split method
+    splitCellMethod.call(tableManager);
+    
+    // Verify table structure after split
+    expect(cell1.rowSpan).toBe(1);
+    expect(cell1.colSpan).toBe(1);
+    
+    // Verify first cell in each row exists
+    expect(table.rows[0].cells[0]).toBe(cell1);
+    expect(table.rows[1].cells[0]).not.toBeNull();
+    expect(table.rows[2].cells[0]).not.toBeNull();
+    
+    // Verify cell count in each row
+    expect(table.rows[0].cells.length).toBe(2);
+    expect(table.rows[1].cells.length).toBe(2);
+    expect(table.rows[2].cells.length).toBe(2);
+    
+    // Verify content is preserved
+    expect(cell1.innerHTML).toContain('跨行单元格');
+    
+    // Verify all new cells contain basic blocks
+    const secondRowFirstCell = table.rows[1].cells[0];
+    const thirdRowFirstCell = table.rows[2].cells[0];
+    
+    expect(secondRowFirstCell.querySelector('div[data-btype="basic"]')).not.toBeNull();
+    expect(thirdRowFirstCell.querySelector('div[data-btype="basic"]')).not.toBeNull();
+  });
+
+  test('splitCell handles cell with only colspan', () => {
+    const splitCellMethod = (TableManager.prototype as any).splitCell;
+    
+    // Create a table with a colspan cell
+    document.body.innerHTML = `
+      <table id="testTable">
+        <tr>
+          <td id="cell1" colspan="3"><div data-btype="basic">跨列单元格</div></td>
+        </tr>
+        <tr>
+          <td id="cell2"><div data-btype="basic">D</div></td>
+          <td id="cell3"><div data-btype="basic">E</div></td>
+          <td id="cell4"><div data-btype="basic">F</div></td>
+        </tr>
+      </table>
+    `;
+    
+    const table = document.getElementById('testTable') as HTMLTableElement;
+    const cell1 = document.getElementById('cell1') as HTMLTableCellElement;
+    
+    // Set required properties and methods
+    (tableManager as any).currentTable = table;
+    (tableManager as any).selectedCells = [cell1];
+    (tableManager as any).clearSelection = jest.fn();
+    (tableManager as any).editor.normalize = jest.fn();
+    
+    // Call split method
+    splitCellMethod.call(tableManager);
+    
+    // Verify table structure after split
+    expect(cell1.rowSpan).toBe(1);
+    expect(cell1.colSpan).toBe(1);
+    
+    // Verify cell count in first row
+    expect(table.rows[0].cells.length).toBe(3);
+    
+    // Verify content is preserved
+    expect(cell1.innerHTML).toContain('跨列单元格');
+    
+    // Verify all new cells contain basic blocks
+    const firstRowSecondCell = table.rows[0].cells[1];
+    const firstRowThirdCell = table.rows[0].cells[2];
+    
+    expect(firstRowSecondCell.querySelector('div[data-btype="basic"]')).not.toBeNull();
+    expect(firstRowThirdCell.querySelector('div[data-btype="basic"]')).not.toBeNull();
+  });
+
+  test('splitCell does nothing when no cell is selected', () => {
+    const splitCellMethod = (TableManager.prototype as any).splitCell;
+    
+    // Create a table
+    document.body.innerHTML = `
+      <table id="testTable">
+        <tr>
+          <td id="cell1" rowspan="2" colspan="2"><div data-btype="basic">合并单元格</div></td>
+          <td id="cell2"><div data-btype="basic">C</div></td>
+        </tr>
+        <tr>
+          <td id="cell3"><div data-btype="basic">F</div></td>
+        </tr>
+      </table>
+    `;
+    
+    const table = document.getElementById('testTable') as HTMLTableElement;
+    
+    // Set required properties without selecting any cell
+    (tableManager as any).currentTable = table;
+    (tableManager as any).selectedCells = [];
+    (tableManager as any).clearSelection = jest.fn();
+    (tableManager as any).editor.normalize = jest.fn();
+    
+    // Initial state
+    const initialStructure = table.innerHTML;
+    
+    // Call split method
+    splitCellMethod.call(tableManager);
+    
+    // Verify table structure unchanged
+    expect(table.innerHTML).toBe(initialStructure);
+    
+    // Verify selection and normalize methods not called
+    expect((tableManager as any).clearSelection).not.toHaveBeenCalled();
+    expect((tableManager as any).editor.normalize).not.toHaveBeenCalled();
+  });
+
+  test('splitCell does nothing when selected cell has no rowspan or colspan', () => {
+    const splitCellMethod = (TableManager.prototype as any).splitCell;
+    
+    // Create a table with no merged cells
+    document.body.innerHTML = `
+      <table id="testTable">
+        <tr>
+          <td id="cell1"><div data-btype="basic">A</div></td>
+          <td id="cell2"><div data-btype="basic">B</div></td>
+        </tr>
+        <tr>
+          <td id="cell3"><div data-btype="basic">C</div></td>
+          <td id="cell4"><div data-btype="basic">D</div></td>
+        </tr>
+      </table>
+    `;
+    
+    const table = document.getElementById('testTable') as HTMLTableElement;
+    const cell1 = document.getElementById('cell1') as HTMLTableCellElement;
+    
+    // Set required properties and methods
+    (tableManager as any).currentTable = table;
+    (tableManager as any).selectedCells = [cell1];
+    (tableManager as any).clearSelection = jest.fn();
+    (tableManager as any).editor.normalize = jest.fn();
+    
+    // Initial state
+    const initialStructure = table.innerHTML;
+    
+    // Call split method
+    splitCellMethod.call(tableManager);
+    
+    // Verify table structure unchanged
+    expect(table.innerHTML).toBe(initialStructure);
+    
+    // Verify selection and normalize methods not called
+    expect((tableManager as any).clearSelection).not.toHaveBeenCalled();
+    expect((tableManager as any).editor.normalize).not.toHaveBeenCalled();
+  });
 }); 
