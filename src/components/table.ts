@@ -28,47 +28,6 @@ function setCursorToFirstCell(table: HTMLTableElement): void {
   setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset);
 }
 
-export function addRow(tableElement: HTMLTableElement, rowIdx: number): void {
-  if (rowIdx < 0 || !tableElement || rowIdx >= tableElement.rows.length) return;
-  
-  const colCount = tableElement.rows[0].cells.length;
-  const newRow = createTableRow(colCount);
-  
-  if (rowIdx < tableElement.rows.length - 1) {
-    tableElement.rows[rowIdx].insertAdjacentElement('afterend', newRow);
-  } else {
-    tableElement.appendChild(newRow);
-  }
-  
-  try {
-    const firstCell = (newRow as HTMLTableRowElement).cells[0];
-    const newRange = document.createRange();
-    newRange.selectNodeContents(firstCell.firstChild.firstChild);
-    newRange.collapse(true);
-    setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset);
-  } catch (e) {
-    console.warn("Failed to set cursor position after adding row:", e);
-  }
-}
-
-export function addColumn(tableElement: HTMLTableElement, columnIdx: number): void {
-  if (columnIdx < 0 || !tableElement || !tableElement.rows.length) return;
-  
-  Array.from(tableElement.rows).forEach(row => {
-    if (columnIdx >= row.cells.length) return;
-    
-    const newCell = createTableCell()
-    const refCell = row.cells[columnIdx];
-    refCell.insertAdjacentElement('afterend', newCell);
-  });
-  
-  const firstRowNewCell = tableElement.rows[0].cells[columnIdx + 1];
-  const newRange = document.createRange();
-  newRange.selectNodeContents(firstRowNewCell.firstChild.firstChild);
-  newRange.collapse(true);
-  setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset);
-}
-
 export function deleteRow(tableElement: HTMLTableElement, rowIdx: number): void {
   if (!tableElement || rowIdx < 0 || rowIdx >= tableElement.rows.length) return;
   
@@ -593,16 +552,76 @@ export class TableManager {
   private handleAddRowBelow(): void {
     if (!this.currentCellElement) return;
     
+    const tableElement = this.currentCellElement.closest('table');
+    if (!tableElement) return;
+    
     const rowElement = this.currentCellElement.closest('tr');
     if (!rowElement) return;
-    
-    const tableElement = rowElement.closest('table');
-    if (!tableElement) return;
     
     const rowIndex = Array.from(tableElement.rows).indexOf(rowElement);
     if (rowIndex === -1) return;
     
-    addRow(tableElement, rowIndex);
+    // Calculate cell positions using the class method
+    const cellDetails = this.calculateCellDetails();
+    
+    // Get the selected cell position
+    const selectedCellDetails = cellDetails.get(this.currentCellElement);
+    if (!selectedCellDetails) return;
+    
+    // Use the bottom edge of the selected cell as the insert position
+    const insertAfterRow = selectedCellDetails.endRow;
+    
+    // Get the effective column count
+    const colCount = this.getTableColumnCount();
+    
+    // Create new row
+    const newRow = document.createElement('tr');
+    
+    // Track which columns in the new row are already covered by spanning cells
+    const coveredColumns = new Array(colCount).fill(false);
+    
+    // Process cells that need rowspan adjustment
+    cellDetails.forEach((pos, cell) => {
+      // Skip the cell if it doesn't span across rows
+      if (pos.startRow === pos.endRow) return;
+      
+      // Check if this cell spans into the insertion point
+      if (pos.startRow <= insertAfterRow && pos.endRow > insertAfterRow) {
+        // This cell spans across our insertion point - increase its rowspan
+        cell.rowSpan = (cell.rowSpan || 1) + 1;
+        
+        // Mark the columns this cell covers in the new row
+        for (let col = pos.startCol; col <= pos.endCol; col++) {
+          if (col < coveredColumns.length) {
+            coveredColumns[col] = true;
+          }
+        }
+      }
+    });
+    
+    // Add cells for columns not covered by spanning cells
+    for (let col = 0; col < colCount; col++) {
+      if (!coveredColumns[col]) {
+        newRow.appendChild(createTableCell());
+      }
+    }
+    
+    const referenceRow = tableElement.rows[insertAfterRow];
+    if (referenceRow) {
+      referenceRow.insertAdjacentElement('afterend', newRow);
+    } else {
+      tableElement.appendChild(newRow);
+    }
+    
+    // Set cursor to the first cell in the new row
+    if (newRow.cells.length > 0) {
+      const firstCell = newRow.cells[0];
+      const newRange = document.createRange();
+      newRange.selectNodeContents(firstCell.firstChild.firstChild);
+      newRange.collapse(true);
+      setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset);
+    }
+    
     this.editor.normalize();
   }
   
@@ -612,10 +631,92 @@ export class TableManager {
     const tableElement = this.currentCellElement.closest('table');
     if (!tableElement) return;
     
-    const columnIndex = getCellColumnIndex(this.currentCellElement);
-    if (columnIndex === -1) return;
+    const cellDetails = this.calculateCellDetails();
     
-    addColumn(tableElement, columnIndex);
+    const selectedCellDetails = cellDetails.get(this.currentCellElement);
+    if (!selectedCellDetails) return;
+    
+    const insertAfterColumn = selectedCellDetails.endCol;
+    
+    const rowCount = tableElement.rows.length;
+    
+    // 跟踪哪些行已被跨列单元格覆盖
+    const coveredRows = new Array(rowCount).fill(false);
+    
+    // 处理需要调整 colspan 的单元格
+    cellDetails.forEach((pos, cell) => {
+      // 跳过未跨列的单元格
+      if (pos.startCol === pos.endCol) return;
+      
+      // 检查此单元格是否跨越插入点
+      if (pos.startCol <= insertAfterColumn && pos.endCol > insertAfterColumn) {
+        // 此单元格跨越插入点 - 增加其 colspan
+        cell.colSpan = (cell.colSpan || 1) + 1;
+        
+        // 标记此单元格覆盖的行
+        for (let row = pos.startRow; row <= pos.endRow; row++) {
+          if (row < coveredRows.length) {
+            coveredRows[row] = true;
+          }
+        }
+      }
+    });
+    
+    // 为未被覆盖的行添加新单元格
+    for (let rowIdx = 0; rowIdx < rowCount; rowIdx++) {
+      if (coveredRows[rowIdx]) continue;
+      
+      const row = tableElement.rows[rowIdx];
+      const cellsInRow = row.cells.length;
+      
+      // 找到插入新单元格的位置
+      let insertBefore = null;
+      
+      for (let cellIdx = 0; cellIdx < cellsInRow; cellIdx++) {
+        const cell = row.cells[cellIdx];
+        const pos = cellDetails.get(cell);
+        
+        if (!pos) continue;
+        
+        // 如果找到一个起始列大于插入点的单元格，则在此单元格前插入
+        if (pos.startCol > insertAfterColumn) {
+          insertBefore = cell;
+          break;
+        }
+      }
+      
+      const newCell = createTableCell();
+      
+      if (insertBefore) {
+        row.insertBefore(newCell, insertBefore);
+      } else {
+        row.appendChild(newCell);
+      }
+    }
+    
+    const newCellDetails = this.calculateCellDetails();
+
+    // 设置光标位置到新列的某个单元格
+    // 查找第一个在新列中的非跨列单元格
+    for (let rowIdx = 0; rowIdx < tableElement.rows.length; rowIdx++) {
+      const row = tableElement.rows[rowIdx];
+      
+      for (let cellIdx = 0; cellIdx < row.cells.length; cellIdx++) {
+        const cell = row.cells[cellIdx];
+        const pos = newCellDetails.get(cell);
+        
+        if (pos && pos.startCol === insertAfterColumn + 1 && pos.startCol === pos.endCol) {
+          const newRange = document.createRange();
+          newRange.selectNodeContents(cell.firstChild.firstChild);
+          newRange.collapse(true);
+          setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset);
+          
+          this.editor.normalize();
+          return;
+        }
+      }
+    }
+    
     this.editor.normalize();
   }
   

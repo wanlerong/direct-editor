@@ -1,4 +1,4 @@
-import {getCellColumnIndex, addRow, addColumn, deleteRow, deleteColumn, TableManager, CellPosition} from "./table";
+import {getCellColumnIndex, deleteRow, deleteColumn, TableManager, CellPosition} from "./table";
 import {Editor} from "../editor";
 import {getSelectionRange} from "../range";
 
@@ -37,46 +37,6 @@ describe('Table Functions', () => {
   test('getCellColumnIndex returns -1 when cell has no parent row', () => {
     const cell = document.createElement('td');
     expect(getCellColumnIndex(cell)).toBe(-1);
-  });
-
-  test('addRow adds a new row to table', () => {
-    document.body.innerHTML = `
-      <table id="testTable">
-        <tr>
-          <td><div data-btype="basic"><br></div></td>
-          <td><div data-btype="basic"><br></div></td>
-        </tr>
-      </table>
-    `;
-
-    const tableElement = document.getElementById('testTable') as HTMLTableElement;
-    const initialRowCount = tableElement.rows.length;
-
-    addRow(tableElement, 0);
-
-    expect(tableElement.rows.length).toBe(initialRowCount + 1);
-    expect(tableElement.rows[1].cells.length).toBe(2);
-  });
-
-  test('addColumn adds a new column to table', () => {
-    document.body.innerHTML = `
-      <table id="testTable">
-        <tr>
-          <td><div data-btype="basic"><br></div></td>
-        </tr>
-        <tr>
-          <td><div data-btype="basic"><br></div></td>
-        </tr>
-      </table>
-    `;
-
-    const tableElement = document.getElementById('testTable') as HTMLTableElement;
-    const initialColCount = tableElement.rows[0].cells.length;
-
-    addColumn(tableElement, 0);
-
-    expect(tableElement.rows[0].cells.length).toBe(initialColCount + 1);
-    expect(tableElement.rows[1].cells.length).toBe(initialColCount + 1);
   });
 
   test('deleteRow removes a row from table', () => {
@@ -180,6 +140,58 @@ describe('TableManager', () => {
 
   afterEach(() => {
     document.body.innerHTML = '';
+  });
+
+  test('handleAddRowBelow adds a new row to table', () => {
+    document.body.innerHTML = `
+      <table id="testTable">
+        <tr>
+          <td id="cell1"><div data-btype="basic">A</div></td>
+          <td id="cell2"><div data-btype="basic">B</div></td>
+        </tr>
+      </table>
+    `;
+
+    const tableElement = document.getElementById('testTable') as HTMLTableElement;
+    const cell1 = document.getElementById('cell1') as HTMLTableCellElement;
+    const initialRowCount = tableElement.rows.length;
+
+    // 设置当前选中的单元格
+    (tableManager as any).currentCellElement = cell1;
+    (tableManager as any).currentTable = tableElement;
+
+    // 调用添加行方法
+    (tableManager as any).handleAddRowBelow();
+
+    expect(tableElement.rows.length).toBe(initialRowCount + 1);
+    expect(tableElement.rows[1].cells.length).toBe(2);
+  });
+
+  test('handleAddColumnRight adds a new column to table', () => {
+    document.body.innerHTML = `
+      <table id="testTable">
+        <tr>
+          <td id="cell1"><div data-btype="basic">A</div></td>
+        </tr>
+        <tr>
+          <td id="cell2"><div data-btype="basic">B</div></td>
+        </tr>
+      </table>
+    `;
+
+    const tableElement = document.getElementById('testTable') as HTMLTableElement;
+    const cell1 = document.getElementById('cell1') as HTMLTableCellElement;
+    const initialColCount = tableElement.rows[0].cells.length;
+
+    // 设置当前选中的单元格
+    (tableManager as any).currentCellElement = cell1;
+    (tableManager as any).currentTable = tableElement;
+
+    // 调用添加列方法
+    (tableManager as any).handleAddColumnRight();
+
+    expect(tableElement.rows[0].cells.length).toBe(initialColCount + 1);
+    expect(tableElement.rows[1].cells.length).toBe(initialColCount + 1);
   });
 
   test('insertTable creates and inserts a table', () => {
