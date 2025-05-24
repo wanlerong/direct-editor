@@ -28,32 +28,6 @@ function setCursorToFirstCell(table: HTMLTableElement): void {
   setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset);
 }
 
-export function deleteRow(tableElement: HTMLTableElement, rowIdx: number): void {
-  if (!tableElement || rowIdx < 0 || rowIdx >= tableElement.rows.length) return;
-  
-  // Keep at least one row
-  if (tableElement.rows.length <= 1) return;
-  
-  tableElement.deleteRow(rowIdx);
-  setCursorToFirstCell(tableElement);
-}
-
-export function deleteColumn(tableElement: HTMLTableElement, columnIdx: number): void {
-  if (!tableElement || columnIdx < 0 || !tableElement.rows.length || 
-      columnIdx >= tableElement.rows[0].cells.length) return;
-  
-  // Keep at least one column
-  if (tableElement.rows[0].cells.length <= 1) return;
-  
-  Array.from(tableElement.rows).forEach(row => {
-    if (row.cells[columnIdx]) {
-      row.deleteCell(columnIdx);
-    }
-  });
-  
-  setCursorToFirstCell(tableElement);
-}
-
 export function createTable(rows: number, cols: number): HTMLElement {
   if (rows < 1 || cols < 1) return null;
   
@@ -495,6 +469,177 @@ export class TableManager {
     this.editor.normalize();
   }
   
+  private deleteRow(): void {
+    if (!this.currentCellElement || !this.currentTable) return;
+    
+    const cellDetails = this.calculateCellDetails();
+    const selectedCellDetails = cellDetails.get(this.currentCellElement);
+    if (!selectedCellDetails) return;
+    
+    const totalRows = this.currentTable.rows.length;
+    if (totalRows <= 1) return; // Keep at least one row
+    
+    const targetRowStart = selectedCellDetails.startRow;
+    const targetRowEnd = selectedCellDetails.endRow;
+    
+    // If selected cell spans multiple rows, delete all spanned rows
+    const rowsToDelete: number[] = [];
+    for (let i = targetRowStart; i <= targetRowEnd; i++) {
+      rowsToDelete.push(i);
+    }
+    
+    // If deleting all rows, keep the last one
+    if (rowsToDelete.length >= totalRows) {
+      rowsToDelete.splice(-1, 1);
+    }
+    
+    // Process all cells to handle colspan/rowspan adjustments
+    cellDetails.forEach((pos, cell) => {
+      if (cell === this.currentCellElement) return; // Skip the selected cell
+      
+      const cellStartRow = pos.startRow;
+      const cellEndRow = pos.endRow;
+      
+      // Check if this cell is affected by row deletion
+      let affectedRowCount = 0;
+      let needsRelocation = false;
+      let newStartRow = cellStartRow;
+      
+      for (const deleteRowIdx of rowsToDelete) {
+        if (deleteRowIdx >= cellStartRow && deleteRowIdx <= cellEndRow) {
+          affectedRowCount++;
+          
+          // If the cell's start row is being deleted, it needs relocation
+          if (deleteRowIdx === cellStartRow && cell.rowSpan > 1) {
+            needsRelocation = true;
+            // Find the next available row after deleted rows
+            newStartRow = deleteRowIdx + 1;
+            while (rowsToDelete.includes(newStartRow) && newStartRow < totalRows) {
+              newStartRow++;
+            }
+          }
+          if (newStartRow > cellEndRow) {
+            needsRelocation = false
+          }
+        }
+      }
+      
+      if (affectedRowCount > 0) {
+        // Reduce rowspan
+        const newRowSpan = Math.max(1, cell.rowSpan - affectedRowCount);
+        cell.rowSpan = newRowSpan;
+        
+        // If cell needs relocation
+        if (needsRelocation && newStartRow < totalRows) {
+          const newRow = this.currentTable.rows[newStartRow];
+          if (newRow) {
+            // Calculate the original column position of this cell
+            const cellPosition = cellDetails.get(cell);
+            if (cellPosition) {
+              const targetColStart = cellPosition.startCol;
+              
+              // Remove cell from current position
+              cell.remove();
+              
+              // Find the correct insertion position in the new row
+              let insertBefore = null;
+              
+              // Look through existing cells in the new row to find the right position
+              for (let i = 0; i < newRow.cells.length; i++) {
+                const existingCell = newRow.cells[i];
+                const existingPos = cellDetails.get(existingCell);
+                
+                if (existingPos && existingPos.startCol > targetColStart) {
+                  insertBefore = existingCell;
+                  break;
+                }
+              }
+              
+              // Insert the cell at the correct position
+              if (insertBefore) {
+                newRow.insertBefore(cell, insertBefore);
+              } else {
+                newRow.appendChild(cell);
+              }
+            } else {
+              // Fallback to simple append if position can't be determined
+              cell.remove();
+              newRow.appendChild(cell);
+            }
+          }
+        }
+      }
+    });
+    
+    // Delete rows in reverse order to maintain indices
+    rowsToDelete.sort((a, b) => b - a);
+    rowsToDelete.forEach(rowIdx => {
+      if (rowIdx < this.currentTable.rows.length) {
+        this.currentTable.deleteRow(rowIdx);
+      }
+    });
+    
+    setCursorToFirstCell(this.currentTable);
+  }
+  
+  private deleteColumn(): void {
+    if (!this.currentCellElement || !this.currentTable) return;
+    
+    const cellDetails = this.calculateCellDetails();
+    const selectedCellDetails = cellDetails.get(this.currentCellElement);
+    if (!selectedCellDetails) return;
+    
+    const totalCols = this.getTableColumnCount();
+    if (totalCols <= 1) return; // Keep at least one column
+    
+    const targetColStart = selectedCellDetails.startCol;
+    const targetColEnd = selectedCellDetails.endCol;
+    
+    // If selected cell spans multiple columns, delete all spanned columns
+    const colsToDelete: number[] = [];
+    for (let i = targetColStart; i <= targetColEnd; i++) {
+      colsToDelete.push(i);
+    }
+    
+    // If deleting all columns, keep the last one
+    if (colsToDelete.length >= totalCols) {
+      colsToDelete.splice(-1, 1);
+    }
+    
+    // Process all cells to handle colspan adjustments and removals
+    const cellsToRemove: HTMLTableCellElement[] = [];
+    
+    cellDetails.forEach((pos, cell) => {
+      const cellStartCol = pos.startCol;
+      const cellEndCol = pos.endCol;
+      
+      // Check if this cell is completely within the deleted columns
+      if (cellStartCol >= targetColStart && cellEndCol <= targetColEnd) {
+        cellsToRemove.push(cell);
+        return;
+      }
+      
+      // Check if this cell is affected by column deletion (partially overlaps)
+      let affectedColCount = 0;
+      for (const deleteColIdx of colsToDelete) {
+        if (deleteColIdx >= cellStartCol && deleteColIdx <= cellEndCol) {
+          affectedColCount++;
+        }
+      }
+      
+      if (affectedColCount > 0) {
+        // Reduce colspan
+        const newColSpan = Math.max(1, cell.colSpan - affectedColCount);
+        cell.colSpan = newColSpan;
+      }
+    });
+    
+    // Remove cells that are completely within deleted columns
+    cellsToRemove.forEach(cell => cell.remove());
+    
+    setCursorToFirstCell(this.currentTable);
+  }
+  
   private initCellOptionsMenu(): void {
     if (this.cellOptionsMenu) {
       document.body.removeChild(this.cellOptionsMenu);
@@ -723,16 +868,11 @@ export class TableManager {
   private handleDeleteRow(): void {
     if (!this.currentCellElement) return;
     
-    const rowElement = this.currentCellElement.closest('tr');
-    if (!rowElement) return;
-    
-    const tableElement = rowElement.closest('table');
+    const tableElement = this.currentCellElement.closest('table');
     if (!tableElement) return;
     
-    const rowIndex = Array.from(tableElement.rows).indexOf(rowElement);
-    if (rowIndex === -1) return;
-    
-    deleteRow(tableElement, rowIndex);
+    this.currentTable = tableElement;
+    this.deleteRow();
     this.editor.normalize();
   }
   
@@ -742,10 +882,8 @@ export class TableManager {
     const tableElement = this.currentCellElement.closest('table');
     if (!tableElement) return;
     
-    const columnIndex = getCellColumnIndex(this.currentCellElement);
-    if (columnIndex === -1) return;
-    
-    deleteColumn(tableElement, columnIndex);
+    this.currentTable = tableElement;
+    this.deleteColumn();
     this.editor.normalize();
   }
   

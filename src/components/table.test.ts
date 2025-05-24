@@ -1,4 +1,4 @@
-import {getCellColumnIndex, deleteRow, deleteColumn, TableManager, CellPosition} from "./table";
+import {getCellColumnIndex, TableManager, CellPosition} from "./table";
 import {Editor} from "../editor";
 import {getSelectionRange} from "../range";
 
@@ -37,83 +37,6 @@ describe('Table Functions', () => {
   test('getCellColumnIndex returns -1 when cell has no parent row', () => {
     const cell = document.createElement('td');
     expect(getCellColumnIndex(cell)).toBe(-1);
-  });
-
-  test('deleteRow removes a row from table', () => {
-    document.body.innerHTML = `
-      <table id="testTable">
-        <tr>
-          <td><div data-btype="basic"><br></div></td>
-        </tr>
-        <tr>
-          <td><div data-btype="basic"><br></div></td>
-        </tr>
-      </table>
-    `;
-
-    const tableElement = document.getElementById('testTable') as HTMLTableElement;
-    const initialRowCount = tableElement.rows.length;
-
-    deleteRow(tableElement, 1);
-
-    expect(tableElement.rows.length).toBe(initialRowCount - 1);
-  });
-
-  test('deleteColumn removes a column from table', () => {
-    document.body.innerHTML = `
-      <table id="testTable">
-        <tr>
-          <td><div data-btype="basic"><br></div></td>
-          <td><div data-btype="basic"><br></div></td>
-        </tr>
-        <tr>
-          <td><div data-btype="basic"><br></div></td>
-          <td><div data-btype="basic"><br></div></td>
-        </tr>
-      </table>
-    `;
-
-    const tableElement = document.getElementById('testTable') as HTMLTableElement;
-    const initialColCount = tableElement.rows[0].cells.length;
-
-    deleteColumn(tableElement, 1);
-
-    expect(tableElement.rows[0].cells.length).toBe(initialColCount - 1);
-    expect(tableElement.rows[1].cells.length).toBe(initialColCount - 1);
-  });
-
-  test('deleteRow does not remove the last row', () => {
-    document.body.innerHTML = `
-      <table id="testTable">
-        <tr>
-          <td><div data-btype="basic"><br></div></td>
-        </tr>
-      </table>
-    `;
-
-    const tableElement = document.getElementById('testTable') as HTMLTableElement;
-    const initialRowCount = tableElement.rows.length;
-
-    deleteRow(tableElement, 0);
-
-    expect(tableElement.rows.length).toBe(initialRowCount);
-  });
-
-  test('deleteColumn does not remove the last column', () => {
-    document.body.innerHTML = `
-      <table id="testTable">
-        <tr>
-          <td><div data-btype="basic"><br></div></td>
-        </tr>
-      </table>
-    `;
-
-    const tableElement = document.getElementById('testTable') as HTMLTableElement;
-    const initialColCount = tableElement.rows[0].cells.length;
-
-    deleteColumn(tableElement, 0);
-
-    expect(tableElement.rows[0].cells.length).toBe(initialColCount);
   });
 });
 
@@ -1300,6 +1223,246 @@ describe('TableManager', () => {
     
     // Verify selection and normalize methods not called
     expect((tableManager as any).clearSelection).not.toHaveBeenCalled();
+    expect((tableManager as any).editor.normalize).not.toHaveBeenCalled();
+  });
+
+  // Test deleteRow with merged cells - Case 1: Delete merged cell D completely
+  test('deleteRow case1: select D and delete - removes both rows spanned by D', () => {
+    const deleteRowMethod = (TableManager.prototype as any).deleteRow;
+    
+    // Create table: A B C / D D F / D D I where D has colspan=2, rowspan=2
+    document.body.innerHTML = `
+      <table id="testTable">
+        <tr>
+          <td id="cellA"><div data-btype="basic">A</div></td>
+          <td id="cellB"><div data-btype="basic">B</div></td>
+          <td id="cellC"><div data-btype="basic">C</div></td>
+        </tr>
+        <tr>
+          <td id="cellD" colspan="2" rowspan="2"><div data-btype="basic">D</div></td>
+          <td id="cellF"><div data-btype="basic">F</div></td>
+        </tr>
+        <tr>
+          <td id="cellI"><div data-btype="basic">I</div></td>
+        </tr>
+      </table>
+    `;
+    
+    const table = document.getElementById('testTable') as HTMLTableElement;
+    const cellD = document.getElementById('cellD') as HTMLTableCellElement;
+    
+    // Setup TableManager state
+    (tableManager as any).currentTable = table;
+    (tableManager as any).currentCellElement = cellD;
+    (tableManager as any).editor.normalize = jest.fn();
+    
+    // Call deleteRow
+    deleteRowMethod.call(tableManager);
+    
+    // Verify result: only A B C row remains
+    expect(table.rows.length).toBe(1);
+    expect(table.rows[0].cells.length).toBe(3);
+    expect(table.rows[0].cells[0].innerHTML).toContain('A');
+    expect(table.rows[0].cells[1].innerHTML).toContain('B');
+    expect(table.rows[0].cells[2].innerHTML).toContain('C');
+  });
+
+  // Test deleteRow with merged cells - Case 2: Delete row containing I
+  test('deleteRow case2: select I and delete - reduces D rowspan and keeps A B C / D D F', () => {
+    const deleteRowMethod = (TableManager.prototype as any).deleteRow;
+    
+    // Create table: A B C / D D F / D D I where D has colspan=2, rowspan=2
+    document.body.innerHTML = `
+      <table id="testTable">
+        <tr>
+          <td id="cellA"><div data-btype="basic">A</div></td>
+          <td id="cellB"><div data-btype="basic">B</div></td>
+          <td id="cellC"><div data-btype="basic">C</div></td>
+        </tr>
+        <tr>
+          <td id="cellD" colspan="2" rowspan="2"><div data-btype="basic">D</div></td>
+          <td id="cellF"><div data-btype="basic">F</div></td>
+        </tr>
+        <tr>
+          <td id="cellI"><div data-btype="basic">I</div></td>
+        </tr>
+      </table>
+    `;
+    
+    const table = document.getElementById('testTable') as HTMLTableElement;
+    const cellI = document.getElementById('cellI') as HTMLTableCellElement;
+    const cellD = document.getElementById('cellD') as HTMLTableCellElement;
+    
+    // Setup TableManager state
+    (tableManager as any).currentTable = table;
+    (tableManager as any).currentCellElement = cellI;
+    (tableManager as any).editor.normalize = jest.fn();
+    
+    // Call deleteRow
+    deleteRowMethod.call(tableManager);
+    
+    // Verify result: A B C / D D F (D rowspan reduced to 1)
+    expect(table.rows.length).toBe(2);
+    expect(table.rows[0].cells.length).toBe(3);
+    expect(table.rows[1].cells.length).toBe(2);
+    
+    expect(cellD.rowSpan).toBe(1);
+    expect(cellD.colSpan).toBe(2);
+    
+    expect(table.rows[0].cells[0].innerHTML).toContain('A');
+    expect(table.rows[0].cells[1].innerHTML).toContain('B');
+    expect(table.rows[0].cells[2].innerHTML).toContain('C');
+    expect(table.rows[1].cells[0].innerHTML).toContain('D');
+    expect(table.rows[1].cells[1].innerHTML).toContain('F');
+  });
+
+  // Test deleteRow with merged cells - Case 3: Delete row containing F
+  test('deleteRow case3: select F and delete - reduces D rowspan and moves D to I row', () => {
+    const deleteRowMethod = (TableManager.prototype as any).deleteRow;
+    
+    // Create table: A B C / D D F / D D I where D has colspan=2, rowspan=2
+    document.body.innerHTML = `
+      <table id="testTable">
+        <tr>
+          <td id="cellA"><div data-btype="basic">A</div></td>
+          <td id="cellB"><div data-btype="basic">B</div></td>
+          <td id="cellC"><div data-btype="basic">C</div></td>
+        </tr>
+        <tr>
+          <td id="cellD" colspan="2" rowspan="2"><div data-btype="basic">D</div></td>
+          <td id="cellF"><div data-btype="basic">F</div></td>
+        </tr>
+        <tr>
+          <td id="cellI"><div data-btype="basic">I</div></td>
+        </tr>
+      </table>
+    `;
+    
+    const table = document.getElementById('testTable') as HTMLTableElement;
+    const cellF = document.getElementById('cellF') as HTMLTableCellElement;
+    const cellD = document.getElementById('cellD') as HTMLTableCellElement;
+    
+    // Setup TableManager state
+    (tableManager as any).currentTable = table;
+    (tableManager as any).currentCellElement = cellF;
+    (tableManager as any).editor.normalize = jest.fn();
+    
+    // Call deleteRow
+    deleteRowMethod.call(tableManager);
+    
+    // Verify result: A B C / D D I (D rowspan reduced to 1, moved to I's row)
+    expect(table.rows.length).toBe(2);
+    expect(table.rows[0].cells.length).toBe(3);
+    expect(table.rows[1].cells.length).toBe(2);
+    
+    expect(cellD.rowSpan).toBe(1);
+    expect(cellD.colSpan).toBe(2);
+    
+    expect(table.rows[0].cells[0].innerHTML).toContain('A');
+    expect(table.rows[0].cells[1].innerHTML).toContain('B');
+    expect(table.rows[0].cells[2].innerHTML).toContain('C');
+    expect(table.rows[1].cells[0].innerHTML).toContain('D');
+    expect(table.rows[1].cells[1].innerHTML).toContain('I');
+  });
+
+  // Test deleteColumn with merged cells
+  test('deleteColumn handles merged cells correctly', () => {
+    const deleteColumnMethod = (TableManager.prototype as any).deleteColumn;
+    
+    // Create table: A B C / D D F / G H I where D has colspan=2
+    document.body.innerHTML = `
+      <table id="testTable">
+        <tr>
+          <td id="cellA"><div data-btype="basic">A</div></td>
+          <td id="cellB"><div data-btype="basic">B</div></td>
+          <td id="cellC"><div data-btype="basic">C</div></td>
+        </tr>
+        <tr>
+          <td id="cellD" colspan="2"><div data-btype="basic">D</div></td>
+          <td id="cellF"><div data-btype="basic">F</div></td>
+        </tr>
+        <tr>
+          <td id="cellG"><div data-btype="basic">G</div></td>
+          <td id="cellH"><div data-btype="basic">H</div></td>
+          <td id="cellI"><div data-btype="basic">I</div></td>
+        </tr>
+      </table>
+    `;
+    
+    const table = document.getElementById('testTable') as HTMLTableElement;
+    const cellB = document.getElementById('cellB') as HTMLTableCellElement;
+    const cellD = document.getElementById('cellD') as HTMLTableCellElement;
+    
+    // Setup TableManager state
+    (tableManager as any).currentTable = table;
+    (tableManager as any).currentCellElement = cellB;
+    (tableManager as any).editor.normalize = jest.fn();
+    
+    // Call deleteColumn
+    deleteColumnMethod.call(tableManager);
+    
+    // Verify result: column B is deleted, D's colspan reduced
+    expect(table.rows[0].cells.length).toBe(2); // A, C
+    expect(table.rows[1].cells.length).toBe(2); // D, F
+    expect(table.rows[2].cells.length).toBe(2); // G, I
+    
+    expect(cellD.colSpan).toBe(1);
+    
+    expect(table.rows[0].cells[0].innerHTML).toContain('A');
+    expect(table.rows[0].cells[1].innerHTML).toContain('C');
+    expect(table.rows[1].cells[0].innerHTML).toContain('D');
+    expect(table.rows[1].cells[1].innerHTML).toContain('F');
+    
+  });
+
+  // Test deleteRow/deleteColumn prevent deleting last row/column
+  test('deleteRow prevents deleting the last row', () => {
+    const deleteRowMethod = (TableManager.prototype as any).deleteRow;
+    
+    document.body.innerHTML = `
+      <table id="testTable">
+        <tr>
+          <td id="cellA"><div data-btype="basic">A</div></td>
+        </tr>
+      </table>
+    `;
+    
+    const table = document.getElementById('testTable') as HTMLTableElement;
+    const cellA = document.getElementById('cellA') as HTMLTableCellElement;
+    
+    (tableManager as any).currentTable = table;
+    (tableManager as any).currentCellElement = cellA;
+    (tableManager as any).editor.normalize = jest.fn();
+    
+    const initialRowCount = table.rows.length;
+    deleteRowMethod.call(tableManager);
+    
+    expect(table.rows.length).toBe(initialRowCount);
+    expect((tableManager as any).editor.normalize).not.toHaveBeenCalled();
+  });
+
+  test('deleteColumn prevents deleting the last column', () => {
+    const deleteColumnMethod = (TableManager.prototype as any).deleteColumn;
+    
+    document.body.innerHTML = `
+      <table id="testTable">
+        <tr>
+          <td id="cellA"><div data-btype="basic">A</div></td>
+        </tr>
+      </table>
+    `;
+    
+    const table = document.getElementById('testTable') as HTMLTableElement;
+    const cellA = document.getElementById('cellA') as HTMLTableCellElement;
+    
+    (tableManager as any).currentTable = table;
+    (tableManager as any).currentCellElement = cellA;
+    (tableManager as any).editor.normalize = jest.fn();
+    
+    const initialColCount = table.rows[0].cells.length;
+    deleteColumnMethod.call(tableManager);
+    
+    expect(table.rows[0].cells.length).toBe(initialColCount);
     expect((tableManager as any).editor.normalize).not.toHaveBeenCalled();
   });
 }); 
