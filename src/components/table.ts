@@ -86,6 +86,7 @@ export class TableManager {
     this.currentTable = cell.closest('table');
     if (!this.currentTable) return;
     
+    this.hideCellOptionsDropdown();
     this.clearSelection();
     this.isSelecting = true;
     this.selectionStartCell = cell;
@@ -959,15 +960,25 @@ export class TableManager {
       const buttonRect = (event.target as HTMLElement).getBoundingClientRect();
       dropdown.style.top = `${buttonRect.height + 2}px`;
       dropdown.style.left = '0';
-      
-      const dropdownRect = dropdown.getBoundingClientRect();
-      const viewportWidth = window.innerWidth;
-      if (buttonRect.left + dropdownRect.width > viewportWidth) {
-        dropdown.style.left = 'auto';
-        dropdown.style.right = '0';
-      }
-      
       dropdown.style.display = 'block';
+      
+      // Use requestAnimationFrame to ensure layout calculation after display change
+      requestAnimationFrame(() => {
+        const dropdownRect = dropdown.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        
+        // Check if dropdown extends beyond right edge of viewport
+        if (dropdownRect.right > viewportWidth) {
+          dropdown.style.left = 'auto';
+          dropdown.style.right = '0';
+        }
+        
+        // Check if dropdown extends beyond bottom edge of viewport
+        const viewportHeight = window.innerHeight;
+        if (dropdownRect.bottom > viewportHeight) {
+          dropdown.style.top = `${-dropdownRect.height - 2}px`;
+        }
+      });
       
       // Update merge/split cell option availability
       const mergeCellsOption = dropdown.querySelector('.cell-option-item:nth-of-type(5)') as HTMLElement;
