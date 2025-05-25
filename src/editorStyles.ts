@@ -45,9 +45,15 @@ export const editorStyle = `
         text-align: left;
       }
       
-      /* 表格单元格高亮样式 */
-      td.cell-selected {
-        background-color: #e6f7ff;
+      /* 表格选择overlay样式 */
+      .table-selection-overlay {
+        position: absolute;
+        pointer-events: none;
+        z-index: 10;
+        display: none;
+        background-color: rgba(24, 144, 255, 0.1);
+        border: 2px solid #1890ff;
+        box-sizing: border-box;
       }
       
       /* 表格单元格操作菜单样式 */

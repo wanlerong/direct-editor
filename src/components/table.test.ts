@@ -127,10 +127,10 @@ describe('TableManager', () => {
     const expectedHTML = `
       <div data-btype="basic">1234</div>
       <div data-btype="table">
-        <table>
+        <table><tbody>
         <tr><td><div data-btype="basic"><br></div></td><td><div data-btype="basic"><br></div></td></tr>
         <tr><td><div data-btype="basic"><br></div></td><td><div data-btype="basic"><br></div></td></tr>
-        </table>
+        </tbody></table>
       </div>
   `.replace(/\s+/g, '')
 

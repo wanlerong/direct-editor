@@ -1,0 +1,181 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 实时协作编辑设计
+
+## 核心流程
+
+```
+DOM 变化 → MutationObserver → JSON0 OP → Server → JSON0 OP → DOM API
+```
+
+## JSON0 OT Type 规范
+
+### 概述
+JSON0 是一个用于编辑任意 JSON 文档的 [Operational Transformation 类型](mdc:https:/github.com/ottypes/json0)，具有以下特性：
+
+- **可逆性**：所有操作都有逆操作，可以撤销
+- **路径系统**：使用路径数组定位文档中的元素
+- **多种操作**：支持列表、对象、数值、字符串等操作
+- **子类型支持**：可嵌入其他 OT 类型（如 text0）
+
+### JSON0 操作格式
+
+所有操作都包含路径 `p: PATH` 和具体操作类型：
+
+```typescript
+interface Op {
+  p: key[]              // 路径数组
+  
+  // 列表操作  
+  li?: any             // 在指定索引插入元素
+  ld?: any             // 删除指定索引的元素
+  
+  // 对象操作
+  oi?: any             // 插入对象属性
+  od?: any             // 删除对象属性
+  
+  // 字符串操作
+  si?: string          // 插入文本
+  sd?: string          // 删除文本
+}
+```
+
+## 数据结构
+
+### JsonML 格式
+将 DOM 结构表示为 JSON 数组，符合 JSON0 可处理的数据格式：
+
+```javascript
+// HTML: <div id="test">Hello <b>World</b></div>
+// JsonML: ["DIV", {"id": "test"}, "Hello ", ["B", {}, "World"]]
+```
+
+### 路径计算
+路径使用索引表示 JsonML 中的位置：
+- `[2]` - 第一个子节点（索引从2开始，0是标签，1是属性）
+- `[2, 1, "id"]` - 第一个子节点的 id 属性
+- `[2, 2, 5]` - 第一个子节点的文本内容的第5个字符
+
+## 核心组件
+
+### 1. MutationObserver 监听
+[src/editor.ts:60-78](mdc:src/editor.ts)
+
+- 监听 DOM 变化（childList、attributes、characterData）
+- 200ms 防抖处理，提升性能
+- 先 normalize 再处理 mutations
+
+### 2. Mutation → JSON0 Op 转换
+[src/lib/mutation.ts:15-69](mdc:src/lib/mutation.ts)
+
+**处理顺序**：
+1. **childList mutations** → `li`/`ld` 操作
+2. **attributes mutations** → `oi`/`od` 操作  
+3. **characterData mutations** → `si`/`sd` 操作
+
+**转换逻辑**：
+```javascript
+// 节点插入
+{p: [2, 3], li: ["SPAN", {}, "text"]}
+
+// 节点删除  
+{p: [2, 1], ld: ["SPAN", {"style": "xxx"}, "content"]}
+
+// 属性添加
+{p: [2, 1, "style"], oi: "new-style"}
+
+// 文本修改
+{p: [2, 2, 5], sd: "old", si: "new"}
+```
+
+### 3. JSON0 Op → DOM 应用
+[src/editor.ts:195-281](mdc:src/editor.ts)
+
+```typescript
+applyDelta(delta: Delta) {
+  this.mutationObserver.disconnect() // 暂停监听
+  
+  delta.ops.forEach(op => {
+    // 文本操作：si/sd
+    if (op.si || op.sd) {
+      const textNode = locateTextNode(op.p)
+      if (op.sd) textNode.deleteData(offset, op.sd.length)
+      if (op.si) textNode.insertData(offset, op.si)
+    }
+    
+    // 节点操作：li/ld  
+    if (op.li || op.ld) {
+      const parent = locateElement(op.p)
+      if (op.li && op.ld) parent.replaceChild(newNode, oldNode)
+      else if (op.li) parent.insertBefore(newNode, refNode)
+      else parent.removeChild(targetNode)
+    }
+    
+    // 属性操作：oi/od
+    if (op.oi || op.od) {
+      const element = locateElement(op.p)
+      if (op.oi && op.od) element.setAttribute(attr, op.oi)
+      else if (op.oi) element.setAttribute(attr, op.oi)  
+      else element.removeAttribute(attr)
+    }
+  })
+  
+  this.observe() // 恢复监听
+}
+```
+
+### 4. 路径调整算法
+[src/lib/delta.ts:32-127](mdc:src/lib/delta.ts)
+
+基于 JSON0 的路径语义处理并发编辑：
+
+- **列表插入**：`{p:[2,1], li:item}` 影响索引 >= 1 的后续路径 +1
+- **列表删除**：`{p:[2,2], ld:item}` 影响索引 > 2 的后续路径 -1  
+- **文本操作**：`{p:[2,2,5], si:"text"}` 影响同一文本节点偏移量 >= 5 的位置
+
+### 5. 虚拟节点缓存
+[src/lib/virtualNode.ts](mdc:src/lib/virtualNode.ts)
+
+- 维护 DOM 的虚拟表示，对应 JsonML 结构
+- 删除操作时提供被删除节点的完整 JsonML 数据，用于 undo/redo
+
+## 协作流程
+
+### 本地编辑
+1. 用户编辑 → DOM 变化
+2. MutationObserver 捕获变化
+3. 转换为 JSON0 Ops
+4. 发送到 ShareDB 服务器
+5. 更新本地 deltas 序列
+
+### 远程同步  
+1. 接收 ShareDB JSON0 Ops
+2. 暂停本地 MutationObserver
+3. 使用 JSON0 规范应用 Ops 到 DOM
+4. 恢复 MutationObserver
+5. 更新虚拟节点缓存
+
+### 冲突解决
+- 基于 JSON0 的 transform 算法自动解决冲突
+- 路径自动调整处理, 撤销/重做时的并发结构修改
+- 利用 JSON0 的可逆性支持撤销/重做
+
+## JSON0 的优势
+
+1. **标准化**：基于成熟的 OT 算法，有完整的理论基础
+2. **可逆性**：所有操作可撤销，支持完整的 undo/redo
+3. **路径系统**：精确定位文档中任意位置
+4. **子类型支持**：可嵌入专门的文本编辑算法
+5. **ShareDB 兼容**：与 ShareDB 实时协作框架无缝集成
+
+## 关键优化
+
+1. **防抖处理**：200ms 内的多次 mutation 合并处理
+2. **增量同步**：只传输 JSON0 Ops，不传输完整文档
+3. **Overlay优化**：表格选择使用绝对定位overlay，完全避免DOM变化
+   - 不触发MutationObserver，零协作开销
+   - 性能更优，视觉效果更好
+   - 简化协作过滤逻辑

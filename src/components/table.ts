@@ -33,11 +33,13 @@ export function createTable(rows: number, cols: number): HTMLElement {
   
   const tableBlock = tableBlockConfig.createElement();
   const table = document.createElement('table');
-  
+  const tbody = document.createElement('tbody');
+
   for (let i = 0; i < rows; i++) {
-    table.appendChild(createTableRow(cols));
+    tbody.appendChild(createTableRow(cols));
   }
-  
+
+  table.appendChild(tbody);
   tableBlock.appendChild(table);
   return tableBlock;
 }
@@ -54,9 +56,13 @@ export class TableManager {
   private currentTable: HTMLTableElement | null = null;
   private currentSelectionRange: CellPosition | null = null;
   
+  // Overlay for cell selection highlighting
+  private selectionOverlay: HTMLElement | null = null;
+  
   constructor(editor: Editor) {
     this.editor = editor;
     this.initCellOptionsMenu();
+    this.initSelectionOverlay();
     
     // Listen for selection changes to show/hide menu
     document.addEventListener('selectionchange', this.handleSelectionChange.bind(this));
@@ -71,6 +77,13 @@ export class TableManager {
     
     window.addEventListener('scroll', this.updateCellOptionsMenuPosition.bind(this));
     window.addEventListener('resize', this.updateCellOptionsMenuPosition.bind(this));
+    window.addEventListener('scroll', this.updateSelectionOverlay.bind(this));
+    window.addEventListener('resize', this.updateSelectionOverlay.bind(this));
+    
+    // Clear selection when content changes
+    this.editor.theDom.addEventListener('input', this.handleContentChange.bind(this));
+    this.editor.theDom.addEventListener('paste', this.handleContentChange.bind(this));
+    this.editor.theDom.addEventListener('keydown', this.handleKeyDown.bind(this));
     
     this.editor.theDom.addEventListener('mousedown', this.handleMouseDown.bind(this));
     document.addEventListener('mousemove', this.handleMouseMove.bind(this));
@@ -121,6 +134,26 @@ export class TableManager {
     this.isSelecting = false;
   }
   
+  private handleContentChange(event: Event): void {
+    if (this.selectedCells.length > 0) {
+      // Clear selection if content changed
+      this.clearSelection();
+    }
+  }
+
+  private handleKeyDown(event: KeyboardEvent): void {
+    // Clear selection on typing (excluding navigation keys)
+    if (this.selectedCells.length > 0) {
+      // Clear selection on content-modifying keys
+      const isNavigationKey = ['Arrow', 'Home', 'End', 'Page'].some(key => event.key.includes(key));
+      const isModifierOnly = event.key === 'Control' || event.key === 'Alt' || event.key === 'Shift' || event.key === 'Meta';
+      
+      if (!isNavigationKey && !isModifierOnly && !event.ctrlKey && !event.metaKey) {
+        this.clearSelection();
+      }
+    }
+  }
+  
   private clearSelection(): void {
     this.clearHighlights()
     this.selectedCells = [];
@@ -128,14 +161,9 @@ export class TableManager {
   }
   
   private clearHighlights(): void {
-    this.selectedCells.forEach(cell => {
-      cell.classList.remove('cell-selected');
-    });
+    this.hideSelectionOverlay();
   }
   
-  private highlightCell(cell: HTMLTableCellElement): void {
-    cell.classList.add('cell-selected');
-  }
   
   // Calculate the rectangular range of each cell, handling rowSpan and colSpan
   private calculateCellDetails(): Map<HTMLTableCellElement, CellPosition> {
@@ -221,10 +249,12 @@ export class TableManager {
       // Only select cells fully contained within the range
       if (pos.startRow >= range.startRow && pos.endRow <= range.endRow &&
           pos.startCol >= range.startCol && pos.endCol <= range.endCol) {
-        this.highlightCell(cell);
         this.selectedCells.push(cell);
       }
     });
+    
+    // Update overlay display
+    this.updateSelectionOverlay();
     
     // Save the current selection range
     this.currentSelectionRange = range;
@@ -795,7 +825,8 @@ export class TableManager {
       newRange.collapse(true);
       setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset);
     }
-    
+
+    this.clearSelection();
     this.editor.normalize();
   }
   
@@ -868,7 +899,7 @@ export class TableManager {
       }
     }
     
-    const newCellDetails = this.calculateCellDetails();
+    const newCellDetails = this.calculateCellDetails();  
 
     // 设置光标位置到新列的某个单元格
     // 查找第一个在新列中的非跨列单元格
@@ -885,12 +916,14 @@ export class TableManager {
           newRange.collapse(true);
           setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset);
           
+          this.clearSelection();
           this.editor.normalize();
           return;
         }
       }
     }
-    
+
+    this.clearSelection();
     this.editor.normalize();
   }
   
@@ -902,6 +935,7 @@ export class TableManager {
     
     this.currentTable = tableElement;
     this.deleteRow();
+    this.clearSelection();
     this.editor.normalize();
   }
   
@@ -913,6 +947,7 @@ export class TableManager {
     
     this.currentTable = tableElement;
     this.deleteColumn();
+    this.clearSelection();
     this.editor.normalize();
   }
   
@@ -1110,6 +1145,53 @@ export class TableManager {
     }
     
     this.editor.normalize();
+  }
+  
+  private initSelectionOverlay(): void {
+    this.selectionOverlay = document.createElement('div');
+    this.selectionOverlay.className = 'table-selection-overlay';
+    this.selectionOverlay.style.cssText = `
+      position: absolute;
+      pointer-events: none;
+      z-index: 10;
+      display: none;
+      background-color: rgba(24, 144, 255, 0.1);
+      border: 2px solid #1890ff;
+      box-sizing: border-box;
+    `;
+    document.body.appendChild(this.selectionOverlay);
+  }
+  
+  private updateSelectionOverlay(): void {
+    if (!this.selectionOverlay || this.selectedCells.length === 0) {
+      this.hideSelectionOverlay();
+      return;
+    }
+    
+    // Calculate the bounding box of all selected cells
+    let minTop = Infinity, minLeft = Infinity;
+    let maxBottom = -Infinity, maxRight = -Infinity;
+    
+    this.selectedCells.forEach(cell => {
+      const rect = cell.getBoundingClientRect();
+      minTop = Math.min(minTop, rect.top);
+      minLeft = Math.min(minLeft, rect.left);
+      maxBottom = Math.max(maxBottom, rect.bottom);
+      maxRight = Math.max(maxRight, rect.right);
+    });
+    
+    // Position overlay
+    this.selectionOverlay.style.top = `${minTop + window.scrollY}px`;
+    this.selectionOverlay.style.left = `${minLeft + window.scrollX}px`;
+    this.selectionOverlay.style.width = `${maxRight - minLeft}px`;
+    this.selectionOverlay.style.height = `${maxBottom - minTop}px`;
+    this.selectionOverlay.style.display = 'block';
+  }
+  
+  private hideSelectionOverlay(): void {
+    if (this.selectionOverlay) {
+      this.selectionOverlay.style.display = 'none';
+    }
   }
 }
 

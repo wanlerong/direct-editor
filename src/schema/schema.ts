@@ -185,11 +185,18 @@ export const tableSchema: HTMLStructureRule = {
   attributes: ["id", "data-btype"],
   children: {
     "table": {
-      childAllowedTags: ["tr"],
+      childAllowedTags: ["tbody"],
       childAllowText: false,
       attributes: ["id"],
       children: {
-        "tr": tableRowSchema
+        "tbody": {
+          childAllowedTags: ["tr"],
+          childAllowText: false,
+          attributes: ["id"],
+          children: {
+            "tr": tableRowSchema
+          }
+        }
       }
     }
   }
