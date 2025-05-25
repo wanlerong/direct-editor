@@ -641,6 +641,33 @@ export class TableManager {
     setCursorToFirstCell(this.currentTable);
   }
   
+  private deleteTable(): void {
+    if (!this.currentCellElement || !this.currentTable) return;
+    
+    const tableBlock = this.currentTable.closest('[data-btype="table"]');
+    if (!tableBlock) return;
+    
+    // Find next or previous block to set cursor
+    let nextBlock = tableBlock.nextElementSibling;
+    
+    // Remove the table block
+    tableBlock.remove();
+
+    const basicBlock = basicBlockConfig.createElement();
+    if (nextBlock) {
+      (nextBlock as HTMLElement).insertAdjacentElement('beforebegin', basicBlock)
+    } else {
+      this.editor.theDom.appendChild(basicBlock);
+    }
+    const newRange = document.createRange();
+    newRange.selectNodeContents(basicBlock);
+    newRange.collapse(true);
+    setRange(newRange.startContainer, newRange.startOffset, newRange.endContainer, newRange.endOffset);
+    
+    this.hideCellOptionsMenu();
+    this.editor.normalize();
+  }
+  
   private initCellOptionsMenu(): void {
     if (this.cellOptionsMenu) {
       document.body.removeChild(this.cellOptionsMenu);
@@ -666,7 +693,8 @@ export class TableManager {
       { text: 'Delete row', handler: this.handleDeleteRow },
       { text: 'Delete column', handler: this.handleDeleteColumn },
       { text: 'Merge cells', handler: this.mergeCells },
-      { text: 'Split cell', handler: this.splitCell }
+      { text: 'Split cell', handler: this.splitCell },
+      { text: 'Delete table', handler: this.handleDeleteTable }
     ];
     
     menuItems.forEach((item, index) => {
@@ -886,6 +914,16 @@ export class TableManager {
     this.currentTable = tableElement;
     this.deleteColumn();
     this.editor.normalize();
+  }
+  
+  private handleDeleteTable(): void {
+    if (!this.currentCellElement) return;
+    
+    const tableElement = this.currentCellElement.closest('table');
+    if (!tableElement) return;
+    
+    this.currentTable = tableElement;
+    this.deleteTable();
   }
   
   private handleSelectionChange(): void {
