@@ -64,24 +64,24 @@ test('normalize nested merge ul', () => {
   let editor = new Editor(div, () => {}, () => {});
   let editorDom = (div.firstChild as HTMLElement);
   editorDom.innerHTML = '<div data-btype="table">' +
-    '<table>' +
+    '<table><tbody>' +
     '<tr>' +
     '<td><div data-btype="basic"><span>Text</span></div></td>' +
     '<td><div data-btype="list"><ul><li>111</li></ul></div>' +
         '<div data-btype="list"><ul><li>222</li></ul></div></td>' +
     '</tr>' +
-    '</table>' +
+    '</tbody></table>' +
     '</div>';
   editor.normalize();
   
   expect(editorDom.innerHTML).toBe(
     '<div data-btype="table">' +
-    '<table>' +
+    '<table><tbody>' +
     '<tr>' +
     '<td><div data-btype="basic"><span>Text</span></div></td>' +
     '<td><div data-btype="list"><ul><li>111</li><li>222</li></ul></div></td>' +
     '</tr>' +
-    '</table>' +
+    '</tbody></table>' +
     '</div>'
   );
 });
@@ -91,23 +91,23 @@ test('normalize nested remove stray text nodes', () => {
   let editor = new Editor(div, () => {}, () => {});
   let editorDom = (div.firstChild as HTMLElement);
   editorDom.innerHTML = '<div data-btype="table">' +
-    '<table>' +
+    '<table><tbody>' +
     '<tr>' +
     '<td><div data-btype="basic"><span>Text</span></div></td>' +
     '<td><div data-btype="basic">111</div> stray text</td>' +
     '</tr>' +
-    '</table>' +
+    '</tbody></table>' +
     '</div>';
   editor.normalize();
 
   expect(editorDom.innerHTML).toBe(
     '<div data-btype="table">' +
-    '<table>' +
+    '<table><tbody>' +
     '<tr>' +
     '<td><div data-btype="basic"><span>Text</span></div></td>' +
     '<td><div data-btype="basic">111</div></td>' +
     '</tr>' +
-    '</table>' +
+    '</tbody></table>' +
     '</div>'
   );
 });
@@ -117,21 +117,21 @@ test('normalize split multiple table blocks', () => {
   let editor = new Editor(div, () => {}, () => {});
   let editorDom = (div.firstChild as HTMLElement);
   editorDom.innerHTML = '<div data-btype="table">' +
-    '123<table>' +
+    '123<table><tbody>' +
     '<tr>' +
     '<td><div data-btype="basic"><span>Text</span></div></td>' +
     '</tr>' +
-    '</table>123' +
+    '</tbody></table>123' +
     '</div>';
   editor.normalize();
 
   expect(editorDom.innerHTML).toBe('<div data-btype="basic">123</div>' +
     '<div data-btype="table">' +
-    '<table>' +
+    '<table><tbody>' +
     '<tr>' +
     '<td><div data-btype="basic"><span>Text</span></div></td>' +
     '</tr>' +
-    '</table>' +
+    '</tbody></table>' +
     '</div>' + 
     '<div data-btype="basic">123</div>');
 });

@@ -58,10 +58,16 @@ let e = new Editor(document.getElementById("container"), (ops) => {
     btn10.className = ''
   }
 
-  if (as.disableActions.includes(ActiveStatusConst.Action.CODE)) {
+  if (as.disableActions.includes(ActiveStatusConst.Action.Code)) {
     btn11.className = 'disable'
   } else {
     btn11.className = ''
+  }
+
+  if (as.disableActions.includes(ActiveStatusConst.Action.Table)) {
+    btn12.className = 'disable'
+  } else {
+    btn12.className = ''
   }
 
 

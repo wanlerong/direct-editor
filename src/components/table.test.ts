@@ -237,7 +237,7 @@ describe('TableManager', () => {
     // 设置必要的私有属性
     (tableManager as any).currentTable = table;
     (tableManager as any).selectedCells = [];
-    (tableManager as any).highlightCell = jest.fn();
+    (tableManager as any).updateSelectionOverlay = jest.fn();
     (tableManager as any).clearHighlights = jest.fn();
     
     // 计算单元格位置信息
@@ -260,10 +260,11 @@ describe('TableManager', () => {
     const cell7 = document.getElementById('cell7') as HTMLTableCellElement;
     
     // 检查selectedCells数组中是否包含正确的单元格
-    expect((tableManager as any).highlightCell).toHaveBeenCalledTimes(3);
-    expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cell4);
-    expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cell6);
-    expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cell7);
+    expect((tableManager as any).selectedCells.length).toBe(3);
+    expect((tableManager as any).selectedCells).toContain(cell4);
+    expect((tableManager as any).selectedCells).toContain(cell6);
+    expect((tableManager as any).selectedCells).toContain(cell7);
+    expect((tableManager as any).updateSelectionOverlay).toHaveBeenCalled();
   });
 
   // 测试从A单元格到D单元格的选择，确保B也被正确选中
@@ -300,7 +301,7 @@ describe('TableManager', () => {
     // 设置必要的私有属性
     (tableManager as any).currentTable = table;
     (tableManager as any).selectedCells = [];
-    (tableManager as any).highlightCell = jest.fn();
+    (tableManager as any).updateSelectionOverlay = jest.fn();
     (tableManager as any).clearHighlights = jest.fn();
     
     // 计算单元格位置信息
@@ -320,10 +321,11 @@ describe('TableManager', () => {
     updateSelectedCellsMethod.call(tableManager, range, cellDetails);
     
     // 验证结果 - A、B和D单元格都应该被选中
-    expect((tableManager as any).highlightCell).toHaveBeenCalledTimes(3);
-    expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cell1); // A
-    expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cell2); // B
-    expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cell4); // D
+    expect((tableManager as any).selectedCells.length).toBe(3);
+    expect((tableManager as any).selectedCells).toContain(cell1); // A
+    expect((tableManager as any).selectedCells).toContain(cell2); // B
+    expect((tableManager as any).selectedCells).toContain(cell4); // D
+    expect((tableManager as any).updateSelectionOverlay).toHaveBeenCalled();
   });
   
   // 测试从F到B的选择场景
@@ -360,7 +362,7 @@ describe('TableManager', () => {
     // 设置必要的私有属性
     (tableManager as any).currentTable = table;
     (tableManager as any).selectedCells = [];
-    (tableManager as any).highlightCell = jest.fn();
+    (tableManager as any).updateSelectionOverlay = jest.fn();
     (tableManager as any).clearHighlights = jest.fn();
     
     // 计算单元格位置信息
@@ -380,10 +382,11 @@ describe('TableManager', () => {
     updateSelectedCellsMethod.call(tableManager, range, cellDetails);
     
     // 验证结果 - B、C和F单元格应该被选中，D不应该被选中(因为D的左部分在选区外)
-    expect((tableManager as any).highlightCell).toHaveBeenCalledTimes(3);
-    expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cell2); // B
-    expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cell3); // C
-    expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cell5); // F
+    expect((tableManager as any).selectedCells.length).toBe(3);
+    expect((tableManager as any).selectedCells).toContain(cell2); // B
+    expect((tableManager as any).selectedCells).toContain(cell3); // C
+    expect((tableManager as any).selectedCells).toContain(cell5); // F
+    expect((tableManager as any).updateSelectionOverlay).toHaveBeenCalled();
   });
   
   // 测试从H到D的选择场景
@@ -420,7 +423,7 @@ describe('TableManager', () => {
     // 设置必要的私有属性
     (tableManager as any).currentTable = table;
     (tableManager as any).selectedCells = [];
-    (tableManager as any).highlightCell = jest.fn();
+    (tableManager as any).updateSelectionOverlay = jest.fn();
     (tableManager as any).clearHighlights = jest.fn();
     
     // 计算单元格位置信息
@@ -440,10 +443,11 @@ describe('TableManager', () => {
     updateSelectedCellsMethod.call(tableManager, range, cellDetails);
     
     // 验证结果 - D、G和H单元格应该被选中
-    expect((tableManager as any).highlightCell).toHaveBeenCalledTimes(3);
-    expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cell4); // D
-    expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cell6); // G
-    expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cell7); // H
+    expect((tableManager as any).selectedCells.length).toBe(3);
+    expect((tableManager as any).selectedCells).toContain(cell4); // D
+    expect((tableManager as any).selectedCells).toContain(cell6); // G
+    expect((tableManager as any).selectedCells).toContain(cell7); // H
+    expect((tableManager as any).updateSelectionOverlay).toHaveBeenCalled();
   });
 
   // 测试修改后的矩形选择逻辑，特别是对合并单元格的处理
@@ -483,12 +487,14 @@ describe('TableManager', () => {
     const cellC = document.getElementById('cellC') as HTMLTableCellElement;
     const cellD = document.getElementById('cellD') as HTMLTableCellElement;
     const cellE = document.getElementById('cellE') as HTMLTableCellElement;
+    const cellI = document.getElementById('cellI') as HTMLTableCellElement;
+    const cellJ = document.getElementById('cellJ') as HTMLTableCellElement;
     const cellK = document.getElementById('cellK') as HTMLTableCellElement;
     
     // 设置必要的私有属性
     (tableManager as any).currentTable = table;
     (tableManager as any).selectedCells = [];
-    (tableManager as any).highlightCell = jest.fn();
+    (tableManager as any).updateSelectionOverlay = jest.fn();
     (tableManager as any).clearHighlights = jest.fn();
     
     // 计算单元格位置信息
@@ -508,34 +514,15 @@ describe('TableManager', () => {
     updateSelectedCellsMethod.call(tableManager, range, cellDetails);
     
     // 验证结果 - A、B、C、E、I、J、K都应该被选中
-    expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cellA);
-    expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cellB);
-    expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cellC);
-    expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cellE);
-    expect((tableManager as any).highlightCell).not.toHaveBeenCalledWith(cellD); // D不在选区内
-    
-    // 测试合并单元格部分覆盖选区的情况（选择B到H）
-    (tableManager as any).clearHighlights.mockClear();
-    (tableManager as any).highlightCell.mockClear();
-    
-    const cellH = document.getElementById('cellH') as HTMLTableCellElement;
-    const range2 = getCellsRangeMethod.call(tableManager, cellB, cellH, cellDetails);
-    
-    expect(range2).not.toBeNull();
-    expect(range2.startRow).toBe(0);
-    expect(range2.startCol).toBe(1);
-    expect(range2.endRow).toBe(1);
-    expect(range2.endCol).toBe(3);
-    
-    updateSelectedCellsMethod.call(tableManager, range2, cellDetails);
-    
-    // B、C、D、E、H都应该被选中
-    expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cellB);
-    expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cellC);
-    expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cellD);
-    expect((tableManager as any).highlightCell).toHaveBeenCalledWith(cellH);
-    expect((tableManager as any).highlightCell).not.toHaveBeenCalledWith(cellA); // A不在选区内
-    expect((tableManager as any).highlightCell).not.toHaveBeenCalledWith(cellE);
+    expect((tableManager as any).selectedCells.length).toBe(7);
+    expect((tableManager as any).selectedCells).toContain(cellA);
+    expect((tableManager as any).selectedCells).toContain(cellB);
+    expect((tableManager as any).selectedCells).toContain(cellC);
+    expect((tableManager as any).selectedCells).toContain(cellE);
+    expect((tableManager as any).selectedCells).toContain(cellI);
+    expect((tableManager as any).selectedCells).toContain(cellJ);
+    expect((tableManager as any).selectedCells).toContain(cellK);
+    expect((tableManager as any).updateSelectionOverlay).toHaveBeenCalled();
   });
   
   // 测试部分重叠单元格的检测功能

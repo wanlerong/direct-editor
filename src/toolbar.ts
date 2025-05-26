@@ -191,6 +191,8 @@ export class Toolbar {
     let range = getSelectionRange();
     let actions: Action[] = [];
     const {hasListOverlap, hasTitleOverlap, hasTodoOverlap, hasCodeOverlap} = this.checkOverlap(range);
+    const tableDisableResult = this.checkTableDisableActions(range);
+    
     if (hasListOverlap) {
       actions.push(Action.Line);
       actions.push(Action.TODO);
@@ -213,6 +215,18 @@ export class Toolbar {
       actions.push(Action.UN_ORDERED_LIST);
       actions.push(Action.Line);
       actions.push(Action.TODO);
+    }
+    
+    // Handle table-related disabling
+    if (tableDisableResult.disableAll) {
+      actions.push(Action.Line);
+      actions.push(Action.ORDERED_LIST);
+      actions.push(Action.UN_ORDERED_LIST);
+      actions.push(Action.TODO);
+      actions.push(Action.Code);
+      actions.push(Action.Table);
+    } else if (tableDisableResult.disableTable) {
+      actions.push(Action.Table);
     }
     
     return actions;
@@ -292,6 +306,81 @@ export class Toolbar {
     });
 
     return {hasListOverlap, hasTitleOverlap, hasTodoOverlap, hasCodeOverlap};
+  }
+
+  checkTableDisableActions(range: Range): { disableAll: boolean, disableTable: boolean } {
+    if (!range) {
+      return { disableAll: false, disableTable: false };
+    }
+
+    const startTd = getClosestAncestorByNodeName(range.startContainer, 'TD');
+    const endTd = getClosestAncestorByNodeName(range.endContainer, 'TD');
+    const startTableBlock = this.getClosestTableBlock(range.startContainer);
+    const endTableBlock = this.getClosestTableBlock(range.endContainer);
+
+    // Check if selection is completely within table block
+    if (startTableBlock && endTableBlock && startTableBlock === endTableBlock) {
+      // Both start and end are in the same table block
+      
+      if (range.collapsed) {
+        // Collapsed selection
+        if (startTd) {
+          // In a single td - disable table insertion only
+          return { disableAll: false, disableTable: true };
+        } else {
+          // Not in any td but in table block - disable all actions
+          return { disableAll: true, disableTable: true };
+        }
+      } else {
+        // Range selection
+        if (startTd && endTd && startTd === endTd) {
+          // Range within single td - disable table insertion only
+          return { disableAll: false, disableTable: true };
+        } else {
+          // Range across multiple tds or not in td - disable all actions
+          return { disableAll: true, disableTable: true };
+        }
+      }
+    }
+
+    // Check if selection partially intersects with table or contains entire table
+    if ((startTableBlock && !endTableBlock) || (!startTableBlock && endTableBlock) || 
+        (startTableBlock && endTableBlock && startTableBlock !== endTableBlock)) {
+      // Partial intersection with table(s) - disable all actions
+      return { disableAll: true, disableTable: true };
+    }
+
+    // Check if selection contains entire table block
+    if (!range.collapsed) {
+      let containsTableBlock = false;
+      iterateSubtree(new RangeIterator(range), (node) => {
+        if (isElementNode(node) && (node as HTMLElement).dataset?.btype === BlockType.Table) {
+          containsTableBlock = true;
+          return true; // Stop iteration
+        }
+        return false;
+      });
+      
+      if (containsTableBlock) {
+        return { disableAll: true, disableTable: true };
+      }
+    }
+
+    // No table-related restrictions
+    return { disableAll: false, disableTable: false };
+  }
+
+  private getClosestTableBlock(node: Node): HTMLElement | null {
+    while (node) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const element = node as HTMLElement;
+        if (element.dataset?.btype === BlockType.Table) {
+          return element;
+        }
+      }
+      node = node.parentNode;
+    }
+    return null;
   }
 
   toggleList(listType: 'ul' | 'ol') {
@@ -725,6 +814,10 @@ export class Toolbar {
   }
 
   insertTable(rows: number, cols: number) {
+    if (this.activeStatus.disableActions.includes(Action.Table)) {
+      return;
+    }
+
     this.tableManager.insertTable(rows, cols);
   }
 }
