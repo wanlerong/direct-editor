@@ -1,4 +1,4 @@
-import {HTMLStructureRule, basicSchema, lineSchema, listSchema, imgSchema, todoSchema, codeSchema, tableSchema} from "../schema/schema.js";
+import {HTMLStructureRule, basicSchema, lineSchema, listSchema, imgSchema, todoSchema, codeSchema, tableSchema, attachSchema} from "../schema/schema.js";
 import {BlockType} from "./blockType.js";
 
 export interface BlockConfig {
@@ -73,6 +73,16 @@ export const tableBlockConfig: BlockConfig = {
   createElement: () => {
     const el = document.createElement('div');
     el.dataset.btype = BlockType.Table;
+    return el;
+  }
+}
+
+export const attachBlockConfig: BlockConfig = {
+  type: BlockType.Attach,
+  schema: attachSchema,
+  createElement: () => {
+    const el = document.createElement('div');
+    el.dataset.btype = BlockType.Attach;
     return el;
   }
 }

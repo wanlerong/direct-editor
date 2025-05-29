@@ -8,7 +8,8 @@ import {
   listBlockConfig,
   todoBlockConfig,
   codeBlockConfig,
-  tableBlockConfig
+  tableBlockConfig,
+  attachBlockConfig
 } from "./block.js";
 import {BlockType} from "./blockType.js";
 import {HTMLStructureRule, listSchema, rootSchema} from "../schema/schema.js";
@@ -26,6 +27,7 @@ export default class BlockNormalizer {
     this.blockRegistry.set(BlockType.Todo, todoBlockConfig);
     this.blockRegistry.set(BlockType.Code, codeBlockConfig);
     this.blockRegistry.set(BlockType.Table, tableBlockConfig);
+    this.blockRegistry.set(BlockType.Attach, attachBlockConfig);
   }
 
   normalize(container: HTMLElement) {
@@ -67,6 +69,15 @@ export default class BlockNormalizer {
           const isValid = n.childNodes.length === 1 &&
             n.firstChild.nodeType === Node.ELEMENT_NODE &&
             (n.firstChild as HTMLElement).tagName === 'IMG';
+
+          if (!isValid) {
+            (n as HTMLElement).setAttribute('data-btype', 'basic')
+          }
+        } else if (blockType === BlockType.Attach) {
+          // 验证附件块结构
+          const isValid = n.childNodes.length === 1 &&
+            n.firstChild.nodeType === Node.ELEMENT_NODE &&
+            (n.firstChild as HTMLElement).className === 'attach-container';
 
           if (!isValid) {
             (n as HTMLElement).setAttribute('data-btype', 'basic')

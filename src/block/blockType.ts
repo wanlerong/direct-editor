@@ -7,6 +7,7 @@ export enum BlockType {
   Todo = "todo",
   Code = "code",
   Table = "table",
+  Attach = "attach",
 }
 
 // 二级类型定义

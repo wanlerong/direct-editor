@@ -15,7 +15,7 @@ export const rootSchema: HTMLStructureRule = {
   childAllowedTags: ["div"],
   childAllowText: false,
   attributes: ["class", "contenteditable"],
-  childAllowedBlocks: [BlockType.Basic, BlockType.Line, BlockType.List, BlockType.Image, BlockType.Todo, BlockType.Code, BlockType.Table],
+  childAllowedBlocks: [BlockType.Basic, BlockType.Line, BlockType.List, BlockType.Image, BlockType.Todo, BlockType.Code, BlockType.Table, BlockType.Attach],
 }
 
 export const spanSchema: HTMLStructureRule = {
@@ -167,7 +167,7 @@ export const tableCellSchema: HTMLStructureRule = {
   childAllowedTags: ["div"],
   childAllowText: false,
   attributes: ["id","class","colspan","rowspan"],
-  childAllowedBlocks: [BlockType.Basic, BlockType.Line, BlockType.List, BlockType.Image, BlockType.Todo, BlockType.Code]
+  childAllowedBlocks: [BlockType.Basic, BlockType.Line, BlockType.List, BlockType.Image, BlockType.Todo, BlockType.Code, BlockType.Attach]
 }
 
 export const tableRowSchema: HTMLStructureRule = {
@@ -196,6 +196,36 @@ export const tableSchema: HTMLStructureRule = {
           children: {
             "tr": tableRowSchema
           }
+        }
+      }
+    }
+  }
+}
+
+export const attachSchema: HTMLStructureRule = {
+  childAllowedTags: ["div"],
+  childAllowText: false,
+  attributes: ["id", "data-btype"],
+  children: {
+    "div": {
+      childAllowedTags: ["div", "span", "a"],
+      childAllowText: false,
+      attributes: ["class", "data-src", "data-type", "data-name", "data-size", "id", "contenteditable"],
+      children: {
+        "div": {
+          childAllowedTags: ["span"],
+          childAllowText: true,
+          attributes: ["class", "id"]
+        },
+        "span": {
+          childAllowedTags: [],
+          childAllowText: true,
+          attributes: ["class", "id"]
+        },
+        "a": {
+          childAllowedTags: [],
+          childAllowText: true,
+          attributes: ["href", "download", "class", "id"]
         }
       }
     }
