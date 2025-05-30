@@ -83,6 +83,7 @@ export const attachBlockConfig: BlockConfig = {
   createElement: () => {
     const el = document.createElement('div');
     el.dataset.btype = BlockType.Attach;
+    el.setAttribute('contenteditable', 'false');
     return el;
   }
 }

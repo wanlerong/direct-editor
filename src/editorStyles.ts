@@ -126,4 +126,40 @@ export const editorStyle = `
         pointer-events: none;
         cursor: default;
       }
+      
+      /* 附件块样式 */
+      .attach-container {
+        display: flex;
+        align-items: center;
+        padding: 12px;
+        border: 1px solid #e1e4e8;
+        border-radius: 6px;
+        margin: 8px 0;
+        max-width: 400px;
+      }
+
+      .attach-icon {
+        font-size: 12px;
+        margin-right: 12px;
+        user-select: none;
+      }
+
+      .attach-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .attach-name {
+        font-weight: 500;
+        color: #24292e;
+        word-break: break-all;
+        line-height: 1.2;
+      }
+
+      .attach-size{
+        font-size: 12px;
+        color:rgb(159, 159, 159);
+      }
     `

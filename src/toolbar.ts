@@ -27,6 +27,7 @@ import {
   createTodoItem,
   codeBlockConfig,
   createCodeLine,
+  attachBlockConfig,
 } from "./block/block.js";
 import {BlockInfoNone, BlockType} from "./block/blockType.js";
 import {aSchema} from "./schema/schema";
@@ -37,6 +38,13 @@ export interface LinkOperationState {
   canEdit: boolean;
   suggestedText: string;
   suggestedUrl: string;
+}
+
+export interface AttachmentData {
+  src: string;
+  type: string;
+  name: string;
+  size: number;
 }
 
 export class Toolbar {
@@ -819,5 +827,81 @@ export class Toolbar {
     }
 
     this.tableManager.insertTable(rows, cols);
+  }
+
+  insertAttach(data: AttachmentData): void {
+    if (!this.editor.restoreSelection()) {
+      console.warn('无法恢复选区');
+      return;
+    }
+
+    const range = getSelectionRange();
+    if (!range) return;
+
+    const block = getClosestBlock(range.endContainer);
+    const attachBlock = this.createAttachBlock(data);
+
+    if (block) {
+      block.insertAdjacentElement('afterend', attachBlock);
+    } else {
+      this.editor.theDom.appendChild(attachBlock);
+    }
+
+    // 设置光标到新插入的附件块后
+    const newRange = document.createRange();
+    newRange.setStartAfter(attachBlock);
+    newRange.collapse(true);
+    setRange(newRange.startContainer, newRange.startOffset, 
+             newRange.endContainer, newRange.endOffset);
+
+    this.editor.normalize();
+  }
+
+  private createAttachBlock(data: AttachmentData): HTMLElement {
+    const attachBlock = attachBlockConfig.createElement();
+    
+    const container = document.createElement('div');
+    container.className = 'attach-container';
+    container.dataset.src = data.src;
+    container.dataset.type = data.type;
+    container.dataset.name = data.name;
+    container.dataset.size = data.size.toString();
+    
+    // 文件类型图标
+    const icon = document.createElement('div');
+    icon.className = 'attach-icon';
+    icon.textContent = this.getFileIcon(data.type);
+    
+    // 文件信息
+    const info = document.createElement('div');
+    info.className = 'attach-info';
+    
+    const name = document.createElement('span');
+    name.className = 'attach-name';
+    name.textContent = data.name;
+    
+    const size = document.createElement('span');
+    size.className = 'attach-size';
+    size.textContent = this.formatFileSize(data.size);
+    
+    info.appendChild(name);
+    info.appendChild(size);
+        
+    container.appendChild(icon);
+    container.appendChild(info);
+    attachBlock.appendChild(container);
+    
+    return attachBlock;
+  }
+
+  private getFileIcon(mimeType: string): string {
+    return '📎';
+  }
+
+  private formatFileSize(bytes: number): string {
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    if (bytes === 0) return '0 B';
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
   }
 }

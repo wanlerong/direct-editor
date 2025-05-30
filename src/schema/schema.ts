@@ -205,12 +205,12 @@ export const tableSchema: HTMLStructureRule = {
 export const attachSchema: HTMLStructureRule = {
   childAllowedTags: ["div"],
   childAllowText: false,
-  attributes: ["id", "data-btype"],
+  attributes: ["id", "data-btype", "contenteditable"],
   children: {
     "div": {
-      childAllowedTags: ["div", "span", "a"],
+      childAllowedTags: ["div", "span"],
       childAllowText: false,
-      attributes: ["class", "data-src", "data-type", "data-name", "data-size", "id", "contenteditable"],
+      attributes: ["class", "data-src", "data-type", "data-name", "data-size", "id"],
       children: {
         "div": {
           childAllowedTags: ["span"],
@@ -221,11 +221,6 @@ export const attachSchema: HTMLStructureRule = {
           childAllowedTags: [],
           childAllowText: true,
           attributes: ["class", "id"]
-        },
-        "a": {
-          childAllowedTags: [],
-          childAllowText: true,
-          attributes: ["href", "download", "class", "id"]
         }
       }
     }

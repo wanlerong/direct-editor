@@ -1,4 +1,4 @@
-import {Editor,Const,ActiveStatusConst,BlockConst} from "direct-editor"
+import {Editor,Const,ActiveStatusConst,BlockConst,AttachmentData} from "direct-editor"
 
 let btn1 = document.getElementById("btn1")
 let btn2 = document.getElementById("btn2")
@@ -23,6 +23,10 @@ let canInsert,canEdit
 let btnImg = document.getElementById("btnImg")
 let imgInput = document.getElementById('imgInput');
 let confirmImg = document.getElementById("confirmImg");
+
+let btnAttach = document.getElementById("btnAttach")
+let attachInput = document.getElementById('attachInput');
+let confirmAttach = document.getElementById("confirmAttach");
 
 let e = new Editor(document.getElementById("container"), (ops) => {
 }, (as)=>{
@@ -179,4 +183,23 @@ confirmImg.addEventListener('click', () => {
   e.toolbar.insertImg(imgInput.value);
   imgInput.style.display = "none"
   confirmImg.style.display = "none"
+});
+
+btnAttach.addEventListener('click', () => {
+  attachInput.style.display = "block"
+  confirmAttach.style.display = "block"
+  e.cacheSelection()
+});
+
+confirmAttach.addEventListener('click', () => {
+  // 示例附件数据
+  const attachmentData = {
+    src: attachInput.value || "http://example.com/sample.pdf",
+    type: "application/pdf",
+    name: "示例文档.pdf", 
+    size: 1024000
+  };
+  e.toolbar.insertAttach(attachmentData);
+  attachInput.style.display = "none"
+  confirmAttach.style.display = "none"
 });
