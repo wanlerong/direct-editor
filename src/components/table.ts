@@ -119,10 +119,17 @@ export class TableManager {
     const cellDetails = this.calculateCellDetails();
     const range = this.getCellsRange(this.selectionStartCell, currentCell, cellDetails);
     if (!range) return;
-    
-    const isMultipleSelection = (range.endRow > range.startRow) || (range.endCol > range.startCol);
-    
-    if (isMultipleSelection) {
+
+    let selectedCellsCnt = 0
+    cellDetails.forEach((pos, cell) => {
+      // Only select cells fully contained within the range
+      if (pos.startRow >= range.startRow && pos.endRow <= range.endRow &&
+          pos.startCol >= range.startCol && pos.endCol <= range.endCol) {
+          selectedCellsCnt++
+      }
+    });
+
+    if (selectedCellsCnt > 1) {
       this.updateSelectedCells(range, cellDetails);
       event.preventDefault();
     } else {
